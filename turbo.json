@@ -27,5 +27,5 @@
       "persistent": true
     }
   },
-  "globalPassThroughEnv": ["NEXT_OUTPUT"]
+  "globalPassThroughEnv": ["NEXT_OUTPUT", "API_INTERNAL_URL"]
 }

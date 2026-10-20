@@ -13,7 +13,10 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --offline --frozen-lockfile
-RUN NEXT_OUTPUT=standalone pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
+# Next.js bakes rewrites at build time: /api → the compose service "api".
+# (Behind Caddy, /api never reaches Next; this matters only without the proxy.)
+ARG API_INTERNAL_URL=http://api:4100
+RUN NEXT_OUTPUT=standalone API_INTERNAL_URL=${API_INTERNAL_URL} pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
 # Self-contained production folders with only runtime dependencies.
 RUN pnpm deploy --filter=@lintel/api --prod --legacy /out/api \
  && pnpm deploy --filter=@lintel/worker --prod --legacy /out/worker \

@@ -1,5 +1,16 @@
 import type { Environment } from '@lintel/configuration';
 import { LoggerModule } from 'nestjs-pino';
+
+/** pino-pretty is a dev dependency; production images do not contain it. */
+function prettyPrintAvailable(): boolean {
+  try {
+    require.resolve('pino-pretty');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 import { ENVIRONMENT } from '../../config/configuration.module';
 import { resolveRequestId } from '../http/request-context.middleware';
 
@@ -33,7 +44,7 @@ export const StructuredLoggerModule = LoggerModule.forRootAsync({
         res: (response: { statusCode: number }) => ({ statusCode: response.statusCode }),
       },
       autoLogging: { ignore: (request) => (request.url ?? '').startsWith('/v1/health') },
-      ...(env.NODE_ENV === 'development'
+      ...(env.NODE_ENV === 'development' && prettyPrintAvailable()
         ? {
             transport: {
               target: 'pino-pretty',

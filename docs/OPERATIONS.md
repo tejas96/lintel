@@ -65,6 +65,19 @@ Steps:
 6. Verify: `/api/v1/health/ready` reports `ready`; sign in; Temporal UI (bind to
    localhost and reach it through an SSH tunnel only).
 
+**One Temporal namespace per environment.** Schedule IDs (`lintel-daily-operations`,
+`lintel-periodic-rewards`) are unique per namespace, and every worker re-applies them
+with its own task queue at startup — two environments sharing a namespace would steal
+each other's schedules.
+
+**Verified 2026-10-21:** all four images built from `infrastructure/docker/Dockerfile`
+(api 589 MB, worker 848 MB, web 424 MB, migrate 393 MB); the migrate image applied
+migrations to a fresh database; the API image refused to start in production mode
+with development secrets and reported ready (database, storage, Temporal) in
+development mode; the worker image connected and registered its schedules; the web
+image served pages and proxied `/api` to the API container. Not yet verified: the
+full `compose.production.yaml` with Temporal on PostgreSQL and Caddy TLS.
+
 Updates: pull the new revision, `docker compose … up -d --build`; migrations run
 first; API and worker restart with graceful shutdown (Temporal workers drain).
 
