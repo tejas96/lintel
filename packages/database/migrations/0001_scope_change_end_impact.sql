@@ -1,0 +1,1 @@
+ALTER TABLE "scope_change_requests" ADD COLUMN "project_end_impact_days" integer DEFAULT 0 NOT NULL;

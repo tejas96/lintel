@@ -138,7 +138,7 @@ describe('authorisation boundaries', () => {
   });
 
   it('revokes every session when a person is deactivated', async () => {
-    const { http, database } = testApp;
+    const { http } = testApp;
     const admin = await signInAs(testApp, PEOPLE.administrator);
     await removePerson('+919111100002');
     const created = await http

@@ -27,7 +27,7 @@ export class NotificationRepository implements NotificationStore {
       })
       .from(users)
       .where(eq(users.id, userId));
-    if (!user || user.status !== 'active') return null;
+    if (user?.status !== 'active') return null;
     const [device] = await this.db
       .select({ id: deviceTokens.id })
       .from(deviceTokens)
