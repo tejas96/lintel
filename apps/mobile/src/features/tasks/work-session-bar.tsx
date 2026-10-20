@@ -8,11 +8,13 @@ import { useElapsedSeconds } from '@/features/today/use-elapsed-seconds';
 import { useToast } from '@/feedback/toast';
 import { formatElapsed, formatMinutes } from '@/formatting/quantities';
 import { usePauseWork, useStartWork } from '@/queries/work-queries';
+import { useCurrentUser } from '@/session/session-provider';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
 import { canBeginWork } from './task-affordances';
 
 function SessionControl({ task, active }: { readonly task: TaskDetail; readonly active: boolean }) {
+  const user = useCurrentUser();
   const toast = useToast();
   const startWork = useStartWork();
   const pauseWork = usePauseWork();
@@ -33,7 +35,7 @@ function SessionControl({ task, active }: { readonly task: TaskDetail; readonly 
       />
     );
   }
-  if (!canBeginWork(task)) return null;
+  if (!canBeginWork(task, user.id)) return null;
   return (
     <Button
       label="Start"
@@ -51,11 +53,12 @@ function SessionControl({ task, active }: { readonly task: TaskDetail; readonly 
 
 /** Start or pause a work session; the server keeps one active session per person. */
 export function WorkSessionBar({ task }: { readonly task: TaskDetail }) {
+  const user = useCurrentUser();
   const { colors } = useAppTheme();
   const elapsed = useElapsedSeconds(task.activeWorkSessionStartedAt);
   const active = task.activeWorkSessionStartedAt !== null;
   const logged = task.actualMinutes > 0 ? `${formatMinutes(task.actualMinutes)} logged` : null;
-  if (!active && !canBeginWork(task) && !logged) return null;
+  if (!active && !canBeginWork(task, user.id) && !logged) return null;
   const estimate = task.estimateMinutes
     ? `of ${formatMinutes(task.estimateMinutes)} estimated`
     : null;
@@ -69,7 +72,7 @@ export function WorkSessionBar({ task }: { readonly task: TaskDetail }) {
           {active ? 'Working now' : 'Work session'}
         </AppText>
         <AppText variant="titleLg" color={strong} style={styles.timer}>
-          {elapsed !== null ? formatElapsed(elapsed) : (logged ?? 'Not started')}
+          {elapsed !== null ? formatElapsed(elapsed) : (logged ?? 'No time logged yet')}
         </AppText>
         {detail ? (
           <AppText variant="bodySm" tone="secondary">

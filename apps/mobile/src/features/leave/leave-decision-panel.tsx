@@ -31,7 +31,13 @@ export function LeaveDecisionPanel({ request }: { readonly request: LeaveRequest
     decide.mutate(
       { decision, note: note.trim() || null, version: request.version },
       {
-        onSuccess: () => toast.show(DONE_MESSAGE[decision], 'success'),
+        onSuccess: (updated) =>
+          toast.show(
+            decision === 'approve' && updated.status === 'pending'
+              ? 'Your approval is recorded. It now goes to the next approver.'
+              : DONE_MESSAGE[decision],
+            'success',
+          ),
         onError: (error) => toast.show(errorMessage(error), 'error'),
       },
     );

@@ -25,7 +25,9 @@ export function AttachmentsSection({ task }: { readonly task: TaskDetail }) {
     >
       {task.attachments.length === 0 && pending.length === 0 ? (
         <AppText variant="bodySm" tone="secondary">
-          No files yet. Add a photo of the site, a drawing or a document.
+          {task.viewerCanEdit
+            ? 'No files yet. Add a photo of the site, a drawing or a document.'
+            : 'No files yet.'}
         </AppText>
       ) : null}
       <View style={{ gap: SPACE.md }}>

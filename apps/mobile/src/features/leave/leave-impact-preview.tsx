@@ -4,6 +4,7 @@ import { AppText } from '@/components/app-text';
 import { Avatar } from '@/components/avatar';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
+import { StatusDot } from '@/components/status-pill';
 import { formatDateRange } from '@/formatting/dates';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
@@ -57,7 +58,15 @@ export function LeaveImpactPreview({
           </AppText>
           {impact.conflicts.map((conflict) => (
             <View key={`${conflict.taskId}-${conflict.kind}`} style={styles.conflict}>
-              <AppText variant="body">{conflict.title}</AppText>
+              <View style={styles.conflictTitle}>
+                <StatusDot tone={conflict.severity === 'critical' ? 'overdue' : 'atRisk'} />
+                <AppText variant="body" style={styles.flex}>
+                  {conflict.title}
+                </AppText>
+                <AppText variant="label" tone="secondary">
+                  {conflict.severity === 'critical' ? 'Critical' : 'Heads-up'}
+                </AppText>
+              </View>
               <AppText variant="bodySm" tone="secondary">
                 {conflict.projectName} · {conflict.explanation}
               </AppText>
@@ -95,5 +104,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   group: { gap: SPACE.sm },
   conflict: { gap: 2 },
+  conflictTitle: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   person: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
 });

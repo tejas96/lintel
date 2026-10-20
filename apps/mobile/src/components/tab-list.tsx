@@ -3,7 +3,7 @@ import { FlatList, type ListRenderItem, RefreshControl, StyleSheet, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/app-theme';
 import { GUTTER, MAX_CONTENT_WIDTH, SPACE } from '@/theme/layout';
-import { usePullToRefresh } from './screen';
+import { StatusBarShield, usePullToRefresh } from './screen';
 
 export interface TabListProps<T> {
   readonly data: readonly T[];
@@ -34,7 +34,7 @@ export function TabList<T>({
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const pull = usePullToRefresh(onRefresh);
-  return (
+  const list = (
     <FlatList
       data={data}
       renderItem={renderItem}
@@ -67,6 +67,13 @@ export function TabList<T>({
       ]}
     />
   );
+  if (edge === 'stack') return list;
+  return (
+    <View style={styles.fill}>
+      {list}
+      <StatusBarShield />
+    </View>
+  );
 }
 
 function Separator() {
@@ -74,6 +81,7 @@ function Separator() {
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   content: {
     paddingHorizontal: GUTTER,
     width: '100%',

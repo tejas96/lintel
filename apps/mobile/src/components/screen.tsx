@@ -1,5 +1,12 @@
 import { type ReactNode, useCallback, useState } from 'react';
-import { RefreshControl, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/app-theme';
@@ -24,41 +31,66 @@ export interface ScreenScrollProps {
   readonly contentStyle?: StyleProp<ViewStyle>;
 }
 
+/** Keeps scrolled content from running under the clock on tab roots (no native header there). */
+export function StatusBarShield() {
+  const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      pointerEvents="none"
+      style={[styles.shield, { height: insets.top, backgroundColor: colors.canvas }]}
+    />
+  );
+}
+
 /**
- * Scrolling page with the warm canvas, a readable column on tablets,
- * pull-to-refresh, and focused inputs kept above the keyboard.
+ * Scrolling page with the warm canvas, a readable column on tablets and
+ * pull-to-refresh. Stack screens (which hold the forms) keep focused inputs
+ * above the keyboard.
  */
 export function ScreenScroll({ children, edge, onRefresh, contentStyle }: ScreenScrollProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const pull = usePullToRefresh(onRefresh ?? (() => Promise.resolve()));
+  const shared = {
+    style: { backgroundColor: colors.canvas },
+    keyboardShouldPersistTaps: 'handled' as const,
+    refreshControl: onRefresh ? (
+      <RefreshControl
+        refreshing={pull.refreshing}
+        onRefresh={pull.onRefresh}
+        tintColor={colors.accent}
+        colors={[colors.accent]}
+        progressBackgroundColor={colors.surfaceRaised}
+      />
+    ) : undefined,
+    contentContainerStyle: [
+      styles.content,
+      {
+        paddingTop: edge === 'tab' ? insets.top + SPACE.lg : SPACE.lg,
+        paddingBottom: insets.bottom + SPACE.huge * 2,
+      },
+    ],
+  };
+  const column = <View style={[styles.column, contentStyle]}>{children}</View>;
+  if (edge === 'stack') {
+    return (
+      <KeyboardAwareScrollView
+        {...shared}
+        bottomOffset={SPACE.xl}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        {column}
+      </KeyboardAwareScrollView>
+    );
+  }
   return (
-    <KeyboardAwareScrollView
-      bottomOffset={SPACE.xl}
-      style={{ backgroundColor: colors.canvas }}
-      contentInsetAdjustmentBehavior={edge === 'stack' ? 'automatic' : 'never'}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        onRefresh ? (
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-            progressBackgroundColor={colors.surfaceRaised}
-          />
-        ) : undefined
-      }
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: edge === 'tab' ? insets.top + SPACE.lg : SPACE.lg,
-          paddingBottom: insets.bottom + SPACE.huge * 2,
-        },
-      ]}
-    >
-      <View style={[styles.column, contentStyle]}>{children}</View>
-    </KeyboardAwareScrollView>
+    <View style={styles.fill}>
+      <ScrollView {...shared} contentInsetAdjustmentBehavior="never">
+        {column}
+      </ScrollView>
+      <StatusBarShield />
+    </View>
   );
 }
 
@@ -97,6 +129,8 @@ export const screenStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  shield: { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0.94 },
   content: { paddingHorizontal: GUTTER },
   column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', gap: SPACE.xxl },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACE.md },

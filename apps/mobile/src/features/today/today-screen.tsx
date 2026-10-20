@@ -2,7 +2,6 @@ import { calendarDateInTimeZone } from '@lintel/shared';
 import { View } from 'react-native';
 import { errorMessage } from '@/api/api-error';
 import { AccountButton } from '@/components/account-button';
-import { AppText } from '@/components/app-text';
 import { PageHeader, ScreenScroll } from '@/components/screen';
 import { SkeletonBlock, SkeletonGroup, SkeletonList } from '@/components/skeleton';
 import { EmptyState, ErrorState } from '@/components/state-views';
@@ -48,7 +47,6 @@ export function TodayScreen() {
         </SkeletonGroup>
       ) : null}
       {queue.isPending ? <SkeletonList count={3} /> : null}
-      {queue.isPending ? null : <PushPromptCard />}
       {queue.isError ? (
         <ErrorState
           error={queue.error}
@@ -56,6 +54,7 @@ export function TodayScreen() {
           onRetry={() => void queue.refetch()}
         />
       ) : null}
+      {queue.isError ? <PushPromptCard /> : null}
       {queue.data ? (
         <>
           <WorkloadStrip workload={queue.data.workload} />
@@ -68,13 +67,9 @@ export function TodayScreen() {
               message="Your queue is clear. New assignments and review requests will appear here."
             />
           )}
+          <PushPromptCard />
           <ReviewsWaiting tasks={queue.data.reviewsWaitingForMe} today={queue.data.today} />
           <QueueSections queue={queue.data} onStart={start} />
-          {queue.data.strategy ? (
-            <AppText variant="bodySm" tone="tertiary" align="center">
-              {queue.data.strategy}
-            </AppText>
-          ) : null}
         </>
       ) : null}
     </ScreenScroll>

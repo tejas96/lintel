@@ -15,10 +15,23 @@ export function configureForegroundNotifications(): void {
   });
 }
 
-/** The server puts the in-app path under `data.linkPath` (see FirebasePushProvider). */
-export function linkPathOf(notification: Notifications.Notification): string | null {
-  const data: unknown = notification.request.content.data;
-  if (typeof data !== 'object' || data === null || !('linkPath' in data)) return null;
-  const { linkPath } = data;
+function linkPathIn(source: unknown): string | null {
+  if (typeof source !== 'object' || source === null || !('linkPath' in source)) return null;
+  const { linkPath } = source;
   return typeof linkPath === 'string' && linkPath.startsWith('/') ? linkPath : null;
+}
+
+/**
+ * The server sends the in-app path as the data key `linkPath` (see
+ * FirebasePushProvider). Depending on platform and delivery path it surfaces in
+ * `content.data`, the iOS APNs payload, or the Android FCM data map.
+ */
+export function linkPathOf(notification: Notifications.Notification): string | null {
+  const { content, trigger } = notification.request;
+  const fromData = linkPathIn(content.data);
+  if (fromData) return fromData;
+  if (trigger && typeof trigger === 'object' && 'type' in trigger && trigger.type === 'push') {
+    return linkPathIn(trigger.payload) ?? linkPathIn(trigger.remoteMessage?.data);
+  }
+  return null;
 }

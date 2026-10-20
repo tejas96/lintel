@@ -8,7 +8,7 @@ import { Section } from '@/components/section';
 import { formatRelativeInstant } from '@/formatting/dates';
 import { useAppTheme } from '@/theme/app-theme';
 import { RADIUS, SPACE } from '@/theme/layout';
-import { isClosed } from './task-affordances';
+import { canReportBlocker, isClosed } from './task-affordances';
 
 export const BLOCKER_CATEGORY_LABELS: Readonly<Record<Blocker['category'], string>> = {
   client: 'Waiting on the client',
@@ -57,8 +57,8 @@ export function BlockersSection({ task }: { readonly task: TaskDetail }) {
   const router = useRouter();
   const open = task.blockers.filter((blocker) => blocker.resolvedAt === null);
   const resolved = task.blockers.filter((blocker) => blocker.resolvedAt !== null);
-  const closed = isClosed(task);
-  if (open.length === 0 && closed) return null;
+  const canReport = canReportBlocker(task);
+  if (open.length === 0 && (isClosed(task) || !canReport)) return null;
   return (
     <Section title="Blockers" meta={open.length > 0 ? `${open.length} open` : undefined}>
       {open.map((blocker) => (
@@ -72,7 +72,7 @@ export function BlockersSection({ task }: { readonly task: TaskDetail }) {
             : ''}
         </AppText>
       ) : null}
-      {closed ? null : (
+      {!canReport ? null : (
         <Button
           label="Report a blocker"
           icon="blocked"

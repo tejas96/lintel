@@ -66,14 +66,13 @@ export function ReviewPanel({
         loading={pending === 'approved'}
         disabled={review.isPending}
       />
-      <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
+      <View style={{ gap: SPACE.sm }}>
         <Button
           label="Request changes"
           variant="secondary"
           onPress={() => run('changes_requested')}
           loading={pending === 'changes_requested'}
           disabled={review.isPending || needsComment}
-          fill
         />
         <Button
           label="Reject"
@@ -81,7 +80,6 @@ export function ReviewPanel({
           onPress={() => run('rejected')}
           loading={pending === 'rejected'}
           disabled={review.isPending || needsComment}
-          fill
         />
       </View>
     </Card>

@@ -13,6 +13,7 @@ import { PersonPicker } from '@/features/people/person-picker';
 import { useToast } from '@/feedback/toast';
 import { useReportBlocker, useTask } from '@/queries/task-queries';
 import { BLOCKER_CATEGORY_LABELS } from './blockers-section';
+import { blockerRefusal } from './task-affordances';
 
 const CATEGORY_OPTIONS = (Object.keys(BLOCKER_CATEGORY_LABELS) as Blocker['category'][]).map(
   (value) => ({ value, label: BLOCKER_CATEGORY_LABELS[value] }),
@@ -42,7 +43,8 @@ function ReportBlockerForm({ task }: { readonly task: TaskDetail }) {
   const [reason, setReason] = useState('');
   const [waitingOn, setWaitingOn] = useState<UserSummary | null>(null);
   const errors = fieldErrors(report.error);
-  const ready = category !== null && reason.trim().length >= 3;
+  const refusal = blockerRefusal(task);
+  const ready = refusal.length === 0 && category !== null && reason.trim().length >= 3;
 
   const submit = () => {
     if (!category || !ready) return;
@@ -80,6 +82,11 @@ function ReportBlockerForm({ task }: { readonly task: TaskDetail }) {
         />
       }
     >
+      {refusal.length > 0 ? (
+        <AppText variant="bodySm" tone="secondary">
+          {refusal.join(' ')}
+        </AppText>
+      ) : null}
       <AppText variant="label" tone="secondary">
         What is it waiting on?
       </AppText>

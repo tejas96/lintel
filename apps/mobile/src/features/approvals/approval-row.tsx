@@ -12,6 +12,13 @@ import { hrefForLinkPath } from '@/push/link-routing';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
 
+/** Kinds the app has a decision screen for; the rest are decided on the web. */
+const DECIDED_IN_APP: ReadonlySet<ApprovalItem['type']> = new Set([
+  'deliverable_review',
+  'task_review',
+  'leave_request',
+]);
+
 /** The in-app screen for an item: its server link first, then its type and id. */
 export function approvalHref(item: ApprovalItem): Href | null {
   const linked = hrefForLinkPath(item.linkPath);
@@ -29,6 +36,7 @@ export function ApprovalRow({ item }: { readonly item: ApprovalItem }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   const href = approvalHref(item);
+  const decidedHere = DECIDED_IN_APP.has(item.type);
   const body = (
     <>
       <View style={styles.top}>
@@ -55,9 +63,11 @@ export function ApprovalRow({ item }: { readonly item: ApprovalItem }) {
         </AppText>
         {href ? <Icon name="chevronRight" size={14} color={colors.textTertiary} /> : null}
       </View>
-      {href ? null : (
+      {decidedHere ? null : (
         <AppText variant="label" tone="tertiary">
-          Decide this in Lintel on the web.
+          {href
+            ? 'Decide this in Lintel on the web. Opens the project for context.'
+            : 'Decide this in Lintel on the web.'}
         </AppText>
       )}
     </>
@@ -68,7 +78,7 @@ export function ApprovalRow({ item }: { readonly item: ApprovalItem }) {
       style={styles.card}
       onPress={() => router.push(href)}
       accessibilityLabel={`${item.title}. ${item.subtitle}`}
-      accessibilityHint="Opens it to decide"
+      accessibilityHint={decidedHere ? 'Opens it to decide' : 'Opens the project'}
     >
       {body}
     </Card>

@@ -35,6 +35,9 @@ export async function requestPushPermission(): Promise<PushPermission> {
   return status;
 }
 
+/** The token last sent to the server in this app session, so repeats are skipped. */
+let registeredToken: string | null = null;
+
 export type DeviceRegistration =
   | { readonly outcome: 'registered' }
   | { readonly outcome: 'unavailable'; readonly reason: string };
@@ -62,6 +65,7 @@ export async function registerPushDevice(
   if (typeof deviceToken.data !== 'string' || deviceToken.data.length < 20) {
     return { outcome: 'unavailable', reason: 'This device returned no usable push token.' };
   }
+  if (deviceToken.data === registeredToken) return { outcome: 'registered' };
   const device = await unwrap(
     api.operations.registerDevice({
       body: {
@@ -73,11 +77,13 @@ export async function registerPushDevice(
     }),
   );
   await writeSecure(STORAGE_KEYS.pushDeviceId, device.id);
+  registeredToken = deviceToken.data;
   return { outcome: 'registered' };
 }
 
 /** Best effort: called before signing out so this phone stops receiving pushes. */
 export async function unregisterPushDevice(): Promise<void> {
+  registeredToken = null;
   const deviceId = await readSecure(STORAGE_KEYS.pushDeviceId);
   if (!deviceId) return;
   try {
@@ -89,5 +95,6 @@ export async function unregisterPushDevice(): Promise<void> {
 }
 
 export function forgetPushDevice(): Promise<void> {
+  registeredToken = null;
   return deleteSecure(STORAGE_KEYS.pushDeviceId);
 }

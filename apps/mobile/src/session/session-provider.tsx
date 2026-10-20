@@ -24,6 +24,8 @@ export type SessionState =
 
 interface SessionContextValue {
   readonly state: SessionState;
+  /** The last signed-in person, kept while signed-in screens unmount after sign-out. */
+  readonly lastUser: CurrentUser | null;
   completeSignIn(token: string, user: CurrentUser): Promise<void>;
   /** Re-reads the person (capabilities can change while the app is open). */
   refreshUser(): Promise<void>;
@@ -47,6 +49,10 @@ async function clearLocalSession(): Promise<void> {
  */
 export function SessionProvider({ children }: { readonly children: ReactNode }) {
   const [state, setState] = useState<SessionState>({ status: 'restoring' });
+  const [lastUser, setLastUser] = useState<CurrentUser | null>(null);
+  useEffect(() => {
+    if (state.status === 'signedIn') setLastUser(state.user);
+  }, [state]);
 
   const restore = useCallback(async () => {
     const token = await readSecure(STORAGE_KEYS.sessionToken);
@@ -110,8 +116,8 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
   }, [restore]);
 
   const value = useMemo(
-    () => ({ state, completeSignIn, refreshUser, signOut, retryRestore }),
-    [state, completeSignIn, refreshUser, signOut, retryRestore],
+    () => ({ state, lastUser, completeSignIn, refreshUser, signOut, retryRestore }),
+    [state, lastUser, completeSignIn, refreshUser, signOut, retryRestore],
   );
   return <SessionContext value={value}>{children}</SessionContext>;
 }
@@ -122,9 +128,13 @@ export function useSession(): SessionContextValue {
   return context;
 }
 
-/** The signed-in person; only call inside the signed-in part of the app. */
+/**
+ * The signed-in person; only call inside the signed-in part of the app. While
+ * those screens unmount after sign-out or expiry, the last person is returned.
+ */
 export function useCurrentUser(): CurrentUser {
-  const { state } = useSession();
-  if (state.status !== 'signedIn') throw new Error('useCurrentUser needs a signed-in session.');
-  return state.user;
+  const { state, lastUser } = useSession();
+  if (state.status === 'signedIn') return state.user;
+  if (lastUser) return lastUser;
+  throw new Error('useCurrentUser needs a signed-in session.');
 }

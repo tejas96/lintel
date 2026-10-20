@@ -11,9 +11,10 @@ import { InlineError } from '@/components/state-views';
 import { useToast } from '@/feedback/toast';
 import { useTask } from '@/queries/task-queries';
 import { usePauseWork, useStartWork } from '@/queries/work-queries';
+import { useCurrentUser } from '@/session/session-provider';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
-import { canBeginWork, isClosed } from './task-affordances';
+import { canBeginWork, canReportBlocker } from './task-affordances';
 import { useRunTransition } from './use-run-transition';
 
 /**
@@ -38,6 +39,7 @@ export function QuickActionsSheet() {
 }
 
 function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
+  const user = useCurrentUser();
   const router = useRouter();
   const toast = useToast();
   const { colors } = useAppTheme();
@@ -48,9 +50,8 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
   };
   const transition = useRunTransition(task);
   const active = task.activeWorkSessionStartedAt !== null;
-  const canStart = canBeginWork(task);
+  const canStart = canBeginWork(task, user.id);
   const notify = { onError: (error: unknown) => toast.show(errorMessage(error), 'error') };
-  const closed = isClosed(task);
 
   return (
     <SheetLayout title={task.title} subtitle={`${task.project.name} · #${task.number}`}>
@@ -90,7 +91,9 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
           />
         ) : null}
         {task.transitions
-          .filter((option) => option.allowed && option.to !== 'in_progress')
+          .filter(
+            (option) => option.allowed && option.to !== 'in_progress' && option.to !== 'blocked',
+          )
           .map((option) => (
             <Button
               key={option.to}
@@ -101,7 +104,7 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
               onPress={() => transition.run(option, close)}
             />
           ))}
-        {closed ? null : (
+        {!canReportBlocker(task) ? null : (
           <Button
             label="Report a blocker"
             icon="blocked"
@@ -119,7 +122,7 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
         />
       </View>
       {task.transitions
-        .filter((option) => !option.allowed && option.reasons.length > 0)
+        .filter((option) => !option.allowed && option.to !== 'blocked' && option.reasons.length > 0)
         .map((option) => (
           <View key={option.to} style={styles.refused}>
             <Icon name="lock" size={14} color={colors.textTertiary} />

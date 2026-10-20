@@ -14,6 +14,10 @@ export function useRunTransition(task: TaskDetail) {
   const transition = useTransitionTask(task.id);
   const run = (option: TransitionOption, onDone?: () => void) => {
     if (!option.allowed) return;
+    if (option.to === 'blocked') {
+      router.push({ pathname: '/tasks/[id]/blocker', params: { id: task.id } });
+      return;
+    }
     if (option.requiresNote) {
       router.push({ pathname: '/tasks/[id]/transition', params: { id: task.id, to: option.to } });
       return;

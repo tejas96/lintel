@@ -2,18 +2,17 @@ import type { Stage } from '@lintel/api-contracts';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
-import { StatusDot } from '@/components/status-pill';
 import { formatDateRange } from '@/formatting/dates';
+import { type AppTheme, useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
-import type { StatusPresentation } from '@/theme/status-vocabulary';
 import { StageTracker } from './stage-tracker';
 
-const STAGE_TONE: Readonly<Record<Stage['status'], StatusPresentation['tone']>> = {
-  completed: 'done',
-  active: 'onTrack',
-  pending: 'neutral',
-  skipped: 'neutral',
-};
+/** Same colours as the tracker above: done, current ("now"), still to come. */
+function stageDotColor(theme: AppTheme, status: Stage['status']): string {
+  if (status === 'completed') return theme.status.onTrack.solid;
+  if (status === 'active') return theme.colors.accent;
+  return theme.colors.borderStrong;
+}
 
 const STAGE_WORD: Readonly<Record<Stage['status'], string>> = {
   completed: 'Done',
@@ -24,6 +23,7 @@ const STAGE_WORD: Readonly<Record<Stage['status'], string>> = {
 
 /** The segmented tracker, then each stage with its dates and task progress. */
 export function StageList({ stages }: { readonly stages: readonly Stage[] }) {
+  const theme = useAppTheme();
   if (stages.length === 0) return null;
   const ordered = [...stages].sort((left, right) => left.position - right.position);
   return (
@@ -37,7 +37,7 @@ export function StageList({ stages }: { readonly stages: readonly Stage[] }) {
             accessible
             accessibilityLabel={`${stage.name}: ${STAGE_WORD[stage.status]}, ${stage.taskCounts.done} of ${stage.taskCounts.total} tasks done`}
           >
-            <StatusDot tone={STAGE_TONE[stage.status]} />
+            <View style={[styles.dot, { backgroundColor: stageDotColor(theme, stage.status) }]} />
             <View style={styles.flex}>
               <AppText variant="body" tone={stage.status === 'skipped' ? 'tertiary' : 'primary'}>
                 {stage.name}
@@ -65,4 +65,5 @@ const styles = StyleSheet.create({
   list: { gap: SPACE.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   flex: { flex: 1 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });

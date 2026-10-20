@@ -25,7 +25,14 @@ export function useStartWork() {
   return useMutation({
     mutationFn: (taskId: string) =>
       unwrap(api.work.startWork({ params: { id: taskId }, body: {} })),
-    onSuccess: (task) => applyTaskChange(queryClient, task),
+    onSuccess: (task) => {
+      applyTaskChange(queryClient, task);
+      // One active session per person: starting here may have paused another task.
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks,
+        predicate: (query) => query.queryKey[1] !== task.id,
+      });
+    },
   });
 }
 

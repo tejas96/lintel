@@ -30,25 +30,29 @@ export default function TabsLayout() {
       badgeBackgroundColor={colors.accent}
       minimizeBehavior="onScrollDown"
     >
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger name="index" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'sun.max', selected: 'sun.max.fill' }} md="today" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="site" hidden={!tabs.has('site')}>
+      <NativeTabs.Trigger name="site" disableAutomaticContentInsets hidden={!tabs.has('site')}>
         <NativeTabs.Trigger.Label>Site</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'hammer', selected: 'hammer.fill' }}
           md="construction"
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="projects">
+      <NativeTabs.Trigger name="projects" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Label>Projects</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'square.stack.3d.up', selected: 'square.stack.3d.up.fill' }}
           md="architecture"
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="approvals" hidden={!tabs.has('approvals')}>
+      <NativeTabs.Trigger
+        name="approvals"
+        disableAutomaticContentInsets
+        hidden={!tabs.has('approvals')}
+      >
         <NativeTabs.Trigger.Label>Approvals</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'checkmark.seal', selected: 'checkmark.seal.fill' }}
@@ -56,14 +60,14 @@ export default function TabsLayout() {
         />
         <NativeTabs.Trigger.Badge hidden={!approvals}>{approvals ?? ''}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="leave" hidden={!tabs.has('leave')}>
+      <NativeTabs.Trigger name="leave" disableAutomaticContentInsets hidden={!tabs.has('leave')}>
         <NativeTabs.Trigger.Label>Leave</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'sun.horizon', selected: 'sun.horizon.fill' }}
           md="beach_access"
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="inbox">
+      <NativeTabs.Trigger name="inbox" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Label>Inbox</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'tray', selected: 'tray.fill' }} md="inbox" />
         <NativeTabs.Trigger.Badge hidden={!unread}>{unread ?? ''}</NativeTabs.Trigger.Badge>

@@ -31,7 +31,8 @@ export function PersonPicker({
   const { colors } = useAppTheme();
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search.trim(), 300);
-  const people = usePeopleSearch(debounced);
+  // Results appear once a name is typed, so long forms stay short.
+  const people = usePeopleSearch(debounced, debounced.length > 0);
   if (selected) {
     return (
       <View
@@ -51,16 +52,16 @@ export function PersonPicker({
       </View>
     );
   }
-  const results = (people.data?.items ?? []).filter(
-    (person) => !excludeUserIds.includes(person.id),
-  );
+  const results = debounced
+    ? (people.data?.items ?? []).filter((person) => !excludeUserIds.includes(person.id))
+    : [];
   return (
     <View style={styles.picker}>
       <TextField
         label={label}
         value={search}
         onChangeText={setSearch}
-        placeholder="Search by name"
+        placeholder="Type a name"
         autoCorrect={false}
         returnKeyType="search"
       />
@@ -88,7 +89,7 @@ export function PersonPicker({
             <Icon name="add" size={16} color={colors.accent} />
           </PressableScale>
         ))}
-        {people.isSuccess && results.length === 0 ? (
+        {debounced && people.isSuccess && results.length === 0 ? (
           <AppText variant="bodySm" tone="secondary">
             No one matches “{debounced}”.
           </AppText>

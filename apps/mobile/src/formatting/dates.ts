@@ -66,6 +66,18 @@ export function dueLabel(dueDate: string | null, today: string): string {
   return `Due ${formatShortDate(dueDate)}`;
 }
 
+/** Distance only, for use beside a printed date: "today", "in 6 days", "2 days overdue". */
+export function relativeDayLabel(date: string, today: string): string {
+  const target = asCalendarDate(date);
+  const now = asCalendarDate(today);
+  if (!target || !now) return '';
+  const days = daysBetween(now, target);
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days > 1) return `in ${days} days`;
+  return days === -1 ? '1 day overdue' : `${-days} days overdue`;
+}
+
 const TIME = new Intl.DateTimeFormat(LOCALE, { hour: 'numeric', minute: '2-digit' });
 const DATE_TIME = new Intl.DateTimeFormat(LOCALE, {
   day: 'numeric',

@@ -91,6 +91,7 @@ export function OtpCodeInput({
           if (digits.length === length) onComplete(digits);
         }}
         editable={!disabled}
+        autoFocus
         keyboardType="number-pad"
         textContentType="oneTimeCode"
         autoComplete="sms-otp"

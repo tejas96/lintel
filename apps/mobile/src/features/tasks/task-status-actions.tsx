@@ -22,9 +22,11 @@ function variantFor(option: TransitionOption, isFirstForward: boolean): ButtonVa
 export function TaskStatusActions({ task }: { readonly task: TaskDetail }) {
   const { colors } = useAppTheme();
   const { run, pendingTo } = useRunTransition(task);
-  const allowed = task.transitions.filter((option) => option.allowed);
-  const refused = task.transitions.filter((option) => !option.allowed && option.reasons.length > 0);
-  if (task.transitions.length === 0) return null;
+  // "Blocked" is reported from the Blockers section with its own form.
+  const options = task.transitions.filter((option) => option.to !== 'blocked');
+  const allowed = options.filter((option) => option.allowed);
+  const refused = options.filter((option) => !option.allowed && option.reasons.length > 0);
+  if (options.length === 0) return null;
   const firstForward = allowed.find((option) => FORWARD.has(option.to))?.to;
 
   return (

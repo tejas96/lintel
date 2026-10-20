@@ -19,8 +19,9 @@ export function useRevokeSession() {
 }
 
 /** Studio directory search, used to pick a colleague (handovers, "waiting on"). */
-export function usePeopleSearch(search: string) {
+export function usePeopleSearch(search: string, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: queryKeys.people(search),
     queryFn: ({ signal }) =>
       unwrap(

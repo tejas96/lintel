@@ -7,7 +7,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { StatusPill } from '@/components/status-pill';
 import { useToast } from '@/feedback/toast';
-import { dueLabel, formatShortDate } from '@/formatting/dates';
+import { formatShortDate, relativeDayLabel } from '@/formatting/dates';
 import { useAcknowledgeTask } from '@/queries/task-queries';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
@@ -113,7 +113,7 @@ export function TaskHeader({ task, today }: { readonly task: TaskDetail; readonl
           label="Due"
           value={
             task.dueDate
-              ? `${formatShortDate(task.dueDate)} · ${dueLabel(task.dueDate, today)}`
+              ? `${formatShortDate(task.dueDate)} · ${relativeDayLabel(task.dueDate, today)}`
               : 'No due date'
           }
           {...(task.isOverdue ? { color: status.overdue.fg } : {})}
