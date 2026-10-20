@@ -1,5 +1,5 @@
 import type { ProjectAccessFacts, ProjectAccessStore } from '@lintel/application';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import { deliverables, milestones, projectMembers, projects, tasks } from '../schema';
 
@@ -43,10 +43,11 @@ export class ProjectAccessRepository implements ProjectAccessStore {
       .select({ projectId: projectMembers.projectId })
       .from(projectMembers)
       .where(eq(projectMembers.userId, userId));
+    // Managers and owners (the person who created the project) see it even without a membership row.
     const managed = await this.db
       .select({ projectId: projects.id })
       .from(projects)
-      .where(eq(projects.managerUserId, userId));
+      .where(or(eq(projects.managerUserId, userId), eq(projects.ownerUserId, userId)));
     return [...new Set([...rows, ...managed].map((row) => row.projectId))];
   }
 
