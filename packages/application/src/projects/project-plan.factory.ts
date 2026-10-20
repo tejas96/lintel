@@ -7,7 +7,11 @@ import {
 } from '@lintel/domain';
 import type { CalendarDate } from '@lintel/shared';
 import type { ProjectMemberInput } from './project.store';
-import type { NewDeliverable, NewProjectPlan, NewTask } from './project-plan.types';
+import type {
+  NewProjectPlan,
+  PlannedProjectDeliverable,
+  PlannedProjectTask,
+} from './project-plan.types';
 
 export interface WorkflowPlanRequest {
   readonly definition: WorkflowTemplateDefinition;
@@ -44,7 +48,7 @@ function toTask(
   number: number,
   position: number,
   scope: { tasks: ReadonlySet<string>; milestones: ReadonlySet<string> },
-): NewTask {
+): PlannedProjectTask {
   const template = planned.template;
   const milestoneKey =
     template.milestoneKey && scope.milestones.has(template.milestoneKey)
@@ -77,7 +81,11 @@ function toTask(
   };
 }
 
-function subtasksOf(parent: NewTask, planned: PlannedTask, firstNumber: number): NewTask[] {
+function subtasksOf(
+  parent: PlannedProjectTask,
+  planned: PlannedTask,
+  firstNumber: number,
+): PlannedProjectTask[] {
   return (planned.template.subtasks ?? []).map((subtask, index) => ({
     ...parent,
     key: `${parent.key}#${index + 1}`,
@@ -106,8 +114,8 @@ export function planFromTemplate(plan: ProjectWorkflowPlan, managerUserId: strin
     tasks: new Set(plan.tasks.map((task) => task.template.key)),
     milestones: new Set(plan.milestones.map((milestone) => milestone.template.key)),
   };
-  const tasks: NewTask[] = [];
-  const deliverables: NewDeliverable[] = [];
+  const tasks: PlannedProjectTask[] = [];
+  const deliverables: PlannedProjectDeliverable[] = [];
   let number = 0;
   for (const stage of plan.stages) {
     const order = stage.template.tasks.map((task) => task.key);

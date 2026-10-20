@@ -1,5 +1,6 @@
 import type { ApplicationStores, UnitOfWork } from '@lintel/application';
 import type { Database, DatabaseExecutor } from './client';
+import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { NotificationRepository } from './repositories/notification.repository';
 import { PeopleRepository } from './repositories/people.repository';
@@ -8,7 +9,10 @@ import { ProjectAccessRepository } from './repositories/project-access.repositor
 import { RecordRepository } from './repositories/record.repository';
 import { ScopeChangeRepository } from './repositories/scope-change.repository';
 import { SettingsRepository } from './repositories/settings.repository';
+import { TaskRepository } from './repositories/task.repository';
+import { TaskItemRepository } from './repositories/task-item.repository';
 import { TemplateRepository } from './repositories/template.repository';
+import { WorkSessionRepository } from './repositories/work-session.repository';
 
 /** Builds every repository on top of one executor (the pool or a transaction). */
 export function createStores(executor: DatabaseExecutor): ApplicationStores {
@@ -22,6 +26,10 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     scopeChanges: new ScopeChangeRepository(executor),
     settings: new SettingsRepository(executor),
     templates: new TemplateRepository(executor),
+    tasks: new TaskRepository(executor),
+    taskItems: new TaskItemRepository(executor),
+    workSessions: new WorkSessionRepository(executor),
+    deliverables: new DeliverableRepository(executor),
   };
 }
 
