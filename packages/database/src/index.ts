@@ -1,8 +1,13 @@
 export * from './client';
+export * from './maintenance';
 export * from './migrate';
+export * from './queries/audit';
 export * from './queries/people';
+export * from './queries/projects';
 export * from './queries/shared';
+export * from './queries/templates';
 export * from './repositories/identity.repository';
 export * from './repositories/record.repository';
 export * as schema from './schema';
+export { seedFoundation } from './seed/seed-foundation';
 export * from './unit-of-work';

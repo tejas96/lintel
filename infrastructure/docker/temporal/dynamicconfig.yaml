@@ -1,0 +1,4 @@
+# Temporal dynamic configuration for production (defaults are fine for studio scale).
+limit.maxIDLength:
+  - value: 255
+    constraints: {}

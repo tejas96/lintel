@@ -1,0 +1,156 @@
+# Single-host production deployment. Secrets come from the --env-file (see .env.example
+# and docs/SECURITY.md). Only Caddy publishes ports; everything else stays on the private network.
+#   docker compose -f infrastructure/docker/compose.production.yaml --env-file /opt/lintel/.env up -d --build
+name: lintel-prod
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "20m", max-file: "5" }
+
+x-app: &app
+  env_file: ${LINTEL_ENV_FILE:-/opt/lintel/.env}
+  restart: unless-stopped
+  logging: *logging
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    STORAGE_ENDPOINT: http://object-store:9000
+    TEMPORAL_ADDRESS: temporal:7233
+    STORAGE_AUTO_CREATE_BUCKET: "false"
+    TRUST_PROXY: "true"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  object-store:
+    image: rustfs/rustfs:1.0.0
+    restart: unless-stopped
+    logging: *logging
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_CONSOLE_ENABLE: "false"
+    volumes: [objects:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Creates or upgrades Temporal's two databases inside the same PostgreSQL, then exits.
+  temporal-schema:
+    image: temporalio/admin-tools:1.30.6
+    depends_on: { postgres: { condition: service_healthy } }
+    environment:
+      SQL_PLUGIN: postgres12
+      SQL_HOST: postgres
+      SQL_PORT: "5432"
+      SQL_USER: ${POSTGRES_USER}
+      SQL_PASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        S=/etc/temporal/schema/postgresql/v12
+        for db in temporal temporal_visibility; do
+          dir=$$S/temporal; [ $$db = temporal_visibility ] && dir=$$S/visibility
+          temporal-sql-tool --db $$db create-database 2>/dev/null || true
+          temporal-sql-tool --db $$db setup-schema -v 0.0 2>/dev/null || true
+          temporal-sql-tool --db $$db update-schema -d $$dir/versioned
+        done
+    restart: "no"
+
+  temporal:
+    image: temporalio/server:1.30.6
+    restart: unless-stopped
+    logging: *logging
+    depends_on: { temporal-schema: { condition: service_completed_successfully } }
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgres
+      BIND_ON_IP: 0.0.0.0
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/lintel.yaml
+    volumes: ["./temporal/dynamicconfig.yaml:/etc/temporal/config/dynamicconfig/lintel.yaml:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 7233"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  temporal-namespace:
+    image: temporalio/admin-tools:1.30.6
+    depends_on: { temporal: { condition: service_healthy } }
+    environment: { TEMPORAL_ADDRESS: "temporal:7233" }
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 30); do
+          temporal operator namespace describe -n lintel >/dev/null 2>&1 && exit 0
+          temporal operator namespace create -n lintel --retention 30d >/dev/null 2>&1 && exit 0
+          sleep 2
+        done
+        exit 1
+    restart: "no"
+
+  migrate:
+    <<: *app
+    build: { context: ../.., dockerfile: infrastructure/docker/Dockerfile, target: migrate }
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+
+  api:
+    <<: *app
+    build: { context: ../.., dockerfile: infrastructure/docker/Dockerfile, target: api }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      object-store: { condition: service_healthy }
+      temporal-namespace: { condition: service_completed_successfully }
+
+  worker:
+    <<: *app
+    build: { context: ../.., dockerfile: infrastructure/docker/Dockerfile, target: worker }
+    stop_grace_period: 60s
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      temporal-namespace: { condition: service_completed_successfully }
+
+  web:
+    <<: *app
+    build: { context: ../.., dockerfile: infrastructure/docker/Dockerfile, target: web }
+    environment:
+      API_INTERNAL_URL: http://api:4100
+    depends_on: [api]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *logging
+    ports: ["80:80", "443:443"]
+    environment: { LINTEL_DOMAIN: "${LINTEL_DOMAIN}" }
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [web, api]
+
+volumes:
+  pgdata:
+  objects:
+  caddy-data:
