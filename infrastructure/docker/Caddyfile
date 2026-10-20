@@ -1,0 +1,15 @@
+# TLS termination and same-site routing: the web app and the API share one origin,
+# so the session cookie stays first-party.
+{$LINTEL_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	handle_path /api/* {
+		reverse_proxy api:4100
+	}
+	handle {
+		reverse_proxy web:3100
+	}
+}
