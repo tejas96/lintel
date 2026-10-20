@@ -1,0 +1,36 @@
+{
+  "name": "@lintel/api-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ts-rest API contracts and Zod schemas shared by the API, web and mobile apps.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lintel/domain": "workspace:*",
+    "@lintel/shared": "workspace:*",
+    "@ts-rest/core": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@lintel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

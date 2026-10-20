@@ -1,0 +1,38 @@
+{
+  "name": "@lintel/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adapters for MSG91, RustFS (S3), Firebase Cloud Messaging, Temporal and node:crypto.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/s3-request-presigner": "3.1153.0",
+    "@lintel/application": "workspace:*",
+    "@lintel/domain": "workspace:*",
+    "@lintel/shared": "workspace:*",
+    "@temporalio/client": "catalog:",
+    "firebase-admin": "catalog:"
+  },
+  "devDependencies": {
+    "@lintel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

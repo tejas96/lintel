@@ -1,0 +1,45 @@
+{
+  "name": "@lintel/database",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PostgreSQL 17 schema, migrations, repositories and read models (Drizzle ORM).",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests src",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate.cli.ts",
+    "db:seed": "tsx src/seed/seed.cli.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@lintel/application": "workspace:*",
+    "@lintel/domain": "workspace:*",
+    "@lintel/shared": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:"
+  },
+  "devDependencies": {
+    "@lintel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
