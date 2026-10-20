@@ -15,7 +15,7 @@ import { activityEvents, auditLog, outboxEvents, taskChecklistItems, tasks } fro
 import { DrizzleUnitOfWork } from '../src/unit-of-work';
 import { createTaskFixture, removeTaskFixture, type TaskFixture } from './fixtures/task-fixture';
 
-const url = process.env.DATABASE_URL;
+const url = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 
 describe.skipIf(!url)('task transitions against PostgreSQL', () => {
   let connection: DatabaseConnection;

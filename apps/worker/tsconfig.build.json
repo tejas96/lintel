@@ -1,0 +1,6 @@
+{
+  "extends": "@lintel/tsconfig/library.json",
+  "compilerOptions": { "types": ["node"], "declaration": false, "declarationMap": false },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/testing/**"]
+}
