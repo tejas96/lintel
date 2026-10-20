@@ -13,11 +13,12 @@ import {
   useToast,
 } from '@lintel/design-system/web';
 import type { DayPortion } from '@lintel/domain';
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useDeferredValue, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 import { LeaveImpactSummary } from './leave-impact';
+import { useLeavePreview } from './use-leave';
 
 interface RequestLeaveSheetProps {
   readonly open: boolean;
@@ -56,28 +57,7 @@ export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestL
           dayPortion: singleDay ? dayPortion : ('full' as const),
         }
       : null;
-  const deferredPeriod = useDeferredValue(period);
-  const preview = useQuery({
-    queryKey: ['leave', 'preview', deferredPeriod],
-    queryFn: () =>
-      expectStatus(
-        api.leave.previewLeave({
-          body: {
-            ...(deferredPeriod ?? {
-              leaveTypeId: '',
-              startDate: today,
-              endDate: today,
-              dayPortion: 'full',
-            }),
-            userId: null,
-            reason: null,
-          },
-        }),
-        200,
-      ),
-    enabled: open && deferredPeriod !== null,
-    placeholderData: keepPreviousData,
-  });
+  const preview = useLeavePreview(period, open);
   const submit = useMutation({
     mutationFn: () => {
       if (!period) throw new Error('Choose the days first.');

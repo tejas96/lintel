@@ -3,7 +3,9 @@
 import type { LeaveRequest } from '@lintel/api-contracts';
 import type { PillTone, StatusGlyphName } from '@lintel/design-system/web';
 import { useToast } from '@lintel/design-system/web';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { DayPortion } from '@lintel/domain';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useDeferredValue } from 'react';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 
@@ -87,5 +89,29 @@ export function useCancelLeave() {
     },
     onError: (error, input) =>
       fail(error, 'cancel the leave', [leaveKeys.request(input.id), leaveKeys.mine]),
+  });
+}
+
+export interface LeavePeriodInput {
+  readonly leaveTypeId: string;
+  readonly startDate: string;
+  readonly endDate: string;
+  readonly dayPortion: DayPortion;
+}
+
+/** The server's impact preview for a period, refreshed as the person changes the dates. */
+export function useLeavePreview(period: LeavePeriodInput | null, enabled: boolean) {
+  const deferred = useDeferredValue(period);
+  return useQuery({
+    queryKey: ['leave', 'preview', deferred],
+    queryFn: () => {
+      if (!deferred) throw new Error('Choose the days first.');
+      return expectStatus(
+        api.leave.previewLeave({ body: { ...deferred, userId: null, reason: null } }),
+        200,
+      );
+    },
+    enabled: enabled && deferred !== null,
+    placeholderData: keepPreviousData,
   });
 }
