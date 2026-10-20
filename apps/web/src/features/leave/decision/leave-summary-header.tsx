@@ -47,7 +47,7 @@ export function LeaveSummaryHeader({ request, today, isRequester }: LeaveSummary
           </p>
           <h1 className="type-display-md text-balance text-ink md:type-display-lg">
             {who} {request.leaveType.name.toLowerCase()},{' '}
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap max-sm:block">
               {formatLeaveDates(request.startDate, request.endDate, today)}
             </span>
           </h1>

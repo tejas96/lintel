@@ -31,7 +31,7 @@ export function TemplateEditorPage({ templateId }: { readonly templateId: string
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-10 w-1/2" />
           </div>
-          <div className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[17rem_minmax(0,1fr)]">
             <Skeleton className="h-96 rounded-lg" />
             <Skeleton className="h-[32rem] rounded-lg" />
           </div>

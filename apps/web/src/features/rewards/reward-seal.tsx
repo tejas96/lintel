@@ -1,8 +1,8 @@
 'use client';
 
-import { cn, easing } from '@lintel/design-system/web';
+import { cn, easing, useCalmMotion } from '@lintel/design-system/web';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const SEEN_PREFIX = 'lintel_reward_embossed_';
 
@@ -52,18 +52,22 @@ interface RewardSealProps {
 export function RewardSeal({ evaluationId, celebrate, className }: RewardSealProps) {
   // Storage is only readable in the browser, so the seal waits one frame to know.
   const [phase, setPhase] = useState<'unknown' | 'press' | 'still'>('unknown');
+  // Decided once per mount, so a re-run effect (Strict Mode) never cancels the press.
+  const decided = useRef<'press' | 'still' | null>(null);
   useEffect(() => {
-    if (!celebrate || alreadyEmbossed(evaluationId)) {
-      setPhase('still');
-      return;
+    if (decided.current === null) {
+      decided.current = !celebrate || alreadyEmbossed(evaluationId) ? 'still' : 'press';
+      if (decided.current === 'press') rememberEmbossed(evaluationId);
     }
-    setPhase('press');
-    rememberEmbossed(evaluationId);
+    setPhase(decided.current);
   }, [evaluationId, celebrate]);
   const pressing = phase === 'press';
+  // Under calm motion the seal fades in where it rests: no press, no ripple.
+  const calm = useCalmMotion();
+  const entrance = calm ? { opacity: 0 } : { scale: 1.16, opacity: 0, rotate: -6 };
   return (
     <span aria-hidden className={cn('relative inline-flex size-28 shrink-0', className)}>
-      {pressing && (
+      {pressing && !calm && (
         <motion.span
           className="absolute inset-2 rounded-full border border-rule"
           initial={{ scale: 0.92, opacity: 0.7 }}
@@ -75,7 +79,7 @@ export function RewardSeal({ evaluationId, celebrate, className }: RewardSealPro
         <motion.svg
           viewBox="0 0 120 120"
           className="lt-emboss size-full"
-          initial={pressing ? { scale: 1.16, opacity: 0, rotate: -6 } : false}
+          initial={pressing ? entrance : false}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 240, damping: 17, mass: 0.9 }}
         >

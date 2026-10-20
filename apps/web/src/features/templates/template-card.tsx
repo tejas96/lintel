@@ -21,7 +21,11 @@ export function TemplateCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="type-body-sm text-ink-muted">{PROJECT_TYPE_LABELS[template.projectType]}</p>
+          {PROJECT_TYPE_LABELS[template.projectType] !== template.name && (
+            <p className="type-body-sm text-ink-muted">
+              {PROJECT_TYPE_LABELS[template.projectType]}
+            </p>
+          )}
           <Link
             href={`/templates/${template.id}`}
             className="lt-stretched-link rounded-sm type-title-lg text-ink"

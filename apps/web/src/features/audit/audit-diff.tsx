@@ -19,7 +19,7 @@ export function AuditDiff({ before, after }: AuditDiffProps) {
   }
   const onlyAfter = before === null;
   return (
-    <div className="overflow-x-auto rounded-md border border-hairline">
+    <div className="relative overflow-x-auto rounded-md border border-hairline">
       <table className="w-full border-separate border-spacing-0 type-body-sm">
         <caption className="sr-only">What changed</caption>
         <thead>

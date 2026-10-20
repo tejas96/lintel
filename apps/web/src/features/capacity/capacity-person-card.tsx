@@ -34,12 +34,15 @@ export function CapacityPersonCard({ person, holidays, today, index }: CapacityP
                 aria-hidden
                 className={cn(
                   'relative flex h-12 w-full items-end justify-center rounded-[5px]',
-                  closed && 'bg-sunken/70',
                   day.leave === 'approved' && 'lt-hatch',
                   day.leave === 'pending' && 'border border-dashed border-ink-faint/70',
                 )}
               >
-                {!closed && <LoadBar day={day} orientation="vertical" className="h-10" />}
+                {closed ? (
+                  <span className="h-10 w-1.5 rounded-full border border-dashed border-rule" />
+                ) : (
+                  <LoadBar day={day} orientation="vertical" className="h-10" />
+                )}
               </span>
               <span
                 aria-hidden

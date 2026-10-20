@@ -2,6 +2,7 @@ import type { LeaveConflict } from '@lintel/api-contracts';
 import { listItemEnter, StatusPill } from '@lintel/design-system/web';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+import { withReadableDates } from '@/lib/format/dates';
 
 const KIND_WORDS: Readonly<Record<LeaveConflict['kind'], string>> = {
   due_during_leave: 'Due while away',
@@ -47,7 +48,7 @@ export function LeaveConflicts({ conflicts }: { readonly conflicts: readonly Lea
               {conflict.projectName}
               <span className="text-ink-faint">, {KIND_WORDS[conflict.kind].toLowerCase()}</span>
             </p>
-            <p className="type-body-sm text-ink-muted">{conflict.explanation}</p>
+            <p className="type-body-sm text-ink-muted">{withReadableDates(conflict.explanation)}</p>
           </div>
         </motion.li>
       ))}

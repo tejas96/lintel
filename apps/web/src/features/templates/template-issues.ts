@@ -51,6 +51,32 @@ function targetOf(path: string, sent: WorkflowDefinition): IssueTarget {
   return stage ? insideStage(stage, rest) : GENERAL;
 }
 
+/** Field names as the editor labels them, so a message says what it is about. */
+const FIELD_NAMES: Readonly<Record<string, string>> = {
+  title: 'Task',
+  description: 'Description',
+  responsibleRole: 'Done by',
+  durationDays: 'Working days',
+  estimateMinutes: 'Effort',
+  milestoneKey: 'Linked milestone',
+  reviewerRole: 'Reviewed by',
+  escalateAfterOverdueDays: 'Days overdue',
+  dependsOn: 'Starts after',
+  checklist: 'Checklist',
+  deliverables: 'Deliverables',
+  priority: 'Priority',
+};
+
+/** "Task: Use at least 2 characters." when the field is known, else the message alone. */
+export function issueSentence({ message, target }: TemplateIssue): string {
+  if (!('field' in target) || !target.field) return message;
+  const field =
+    target.field === 'name'
+      ? `${target.kind === 'milestone' ? 'Milestone' : 'Stage'} name`
+      : FIELD_NAMES[target.field];
+  return field ? `${field}: ${message}` : message;
+}
+
 /** Schema messages in plain words ("String must contain at least 2 character(s)"). */
 function plainMessage(message: string): string {
   const atLeast = /at least (\d+) character/.exec(message)?.[1];

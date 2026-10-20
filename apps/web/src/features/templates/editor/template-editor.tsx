@@ -124,7 +124,7 @@ export function TemplateEditor({ detail, onReload }: TemplateEditorProps) {
         onGoToStage={setStageIndex}
         onGoToTask={(index, taskKey) => openTask(index, taskKey)}
       />
-      <div className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
         <aside className="flex flex-col gap-8 lg:sticky lg:top-6">
           <StageOutline
             definition={draft.definition}

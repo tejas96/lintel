@@ -90,6 +90,7 @@ export function LeaveDecisionPage({ requestId }: { readonly requestId: string })
               requesterName={isRequester ? 'You' : (request.user.fullName.split(' ')[0] ?? '')}
               today={today}
               mutation={mutations.handover}
+              urgent={request.isUrgentAbsence}
             />
           </Section>
         </div>

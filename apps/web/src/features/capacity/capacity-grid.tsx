@@ -16,7 +16,7 @@ export function CapacityGrid({ overview, today, compact }: CapacityGridProps) {
   const dates = eachDate(overview.start, overview.end);
   const holidays = new Map(overview.holidays.map((holiday) => [holiday.date, holiday.name]));
   return (
-    <div className="overflow-x-auto rounded-lg border border-hairline bg-raised">
+    <div className="relative overflow-x-auto rounded-lg border border-hairline bg-raised">
       <table className="w-full table-fixed border-separate border-spacing-0">
         <caption className="sr-only">
           Booked work against available time, {formatLongDate(overview.start)} to{' '}

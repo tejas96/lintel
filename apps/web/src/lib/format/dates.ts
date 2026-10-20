@@ -77,6 +77,11 @@ export function formatLongDate(date: string): string {
   }).format(asUtcNoon(date));
 }
 
+/** Server sentences with ISO dates in them ("due on 2026-10-27") made readable. */
+export function withReadableDates(text: string): string {
+  return text.replace(/\b(\d{4}-\d{2}-\d{2})\b/g, (date) => formatLongDate(date));
+}
+
 /** "Due today", "Due tomorrow", "Due in 4 days", "2 days late", "Due Mon 3 Nov". */
 export function describeDue(
   dueDate: string,

@@ -79,7 +79,7 @@ export function AbsenceChart({ request, today }: AbsenceChartProps) {
   const workingDays = new Set(request.impact.days.map((day) => day.date));
   const halfSide = request.dayPortion === 'second_half' ? 'right' : 'left';
   return (
-    <div className="overflow-x-auto rounded-lg border border-hairline bg-raised">
+    <div className="relative overflow-x-auto rounded-lg border border-hairline bg-raised">
       <table className="w-full border-separate border-spacing-0">
         <caption className="sr-only">
           Who is away from {formatCalendarDate(request.startDate, today)} to{' '}
@@ -89,7 +89,7 @@ export function AbsenceChart({ request, today }: AbsenceChartProps) {
           <tr>
             <th
               scope="col"
-              className="sticky left-0 z-[1] w-40 min-w-36 border-b border-hairline bg-raised px-4 py-2.5 text-left type-label text-ink-faint"
+              className="sticky left-0 z-[1] w-32 min-w-32 sm:w-40 sm:min-w-36 border-b border-hairline bg-raised px-4 py-2.5 text-left type-label text-ink-faint"
             >
               {formatMonthShort(request.startDate)}
             </th>

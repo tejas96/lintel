@@ -55,7 +55,7 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
     );
   };
   return (
-    <div className="overflow-x-auto rounded-lg border border-hairline bg-raised">
+    <div className="relative overflow-x-auto rounded-lg border border-hairline bg-raised">
       <table className="w-full min-w-[22rem] border-separate border-spacing-0">
         <caption className="sr-only">How each kind of notification reaches you</caption>
         <thead>

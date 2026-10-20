@@ -3,7 +3,7 @@
 import { Button } from '@lintel/design-system/web';
 import { CircleAlert } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { TemplateIssue } from '../template-issues';
+import { issueSentence, type TemplateIssue } from '../template-issues';
 import { allTasks, type WorkflowDefinition } from '../template-types';
 
 interface IssuesPanelProps {
@@ -23,7 +23,7 @@ export function IssuesPanel({ issues, definition, onGoToStage, onGoToTask }: Iss
       const place = tasks.find((entry) => entry.task.key === target.taskKey);
       return place
         ? {
-            label: `${place.task.title}, ${place.stage.name}`,
+            label: `${place.task.title || 'Untitled task'}, ${place.stage.name || 'untitled stage'}`,
             go: () => onGoToTask(place.stageIndex, place.task.key),
           }
         : null;
@@ -31,7 +31,7 @@ export function IssuesPanel({ issues, definition, onGoToStage, onGoToTask }: Iss
     if (target.kind === 'stage') {
       const index = definition.stages.findIndex((stage) => stage.key === target.stageKey);
       const stage = definition.stages[index];
-      return stage ? { label: stage.name, go: () => onGoToStage(index) } : null;
+      return stage ? { label: stage.name || 'Untitled stage', go: () => onGoToStage(index) } : null;
     }
     if (target.kind === 'milestone') {
       const index = definition.stages.findIndex((stage) =>
@@ -63,7 +63,7 @@ export function IssuesPanel({ issues, definition, onGoToStage, onGoToTask }: Iss
               key={`${issue.message}-${JSON.stringify(issue.target)}`}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 type-body-sm"
             >
-              <span className="text-ink">{issue.message}</span>
+              <span className="text-ink">{issueSentence(issue)}</span>
               {place && (
                 <Button
                   size="sm"

@@ -1,7 +1,7 @@
 import type { LeaveImpact } from '@lintel/api-contracts';
 import { Avatar, StatusGlyph } from '@lintel/design-system/web';
 import { CircleAlert, TriangleAlert } from 'lucide-react';
-import { formatCalendarDate } from '@/lib/format/dates';
+import { formatCalendarDate, withReadableDates } from '@/lib/format/dates';
 
 /**
  * What the leave touches, as the server worked it out: working days, work due
@@ -59,7 +59,9 @@ export function LeaveImpactSummary({
                       {conflict.severity === 'critical' ? ' (critical)' : ' (warning)'}
                     </span>
                   </p>
-                  <p className="type-body-sm text-ink-muted">{conflict.explanation}</p>
+                  <p className="type-body-sm text-ink-muted">
+                    {withReadableDates(conflict.explanation)}
+                  </p>
                 </div>
               </li>
             ))}

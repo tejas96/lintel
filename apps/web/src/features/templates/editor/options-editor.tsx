@@ -34,7 +34,7 @@ export function OptionsEditor({ definition, readOnly, edit }: OptionsEditorProps
             leadingIcon={<Plus aria-hidden />}
             onClick={() => edit(addOption)}
           >
-            Add
+            Add option
           </Button>
         )}
       </div>

@@ -28,6 +28,8 @@ interface LeaveHandoversProps {
   readonly requesterId: string;
   readonly today: string;
   readonly mutation: HandoverMutation;
+  /** Recorded by a manager: nobody had the chance to propose cover. */
+  readonly urgent?: boolean;
 }
 
 /** Who covers which task while the person is away, and each answer so far. */
@@ -38,12 +40,14 @@ export function LeaveHandovers({
   requesterId,
   today,
   mutation,
+  urgent = false,
 }: LeaveHandoversProps) {
   if (handovers.length === 0) {
     return (
       <p className="rounded-md border border-hairline bg-raised px-4 py-3 type-body-sm text-ink-muted">
-        {requesterName} didn’t propose anyone to cover their work. A project manager can still
-        reassign tasks from each task’s page.
+        {urgent
+          ? 'Recorded as an urgent absence, so nobody was proposed to cover. Project managers reassign work from each task’s page.'
+          : `${requesterName} didn’t propose anyone to cover their work. A project manager can still reassign tasks from each task’s page.`}
       </p>
     );
   }
