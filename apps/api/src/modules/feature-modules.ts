@@ -1,8 +1,11 @@
 import type { Type } from '@nestjs/common';
+import { DeliverablesModule } from './deliverables/deliverables.module';
 import { PeopleModule } from './people/people.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SettingsModule } from './settings/settings.module';
+import { TasksModule } from './tasks/tasks.module';
 import { TemplatesModule } from './templates/templates.module';
+import { WorkModule } from './work/work.module';
 
 /**
  * Business modules registered with the application. Each feature module owns
@@ -13,4 +16,7 @@ export const FEATURE_MODULES: Type[] = [
   ProjectsModule,
   TemplatesModule,
   SettingsModule,
+  TasksModule,
+  WorkModule,
+  DeliverablesModule,
 ];

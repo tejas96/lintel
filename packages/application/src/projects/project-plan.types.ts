@@ -30,7 +30,7 @@ export interface NewChecklistItem {
   readonly isRequired: boolean;
 }
 
-export interface NewTask {
+export interface PlannedProjectTask {
   readonly key: string;
   readonly parentKey: string | null;
   readonly stageKey: string | null;
@@ -54,7 +54,7 @@ export interface NewTask {
   readonly dependsOn: readonly string[];
 }
 
-export interface NewDeliverable {
+export interface PlannedProjectDeliverable {
   readonly taskKey: string;
   readonly name: string;
   readonly isRequired: boolean;
@@ -64,6 +64,6 @@ export interface NewDeliverable {
 export interface NewProjectPlan {
   readonly stages: readonly NewStage[];
   readonly milestones: readonly NewMilestone[];
-  readonly tasks: readonly NewTask[];
-  readonly deliverables: readonly NewDeliverable[];
+  readonly tasks: readonly PlannedProjectTask[];
+  readonly deliverables: readonly PlannedProjectDeliverable[];
 }
