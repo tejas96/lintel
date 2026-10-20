@@ -1,0 +1,57 @@
+{
+  "name": "@lintel/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lintel design system: platform-neutral tokens (web + mobile) and React DOM components (web).",
+  "exports": {
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "default": "./dist/tokens/index.js"
+    },
+    "./theme.css": {
+      "style": "./dist/theme.css",
+      "default": "./dist/theme.css"
+    },
+    "./components.css": {
+      "style": "./src/web/styles/components.css",
+      "default": "./src/web/styles/components.css"
+    },
+    "./web": "./src/web/index.ts"
+  },
+  "files": [
+    "dist",
+    "src/web"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/write-theme-css.mjs",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests src"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "date-fns": "4.4.0",
+    "lucide-react": "1.60.0",
+    "motion": "14.4.0",
+    "radix-ui": "1.8.1",
+    "tailwind-merge": "3.7.0"
+  },
+  "peerDependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@lintel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
