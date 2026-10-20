@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ProjectRoom } from '@/features/projects/room/project-room';
+
+export const metadata: Metadata = { title: 'Project' };
 
 export default async function ProjectLayout({
   children,

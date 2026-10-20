@@ -1,9 +1,9 @@
 'use client';
 
 import type { TaskSummary } from '@lintel/api-contracts';
-import { Button, Field, IconButton, Input, Sheet, Textarea } from '@lintel/design-system/web';
+import { Button, cn, Field, IconButton, Input, Sheet, Textarea } from '@lintel/design-system/web';
 import { Minus, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatCalendarDate } from '@/lib/format/dates';
 import { ScopeImpacts } from './scope-impacts';
 import { type TaskShift, useScopeChangeMutations } from './use-scope-changes';
@@ -29,6 +29,11 @@ export function ProposeScopeSheet({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // The impact appears under a long list of tasks; bring it into view when it arrives.
+  const impactRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (preview.data) impactRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [preview.data]);
   const chosen: TaskShift[] = Object.entries(shifts)
     .filter(([, days]) => days !== 0)
     .map(([taskId, shiftWorkingDays]) => ({ taskId, shiftWorkingDays }));
@@ -108,9 +113,14 @@ export function ProposeScopeSheet({
                 </IconButton>
                 <output
                   aria-live="polite"
-                  className="w-16 text-center type-body-sm tabular-nums text-ink"
+                  className={cn(
+                    'w-20 whitespace-nowrap text-center type-body-sm tabular-nums',
+                    days === 0 ? 'text-ink-faint' : 'font-medium text-ink',
+                  )}
                 >
-                  {days === 0 ? 'No change' : `${days > 0 ? '+' : ''}${days} d`}
+                  {days === 0
+                    ? 'No change'
+                    : `${days > 0 ? '+' : ''}${days} ${Math.abs(days) === 1 ? 'day' : 'days'}`}
                 </output>
                 <IconButton
                   label={`Move “${task.title}” a day later`}
@@ -124,7 +134,7 @@ export function ProposeScopeSheet({
           })}
         </ul>
         {preview.data && (
-          <>
+          <div ref={impactRef} className="flex scroll-mt-4 flex-col gap-6">
             <ScopeImpacts
               impacts={preview.data.impacts}
               projectEndImpactDays={preview.data.projectEndImpactDays}
@@ -145,7 +155,7 @@ export function ProposeScopeSheet({
                 maxLength={2000}
               />
             </Field>
-          </>
+          </div>
         )}
       </div>
     </Sheet>

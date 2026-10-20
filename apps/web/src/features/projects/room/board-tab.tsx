@@ -18,6 +18,8 @@ import { TASK_STATUS_PRESENTATION } from '@/features/tasks/task-presentation';
 import { describeError } from '@/lib/api/describe-error';
 import { todayIn } from '@/lib/format/dates';
 import { BoardCard } from './board-card';
+import { BoardDragGhost } from './board-drag-ghost';
+import { useBoardDrag } from './use-board-drag';
 import { legalTargets, useBoardMove } from './use-board-move';
 import { useProjectTasks } from './use-project-room';
 
@@ -35,8 +37,6 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
   const { user } = useSession();
   const tasks = useProjectTasks(projectId);
   const move = useBoardMove(projectId);
-  const [dragging, setDragging] = useState<TaskSummary | null>(null);
-  const [over, setOver] = useState<TaskStatus | null>(null);
   const [blocking, setBlocking] = useState<TaskSummary | null>(null);
   const today = todayIn(user.timeZone);
 
@@ -45,6 +45,8 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
     if (to === 'blocked') setBlocking(task);
     else move.mutate({ task, to });
   };
+  const { drag, over, start, scroller } = useBoardDrag(requestMove);
+  const dragging = drag?.task ?? null;
 
   if (tasks.isPending) {
     return (
@@ -78,7 +80,7 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
 
   return (
     <LayoutGroup>
-      <div className="-mx-5 overflow-x-auto px-5 pb-4 md:-mx-10 md:px-10">
+      <div ref={scroller} className="-mx-5 overflow-x-auto px-5 pb-4 md:-mx-10 md:px-10">
         <div className="flex min-w-max gap-3">
           {columns.map((status) => {
             const presentation = TASK_STATUS_PRESENTATION[status];
@@ -87,19 +89,8 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
             return (
               <section
                 key={status}
+                data-board-column={status}
                 aria-label={`${presentation.label}, ${columnTasks.length} tasks`}
-                onDragOver={(event) => {
-                  if (!legal) return;
-                  event.preventDefault();
-                  setOver(status);
-                }}
-                onDragLeave={() => setOver((current) => (current === status ? null : current))}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  setOver(null);
-                  if (dragging && legal) requestMove(dragging, status);
-                  setDragging(null);
-                }}
                 className={cn(
                   'flex w-72 shrink-0 flex-col gap-3 rounded-lg border p-3 transition-[background-color,border-color,opacity] duration-(--duration-fast)',
                   'border-transparent bg-sunken/60',
@@ -122,11 +113,7 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
                       task={task}
                       today={today}
                       dragging={dragging?.id === task.id}
-                      onDragStart={() => setDragging(task)}
-                      onDragEnd={() => {
-                        setDragging(null);
-                        setOver(null);
-                      }}
+                      onPointerDown={(event) => start(task, event)}
                       onMove={(to) => requestMove(task, to)}
                     />
                   ))}
@@ -141,6 +128,7 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
           })}
         </div>
       </div>
+      <BoardDragGhost drag={drag} />
       <ReportBlockerSheet
         task={
           blocking ? { id: blocking.id, title: blocking.title, version: blocking.version } : null
