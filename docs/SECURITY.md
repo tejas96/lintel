@@ -128,3 +128,15 @@ probed as a non-member returned 404. Findings and their status:
 - **Idempotency** has no in-flight lock: two identical concurrent requests can both run.
 - When the owner requests leave and no administrator holds `leave.approve_any`, the
   owner approves their own leave (a studio owner's prerogative).
+
+### Dependency audit — 2026-10-21 (`pnpm audit --prod`)
+
+| Advisory | Path | Assessment |
+|---|---|---|
+| node-forge RSA signature check (high, no fix released) | `expo › @expo/cli` | Development/build tooling only; not shipped in the app bundle or the servers. Re-check on each Expo SDK update. |
+| braces stack exhaustion (high, no fix released) | `expo › metro › micromatch` | Bundler tooling only. |
+| uuid bounds check (moderate) | `expo › @expo/config-plugins › xcode` | Native project generation only. |
+| ts-deepmerge prototype override (moderate) | `@ts-rest/open-api › @anatine/zod-openapi` | Runs only when building the OpenAPI document from our own contract (not user input); `/docs` is not mounted in production. |
+| js-yaml CPU use (moderate) | `@nestjs/swagger` | **Patched** via `overrides` in `pnpm-workspace.yaml`. |
+
+CI fails on any critical advisory (`pnpm audit --prod --audit-level=critical`).

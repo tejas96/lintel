@@ -2,7 +2,7 @@
 
 Legend: ✅ done and verified · 🟡 built, partly verified · 🔄 in progress · ⏳ not started · ⛔ blocked (needs something external)
 
-Last updated: 2026-10-21 (overnight build session).
+Last updated: 2026-10-21, end of the overnight build session.
 
 ## Stage 0 — Assessment ✅
 
@@ -40,11 +40,12 @@ Last updated: 2026-10-21 (overnight build session).
 - ✅ Tasks (explained transitions, assignment, dependencies with loop refusal, checklists, blockers, comments), work queue, work sessions, priority conflicts, deliverables with versions and review, file upload/download with content checks, site updates — 28 unit + 4 integration tests, ~150 live checks.
 - ✅ Demo seed: 6 projects through the real use case, mixed health.
 
-## Stage 4 — Web experiences 🟡
+## Stage 4 — Web experiences ✅
 
 - ✅ Design tokens (light/dark, status, type, motion) → generated theme CSS; `@lintel/design-system` web components.
 - ✅ App shell (capability-gated nav, ⌘K, notifications bell), sign-in, Today, task page + drawer, projects (cards/table, 4-step wizard), project control room (overview, board, Gantt timeline, list, deliverables, scope changes, activity), people, settings (studio, roles, holidays), approvals inbox, leave (balances, requests, impact preview), owner command center — verified in a browser against live data at 1440/390 px, light/dark, calm motion; 30 screenshots in `docs/screenshots/web/`.
-- 🔄 Leave decision page, handover proposals, urgent absence, capacity grid, rewards, template editor, people admin forms, account & notification preferences, audit log, and untested interactions (uploads, comments, work timer, scope-change propose/decide, drag & drop) — second web builder.
+- ✅ Leave decision page, handover proposals, urgent absence, capacity grid (week/fortnight), rewards (my recognition, review queue, policies), workflow template editor (draft/validate/publish/history), people administration, account & notification preferences, audit log with diffs, deliverable page; uploads with inline previews, comments, work timer, scope-change propose/decide, board drag & drop — verified in a browser, screenshots 31–50.
+- ✅ Re-verified on `main` in the in-app browser: sign-in, Today, command center (live counts), project control room.
 
 ## Stage 5 — Leave, notifications, rewards, Temporal ✅
 
@@ -66,7 +67,9 @@ Last updated: 2026-10-21 (overnight build session).
 - ✅ CI workflow (`.github/workflows/ci.yml`) running every quality gate.
 - ✅ API end-to-end journeys: project lifecycle (template → assign → block → deliverable review loop → done → milestone → outsider 404) and people operations (leave conflicts → two-level approval → handover → capacity → inbox → idempotent rewards → restrictions).
 - ✅ Idempotency-Key replay for retried commands.
-- ⏳ Security review against `SECURITY.md` checklist; dependency audit.
+- ✅ Independent security review: 0 Critical/High; 3 Medium + 13 Low/suspected fixed and re-tested live; residual risks listed in `SECURITY.md`.
+- ✅ Production images built and smoke-tested (api, worker, migrate, web).
+- ⏳ Dependency audit (`pnpm audit --prod`) runs in CI; not yet reviewed.
 
 ## Stage 8 — Phase 2 preparation ✅
 
