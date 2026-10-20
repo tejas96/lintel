@@ -32,12 +32,13 @@ Last updated: 2026-10-21 (overnight build session).
 - ✅ Initial migration (44 tables) and idempotent seed.
 - ⛔ Live MSG91 delivery — needs an auth key and DLT template.
 
-## Stage 3 — Core project and task operations 🔄
+## Stage 3 — Core project and task operations ✅
 
 - ✅ Domain: workflow templates, presets for 5 project types, plan builder, validator, task state machine with explained guards, dependency graph, project health, milestone risk.
 - ✅ People directory and administration (API verified).
-- 🔄 Projects, templates, milestones, scope changes, settings, audit (builder A).
-- 🔄 Tasks, work queue, work sessions, blockers, deliverables, files, site updates (builder B).
+- ✅ Projects (create from template, detail, members, status, milestones, activity), templates (draft/publish versions), scope changes (preview/propose/decide with schedule history), settings, roles, holidays, audit — 31 unit tests, 108 live API checks; migration 0001.
+- ✅ Tasks (explained transitions, assignment, dependencies with loop refusal, checklists, blockers, comments), work queue, work sessions, priority conflicts, deliverables with versions and review, file upload/download with content checks, site updates — 28 unit + 4 integration tests, ~150 live checks.
+- ✅ Demo seed: 6 projects through the real use case, mixed health.
 
 ## Stage 4 — Web experiences 🔄
 
@@ -50,7 +51,7 @@ Last updated: 2026-10-21 (overnight build session).
 - ✅ Domain: leave periods/conflicts/policy, capacity calculator, reward criteria/metrics/eligibility, notification policy, deadline escalation plan.
 - ✅ Notifier (dedupe, quiet hours, outbox event).
 - 🔄 Leave, capacity, rewards, notifications, devices, command center, approvals queue (builder C).
-- 🔄 Worker: outbox relay + deadline, review, blocker, leave, notification-delivery workflows + daily schedule (builder D).
+- ✅ Worker: outbox relay + deadline, review, blocker, leave, notification-delivery workflows + daily 08:30 schedule — 44 unit + 15 Temporal integration tests; verified on the main database (89 events relayed, reminders and escalations created).
 
 ## Stage 6 — Mobile 🔄
 
