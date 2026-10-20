@@ -11,12 +11,12 @@ export type ToastTone = 'success' | 'error' | 'info';
 
 export interface ToastInput {
   readonly title: string;
-  readonly description?: string;
-  readonly tone?: ToastTone;
+  readonly description?: string | undefined;
+  readonly tone?: ToastTone | undefined;
   /** Shown in small print on errors so support can find the request. */
-  readonly reference?: string;
-  readonly action?: { readonly label: string; readonly onSelect: () => void };
-  readonly durationMs?: number;
+  readonly reference?: string | undefined;
+  readonly action?: { readonly label: string; readonly onSelect: () => void } | undefined;
+  readonly durationMs?: number | undefined;
 }
 
 interface ToastEntry extends ToastInput {

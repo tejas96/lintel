@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@import "@lintel/design-system/theme.css";
+@import "@lintel/design-system/components.css";
+
+/* Components ship as source; let Tailwind see their class names. */
+@source "../../../../packages/design-system/src/web";
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-canvas);
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-on-accent-soft);
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Numbers in the display serif and the UI sans line up in columns. */
+  .tabular-nums,
+  time,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+}

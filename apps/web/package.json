@@ -7,7 +7,7 @@
     "dev": "next dev --port 3105",
     "build": "next build",
     "start": "next start --port 3105",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@lintel/api-contracts": "workspace:*",
