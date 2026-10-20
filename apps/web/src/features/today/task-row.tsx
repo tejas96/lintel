@@ -48,7 +48,7 @@ export function TaskRow({
     <motion.li
       layout="position"
       transition={layoutSpring}
-      className="group relative flex items-start gap-3 rounded-md px-3 py-3 transition-colors hover:bg-sunken/50 sm:items-center"
+      className="group relative flex flex-wrap items-start gap-x-3 gap-y-2 rounded-md px-3 py-3 transition-colors hover:bg-sunken/50 sm:flex-nowrap sm:items-center"
     >
       <span
         title={status.label}
@@ -60,7 +60,7 @@ export function TaskRow({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <Link
           href={`/tasks/${task.id}`}
-          className="lt-stretched-link truncate rounded-sm type-body font-medium text-ink outline-offset-4"
+          className="lt-stretched-link line-clamp-2 rounded-sm type-body font-medium text-ink outline-offset-4 sm:truncate"
         >
           {task.title}
         </Link>
@@ -76,7 +76,9 @@ export function TaskRow({
             </span>
           )}
           <ProjectChip project={task.project} />
-          {task.stage && <span className="type-body-sm text-ink-faint">{task.stage.name}</span>}
+          {task.stage && (
+            <span className="hidden type-body-sm text-ink-faint sm:inline">{task.stage.name}</span>
+          )}
           {task.checklist.total > 0 && (
             <span className="inline-flex items-center gap-1 type-body-sm text-ink-faint tabular-nums">
               <ListChecks aria-hidden className="size-3.5" />
@@ -87,8 +89,12 @@ export function TaskRow({
           {headline && <span className="type-body-sm text-ink-faint italic">{headline}</span>}
         </div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
-        {NOTABLE_STATUSES.has(task.status) && <TaskStatusPill status={task.status} />}
+      <div className="flex w-full items-center justify-end gap-3 pl-7 sm:w-auto sm:shrink-0 sm:gap-4 sm:pl-0">
+        {NOTABLE_STATUSES.has(task.status) && (
+          <span className="mr-auto sm:mr-0">
+            <TaskStatusPill status={task.status} />
+          </span>
+        )}
         {due && (
           <span
             className={cn(

@@ -84,7 +84,7 @@ export const DARK_COLORS: ThemeColors = {
   blueprint: '#17204D',
   onBlueprint: '#EEF0FB',
   onBlueprintMuted: '#AEB8E6',
-  blueprintLine: 'rgba(174, 184, 230, 0.14)',
+  blueprintLine: 'rgba(174, 184, 230, 0.1)',
 };
 
 /** Project identity colours (Gantt bars, chips). Never used for status. */

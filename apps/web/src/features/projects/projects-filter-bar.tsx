@@ -55,7 +55,7 @@ export function ProjectsFilterBar({
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="min-w-0 flex-1 lg:max-w-sm">
+      <div className="min-w-0 flex-1 lg:min-w-72 lg:max-w-sm">
         <Input
           type="search"
           aria-label="Search projects by name, client or reference"

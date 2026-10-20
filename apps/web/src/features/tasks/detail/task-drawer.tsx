@@ -2,7 +2,7 @@
 
 import { ErrorState, Sheet } from '@lintel/design-system/web';
 import { Maximize2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
 import { describeError } from '@/lib/api/describe-error';
@@ -21,6 +21,9 @@ export function TaskDrawer({ taskId }: { readonly taskId: string }) {
   const { user } = useSession();
   const [open, setOpen] = useState(true);
   const task = useTask(taskId);
+  const pathname = usePathname();
+  // A parallel slot keeps its last page on soft navigation; show the drawer only on its own URL.
+  if (pathname !== `/tasks/${taskId}`) return null;
   return (
     <Sheet
       open={open}

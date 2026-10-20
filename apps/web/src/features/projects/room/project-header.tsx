@@ -66,7 +66,9 @@ export function ProjectHeader({
             {project.name}
           </h1>
         </div>
-        <HealthPill health={project.health} size="md" />
+        <span className="self-start sm:self-auto">
+          <HealthPill health={project.health} size="md" />
+        </span>
       </div>
       <dl className="grid grid-cols-2 divide-hairline overflow-hidden rounded-lg border border-hairline bg-raised sm:grid-cols-3 xl:grid-cols-6 [&>div]:border-hairline [&>div]:border-b xl:[&>div]:border-b-0 xl:[&>div:not(:last-child)]:border-r">
         <Cell label="Client">{project.clientName}</Cell>
@@ -99,7 +101,14 @@ export function ProjectHeader({
       )}
       {stages.length > 0 && <StageTracker stages={stages} className="md:hidden" />}
       {project.health.reasons.length > 0 && (
-        <ul className="flex flex-col gap-1.5 rounded-lg border border-at-risk-solid/30 bg-at-risk-tint/50 p-4">
+        <ul
+          className={cn(
+            'flex flex-col gap-1.5 rounded-lg border p-4',
+            project.health.reasons.some((reason) => reason.severity === 'critical')
+              ? 'border-overdue-solid/30 bg-overdue-tint/50'
+              : 'border-at-risk-solid/30 bg-at-risk-tint/50',
+          )}
+        >
           {project.health.reasons.map((reason) => (
             <li key={reason.message} className="flex items-start gap-2 type-body-sm text-ink">
               {reason.severity === 'critical' ? (

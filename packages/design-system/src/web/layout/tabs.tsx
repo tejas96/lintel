@@ -42,7 +42,7 @@ export function Tabs<TValue extends string>({
     >
       <TabsPrimitive.List
         aria-label={label}
-        className="flex gap-1 overflow-x-auto border-b border-hairline"
+        className="flex gap-1 overflow-x-auto border-b border-hairline [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item) => (
           <TabsPrimitive.Trigger
@@ -98,7 +98,13 @@ export function TabNav({
 }) {
   const indicatorId = useId();
   return (
-    <nav aria-label={label} className={cn('-mx-1 overflow-x-auto', className)}>
+    <nav
+      aria-label={label}
+      className={cn(
+        '-mx-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
       <ul className="flex min-w-max gap-1 border-b border-hairline px-1">
         {items.map((item) => (
           <li key={item.href} className="relative">

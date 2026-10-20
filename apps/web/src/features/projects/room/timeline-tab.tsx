@@ -18,7 +18,7 @@ import {
 import { useQueries } from '@tanstack/react-query';
 import { ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
 import { TASK_STATUS_PRESENTATION } from '@/features/tasks/task-presentation';
 import { api, expectStatus } from '@/lib/api/api-client';
@@ -43,6 +43,17 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
   const tasks = useProjectTasks(projectId);
   const [zoom, setZoom] = useState<TimelineZoom>('week');
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const foldedFinished = useRef(false);
+  useEffect(() => {
+    // Finished stages start folded so the chart opens on the work still to do.
+    if (!project || foldedFinished.current) return;
+    foldedFinished.current = true;
+    setCollapsed(
+      new Set(
+        project.stages.filter((stage) => stage.status === 'completed').map((stage) => stage.id),
+      ),
+    );
+  }, [project]);
   const taskIds = (tasks.data?.items ?? []).slice(0, 60).map((task) => task.id);
   const details = useQueries({
     queries: taskIds.map((id) => ({
