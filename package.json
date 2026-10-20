@@ -1,0 +1,33 @@
+{
+  "name": "lintel",
+  "private": true,
+  "description": "Lintel — business operations platform for interior design and architecture studios.",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration --concurrency=1",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "check:file-size": "node infrastructure/scripts/check-file-size.mjs",
+    "check:boundaries": "node infrastructure/scripts/check-boundaries.mjs",
+    "check": "pnpm lint && pnpm check:file-size && pnpm check:boundaries && pnpm typecheck && pnpm test",
+    "db:generate": "pnpm --filter @lintel/database db:generate",
+    "db:migrate": "pnpm --filter @lintel/database db:migrate",
+    "db:seed": "pnpm --filter @lintel/database db:seed",
+    "infra:up": "docker compose -f infrastructure/docker/compose.yaml up -d",
+    "infra:down": "docker compose -f infrastructure/docker/compose.yaml down",
+    "infra:ps": "docker compose -f infrastructure/docker/compose.yaml ps"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "turbo": "2.11.9",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,87 @@
+# Local development infrastructure for Lintel.
+# Every image here was already present on the development machine (see docs/OPERATIONS.md).
+#
+#   pnpm infra:up      start Postgres, RustFS and the Temporal dev server
+#   pnpm infra:down    stop them (named volumes keep the data)
+#
+# Ports are chosen to avoid clashes with other local projects.
+name: lintel
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: lintel-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${LINTEL_POSTGRES_USER:-lintel}
+      POSTGRES_PASSWORD: ${LINTEL_POSTGRES_PASSWORD:-lintel-local-only}
+      POSTGRES_DB: ${LINTEL_POSTGRES_DB:-lintel}
+    ports:
+      - "127.0.0.1:${LINTEL_POSTGRES_PORT:-5450}:5432"
+    volumes:
+      - lintel-pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LINTEL_POSTGRES_USER:-lintel} -d ${LINTEL_POSTGRES_DB:-lintel}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  object-store:
+    image: rustfs/rustfs:1.0.0
+    container_name: lintel-object-store
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${LINTEL_STORAGE_ACCESS_KEY:-lintel-local}
+      RUSTFS_SECRET_KEY: ${LINTEL_STORAGE_SECRET_KEY:-lintel-local-secret}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+    ports:
+      - "127.0.0.1:${LINTEL_STORAGE_PORT:-9110}:9000"
+      - "127.0.0.1:${LINTEL_STORAGE_CONSOLE_PORT:-9111}:9001"
+    volumes:
+      - lintel-objects:/data
+
+  # Local-only Temporal: the Temporal CLI dev server inside the admin-tools image.
+  # It keeps workflow history in a SQLite file on a named volume, so it survives restarts.
+  # Production uses temporalio/server with PostgreSQL instead (docs/OPERATIONS.md).
+  temporal:
+    image: temporalio/admin-tools:1.30.6
+    container_name: lintel-temporal
+    restart: unless-stopped
+    logging: *default-logging
+    user: "0:0"
+    entrypoint: ["temporal"]
+    command:
+      - server
+      - start-dev
+      - --ip=0.0.0.0
+      - --db-filename=/var/lib/temporal/lintel-dev.db
+      - --namespace=lintel
+      - --ui-port=8233
+      - --log-level=warn
+    ports:
+      - "127.0.0.1:${LINTEL_TEMPORAL_PORT:-7240}:7233"
+      - "127.0.0.1:${LINTEL_TEMPORAL_UI_PORT:-8240}:8233"
+    volumes:
+      - lintel-temporal:/var/lib/temporal
+    healthcheck:
+      test: ["CMD-SHELL", "temporal operator namespace describe -n lintel --address 127.0.0.1:7233 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  lintel-pgdata:
+  lintel-objects:
+  lintel-temporal:

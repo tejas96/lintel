@@ -1,0 +1,27 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tooling/*"
+
+# One pinned version per dependency, shared by every workspace package.
+catalog:
+  "@types/node": 22.20.5
+  typescript: 5.9.3
+  vitest: 5.0.5
+  zod: 3.25.76
+  "@ts-rest/core": 3.52.1
+  "@ts-rest/nest": 3.52.1
+  "@ts-rest/open-api": 3.52.1
+  drizzle-orm: 0.45.4
+  drizzle-kit: 0.31.11
+  pg: 8.23.1
+  "@types/pg": 8.23.1
+  "@temporalio/client": 1.24.0
+  "@temporalio/worker": 1.24.0
+  "@temporalio/workflow": 1.24.0
+  "@temporalio/activity": 1.24.0
+  "@temporalio/testing": 1.24.0
+  "@temporalio/common": 1.24.0
+  "@aws-sdk/client-s3": 3.1153.0
+  firebase-admin: 14.5.0
+  tsx: 4.23.15
