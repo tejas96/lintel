@@ -1,6 +1,12 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { emptyBodySchema, idSchema, shortTextSchema, versionSchema } from '../common/primitives';
+import {
+  emptyBodySchema,
+  idSchema,
+  queryBooleanSchema,
+  shortTextSchema,
+  versionSchema,
+} from '../common/primitives';
 import { projectTypeSchema } from '../schemas/project.schema';
 import {
   templateDetailSchema,
@@ -18,7 +24,7 @@ export const templatesContract = c.router({
     path: '/templates',
     query: z.object({
       projectType: projectTypeSchema.optional(),
-      includeArchived: z.coerce.boolean().default(false),
+      includeArchived: queryBooleanSchema.default(false),
     }),
     responses: { 200: z.array(templateSummarySchema) },
   },

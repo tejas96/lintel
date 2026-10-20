@@ -7,6 +7,7 @@ import {
   idSchema,
   instantSchema,
   noteSchema,
+  queryBooleanSchema,
   shortTextSchema,
   versionSchema,
 } from '../common/primitives';
@@ -65,7 +66,7 @@ export const operationsContract = c.router({
   listNotifications: {
     method: 'GET',
     path: '/notifications',
-    query: pageQuerySchema.extend({ unreadOnly: z.coerce.boolean().default(false) }),
+    query: pageQuerySchema.extend({ unreadOnly: queryBooleanSchema.default(false) }),
     responses: { 200: pageSchema(notificationSchema).extend({ unreadCount: z.number().int() }) },
   },
   markNotificationRead: {

@@ -23,3 +23,11 @@ export const idParamsSchema = z.object({ id: idSchema });
  * refer to the named type instead of repeating the full Zod structure.
  */
 export type ResponseSchema<T> = z.ZodType<T, z.ZodTypeDef, T>;
+
+/**
+ * A boolean in a query string. `z.coerce.boolean()` would turn the string
+ * "false" into `true`, so only the literal words true/false (or 1/0) are accepted.
+ */
+export const queryBooleanSchema = z
+  .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+  .transform((value) => value === true || value === 'true' || value === '1');

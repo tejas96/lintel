@@ -1,7 +1,7 @@
 import { type AppRoute, type AppRouter, initContract, isAppRoute } from '@ts-rest/core';
 import { describe, expect, it } from 'vitest';
 import { errorResponseSchema } from '../common/errors';
-import { calendarDateSchema } from '../common/primitives';
+import { calendarDateSchema, queryBooleanSchema } from '../common/primitives';
 import { apiContractOptions, apiRouterDefinition } from './index';
 
 const contract = initContract().router(apiRouterDefinition, apiContractOptions);
@@ -33,5 +33,13 @@ describe('API contract', () => {
   it('accepts real calendar dates only', () => {
     expect(calendarDateSchema.safeParse('2026-02-28').success).toBe(true);
     expect(calendarDateSchema.safeParse('2026-02-30').success).toBe(false);
+  });
+});
+
+describe('query booleans', () => {
+  it('reads "false" as false', () => {
+    expect(queryBooleanSchema.parse('false')).toBe(false);
+    expect(queryBooleanSchema.parse('true')).toBe(true);
+    expect(queryBooleanSchema.safeParse('maybe').success).toBe(false);
   });
 });
