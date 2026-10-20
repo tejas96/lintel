@@ -208,12 +208,18 @@ API on `:4106` with the demo seed (`db:seed` + `db:seed:demo`):
   banner and the tap deep-linked to the task from `linkPath`; sign-out sent `DELETE /v1/devices/:id`.
 - Screenshots: `docs/screenshots/mobile/`.
 
+- Android development build: `expo prebuild --platform android` + `./gradlew assembleDebug`
+  (arm64, JDK 17) — BUILD SUCCESSFUL; installed on the Pixel 8 API 36 emulator (Metro via
+  `adb reverse tcp:8106 tcp:8106`, API at `10.0.2.2:4106` rewritten automatically). Verified sign-in,
+  Today, Account, the `work-updates` channel being created before the Android 13+ permission
+  prompt, and the "push isn't set up in this build" message when `google-services.json` is absent.
+- Session expiry: revoking the app's session from another client made the next request return
+  401 and the app returned to sign-in with "Your session has ended. Please sign in again."
+
 Not verified:
 
 - Real push delivery through FCM (no Firebase project/credentials here; iOS also needs the
-  Firebase iOS SDK, see Push). Android notification channel and FCM token code paths were not run.
-- Android: see the Android build note in the final report of the branch; the app was not run on an
-  Android emulator in this session.
+  Firebase iOS SDK, see Push). FCM token retrieval on Android needs `google-services.json`.
 - Physical devices, release/TestFlight/Play builds and signing.
-- Offline banner and session-expiry flow were exercised only through code paths and unit-level
-  reasoning, not by cutting the network on the simulator.
+- The offline banner by cutting the simulator's network (the code path is covered by the
+  fetcher's network-error handling but was not exercised by hand).

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/app-text';
@@ -11,6 +12,11 @@ import { GUTTER, SPACE } from '@/theme/layout';
 export default function ReconnectScreen() {
   const { retryRestore, signOut } = useSession();
   const { colors } = useAppTheme();
+  const [busy, setBusy] = useState<'retry' | 'signOut' | null>(null);
+  const run = (action: 'retry' | 'signOut') => {
+    setBusy(action);
+    void (action === 'retry' ? retryRestore() : signOut()).finally(() => setBusy(null));
+  };
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.canvas }]}>
       <View style={styles.body}>
@@ -24,8 +30,21 @@ export default function ReconnectScreen() {
         </AppText>
       </View>
       <View style={styles.actions}>
-        <Button label="Try again" size="lg" icon="refresh" onPress={retryRestore} />
-        <Button label="Sign out" variant="quiet" onPress={() => void signOut()} />
+        <Button
+          label="Try again"
+          size="lg"
+          icon="refresh"
+          onPress={() => run('retry')}
+          loading={busy === 'retry'}
+          disabled={busy !== null}
+        />
+        <Button
+          label="Sign out"
+          variant="quiet"
+          onPress={() => run('signOut')}
+          loading={busy === 'signOut'}
+          disabled={busy !== null}
+        />
       </View>
     </SafeAreaView>
   );

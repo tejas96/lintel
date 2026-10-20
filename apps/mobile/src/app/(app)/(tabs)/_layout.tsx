@@ -29,6 +29,7 @@ export default function TabsLayout() {
       indicatorColor={colors.accentSoft}
       badgeBackgroundColor={colors.accent}
       minimizeBehavior="onScrollDown"
+      labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="index" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>

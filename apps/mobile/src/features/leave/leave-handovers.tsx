@@ -9,6 +9,7 @@ import { Divider, Section } from '@/components/section';
 import { StatusPill } from '@/components/status-pill';
 import { useToast } from '@/feedback/toast';
 import { useDecideHandover } from '@/queries/leave-queries';
+import { can } from '@/session/capabilities';
 import { useCurrentUser } from '@/session/session-provider';
 import { SPACE } from '@/theme/layout';
 import type { StatusPresentation } from '@/theme/status-vocabulary';
@@ -92,6 +93,9 @@ function HandoverRow({
 
 /** Proposed cover for the work this leave touches; recipients accept, managers apply. */
 export function LeaveHandovers({ request }: { readonly request: LeaveRequestDetail }) {
+  const user = useCurrentUser();
+  // The server checks project rights; people who assign work see the action.
+  const canAssign = can(user, 'tasks.assign') || can(user, 'tasks.manage_any');
   if (request.handovers.length === 0) return null;
   return (
     <Section title="Handovers" meta={String(request.handovers.length)}>
@@ -99,7 +103,7 @@ export function LeaveHandovers({ request }: { readonly request: LeaveRequestDeta
         {request.handovers.map((handover, index) => (
           <View key={handover.id}>
             {index > 0 ? <Divider /> : null}
-            <HandoverRow handover={handover} canApply={request.viewerCanDecide} />
+            <HandoverRow handover={handover} canApply={canAssign} />
           </View>
         ))}
       </Card>

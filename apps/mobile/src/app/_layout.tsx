@@ -33,7 +33,8 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
               <SessionProvider>
                 <ToastProvider>
-                  <RootNavigator fontsReady={fontsLoaded || fontError !== null} />
+                  {/* Text is measured with the real faces only: render once fonts are in. */}
+                  {fontsLoaded || fontError !== null ? <RootNavigator /> : null}
                   <NetworkBanner />
                 </ToastProvider>
               </SessionProvider>
@@ -45,11 +46,11 @@ export default function RootLayout() {
   );
 }
 
-/** Routes are guarded by session state; the splash stays up until both are known. */
-function RootNavigator({ fontsReady }: { readonly fontsReady: boolean }) {
+/** Routes are guarded by session state; the splash stays up until the session is known. */
+function RootNavigator() {
   const { state } = useSession();
   const theme = useAppTheme();
-  const settled = fontsReady && state.status !== 'restoring';
+  const settled = state.status !== 'restoring';
   useEffect(() => {
     if (settled) void SplashScreen.hideAsync();
   }, [settled]);

@@ -87,6 +87,17 @@ export function LeaveDecisionPanel({ request }: { readonly request: LeaveRequest
   );
 }
 
+/** The server replaces unapplied handovers on respond, so send back the ones still open. */
+function openHandovers(request: LeaveRequestDetail) {
+  return request.handovers
+    .filter((handover) => handover.status !== 'applied' && handover.status !== 'declined')
+    .map((handover) => ({
+      taskId: handover.task.id,
+      toUserId: handover.to?.id ?? null,
+      note: handover.note,
+    }));
+}
+
 /** The requester's own actions: answer an information request, or cancel. */
 export function LeaveOwnerActions({ request }: { readonly request: LeaveRequestDetail }) {
   const toast = useToast();
@@ -130,7 +141,11 @@ export function LeaveOwnerActions({ request }: { readonly request: LeaveRequestD
             disabled={answer.trim().length < 3}
             onPress={() =>
               respond.mutate(
-                { reason: answer.trim(), handovers: [], version: request.version },
+                {
+                  reason: answer.trim(),
+                  handovers: openHandovers(request),
+                  version: request.version,
+                },
                 {
                   onSuccess: () => toast.show('Answer sent.', 'success'),
                   onError: (error) => toast.show(errorMessage(error), 'error'),

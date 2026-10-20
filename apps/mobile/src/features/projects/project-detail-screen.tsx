@@ -1,6 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { isNotFound } from '@/api/api-error';
+import { queryKeys } from '@/api/query-keys';
 import { ScreenScroll } from '@/components/screen';
 import { Section } from '@/components/section';
 import { SkeletonBlock, SkeletonGroup, SkeletonList } from '@/components/skeleton';
@@ -32,10 +34,14 @@ function ProjectDeliverables({ projectId }: { readonly projectId: string }) {
 export function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const project = useProject(id);
+  const queryClient = useQueryClient();
   return (
     <>
       <Stack.Screen options={{ title: project.data?.reference ?? '' }} />
-      <ScreenScroll edge="stack" onRefresh={() => project.refetch()}>
+      <ScreenScroll
+        edge="stack"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.project(id) })}
+      >
         {project.isPending ? (
           <SkeletonGroup label="Loading project">
             <View style={{ gap: SPACE.md }}>

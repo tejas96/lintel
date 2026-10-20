@@ -81,3 +81,15 @@ export function isRetryable(error: unknown): boolean {
   if (error instanceof NetworkError) return true;
   return error instanceof ApiError && (error.status >= 500 || error.code === 'RATE_LIMITED');
 }
+
+/**
+ * The message to toast after a refused submit, or null when every problem is
+ * already shown beside a field on screen (`shownFields`).
+ */
+export function unshownErrorMessage(error: unknown, shownFields: readonly string[]): string | null {
+  if (!(error instanceof ApiError) || error.details.length === 0) return errorMessage(error);
+  const unshown = error.details.find(
+    (detail) => !detail.field || !shownFields.includes(detail.field),
+  );
+  return unshown ? unshown.message : null;
+}

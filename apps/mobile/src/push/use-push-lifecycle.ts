@@ -2,27 +2,37 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { queryKeys } from '@/api/query-keys';
 import { linkPathOf } from './foreground-notifications';
 import { hrefForLinkPath } from './link-routing';
 import { currentPushPermission, registerPushDevice } from './push-device';
 
 /**
- * Signed-in only. If permission was granted earlier, (re)register this
- * device's token on launch and whenever the OS rotates it.
+ * Signed-in only. When permission is granted, register this device's token on
+ * launch, on every return to the foreground (permission may have been turned
+ * on in Settings meanwhile) and whenever the OS rotates the token. Repeats of
+ * the same token are skipped in `registerPushDevice`.
  */
 export function usePushRegistration(): void {
   useEffect(() => {
     let active = true;
-    void currentPushPermission()
-      .then((permission) => (permission === 'granted' && active ? registerPushDevice() : null))
-      .catch(() => undefined);
-    const subscription = Notifications.addPushTokenListener((token) => {
+    const registerIfAllowed = () => {
+      void currentPushPermission()
+        .then((permission) => (permission === 'granted' && active ? registerPushDevice() : null))
+        .catch(() => undefined);
+    };
+    registerIfAllowed();
+    const foreground = AppState.addEventListener('change', (status) => {
+      if (status === 'active') registerIfAllowed();
+    });
+    const tokens = Notifications.addPushTokenListener((token) => {
       void registerPushDevice(token).catch(() => undefined);
     });
     return () => {
       active = false;
-      subscription.remove();
+      foreground.remove();
+      tokens.remove();
     };
   }, []);
 }

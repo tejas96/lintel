@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import { errorMessage } from '@/api/api-error';
 import { Button } from '@/components/button';
 import { ListRow } from '@/components/list-row';
@@ -25,11 +25,19 @@ export function PushSettings() {
   const [permission, setPermission] = useState<PushPermission | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Re-read on focus and on return from the phone's Settings app.
   useFocusEffect(
     useCallback(() => {
-      void currentPushPermission()
-        .then(setPermission)
-        .catch(() => setPermission(null));
+      const read = () => {
+        void currentPushPermission()
+          .then(setPermission)
+          .catch(() => setPermission(null));
+      };
+      read();
+      const subscription = AppState.addEventListener('change', (status) => {
+        if (status === 'active') read();
+      });
+      return () => subscription.remove();
     }, []),
   );
 

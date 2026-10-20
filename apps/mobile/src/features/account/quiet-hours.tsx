@@ -25,10 +25,12 @@ function TimeStepper({
   label,
   value,
   onChange,
+  disabled,
 }: {
   readonly label: string;
   readonly value: string;
   readonly onChange: (time: string) => void;
+  readonly disabled: boolean;
 }) {
   return (
     <View style={styles.stepper} accessible={false}>
@@ -39,6 +41,7 @@ function TimeStepper({
         icon="back"
         accessibilityLabel={`${label} 30 minutes earlier`}
         onPress={() => onChange(shiftTime(value, -STEP_MINUTES))}
+        disabled={disabled}
       />
       <AppText variant="titleMd" style={styles.time} accessibilityLabel={`${label} ${value}`}>
         {value}
@@ -47,6 +50,7 @@ function TimeStepper({
         icon="chevronRight"
         accessibilityLabel={`${label} 30 minutes later`}
         onPress={() => onChange(shiftTime(value, STEP_MINUTES))}
+        disabled={disabled}
       />
     </View>
   );
@@ -95,11 +99,13 @@ export function QuietHours() {
             label="From"
             value={quiet.start}
             onChange={(start) => save({ ...quiet, start })}
+            disabled={update.isPending}
           />
           <TimeStepper
             label="Until"
             value={quiet.end}
             onChange={(end) => save({ ...quiet, end })}
+            disabled={update.isPending}
           />
         </>
       ) : null}

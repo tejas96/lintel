@@ -93,6 +93,9 @@ function useApplyLeaveChange() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.leaveRequestLists });
     void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalances });
     void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
+    // Applied handovers change task owners; approved leave changes today's capacity.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.workQueue });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
   };
 }
 

@@ -104,7 +104,7 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
               onPress={() => transition.run(option, close)}
             />
           ))}
-        {!canReportBlocker(task) ? null : (
+        {!canReportBlocker(task, user.id) ? null : (
           <Button
             label="Report a blocker"
             icon="blocked"

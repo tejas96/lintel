@@ -47,14 +47,16 @@ export function TodayScreen() {
         </SkeletonGroup>
       ) : null}
       {queue.isPending ? <SkeletonList count={3} /> : null}
-      {queue.isError ? (
-        <ErrorState
-          error={queue.error}
-          subject="your work queue"
-          onRetry={() => void queue.refetch()}
-        />
+      {queue.isError && !queue.data ? (
+        <>
+          <ErrorState
+            error={queue.error}
+            subject="your work queue"
+            onRetry={() => void queue.refetch()}
+          />
+          <PushPromptCard />
+        </>
       ) : null}
-      {queue.isError ? <PushPromptCard /> : null}
       {queue.data ? (
         <>
           <WorkloadStrip workload={queue.data.workload} />

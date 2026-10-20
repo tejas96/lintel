@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
-import { errorMessage, fieldErrors } from '@/api/api-error';
+import { fieldErrors, unshownErrorMessage } from '@/api/api-error';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen';
@@ -73,8 +73,8 @@ function ComposerForm({
           router.back();
         },
         onError: (error) => {
-          if (Object.keys(fieldErrors(error)).length === 0)
-            toast.show(errorMessage(error), 'error');
+          const message = unshownErrorMessage(error, ['note']);
+          if (message) toast.show(message, 'error');
         },
       },
     );

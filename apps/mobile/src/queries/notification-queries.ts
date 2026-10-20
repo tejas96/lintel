@@ -12,7 +12,8 @@ export function useNotifications() {
     queryFn: ({ pageParam, signal }) =>
       unwrap(
         api.operations.listNotifications({
-          query: { page: pageParam, pageSize: PAGE_SIZE, unreadOnly: false },
+          // Omitted, not false: the query string "false" would be coerced to true.
+          query: { page: pageParam, pageSize: PAGE_SIZE },
           fetchOptions: { signal },
         }),
       ),

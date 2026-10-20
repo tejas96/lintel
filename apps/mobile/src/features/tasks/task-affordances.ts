@@ -1,4 +1,4 @@
-import type { TaskDetail } from '@lintel/api-contracts';
+import type { Blocker, TaskDetail } from '@lintel/api-contracts';
 
 /**
  * Offer "Start" only where the server would let work begin: its `transitions`
@@ -22,13 +22,23 @@ export function isClosed(task: Pick<TaskDetail, 'status'>): boolean {
  * server's "blocked" transition is offered as "Report a blocker". A task that
  * is already blocked can take another blocker.
  */
-export function canReportBlocker(task: TaskDetail): boolean {
-  if (task.status === 'blocked') return true;
+export function canReportBlocker(task: TaskDetail, viewerId: string): boolean {
+  if (task.status === 'blocked') {
+    // Another blocker on a blocked task: the owner, a collaborator or a manager.
+    return task.viewerCanEdit || task.collaborators.some((person) => person.id === viewerId);
+  }
   return task.transitions.some((option) => option.to === 'blocked' && option.allowed);
 }
 
 /** The server's reasons when a blocker can't be reported right now. */
-export function blockerRefusal(task: TaskDetail): readonly string[] {
-  if (canReportBlocker(task)) return [];
+export function blockerRefusal(task: TaskDetail, viewerId: string): readonly string[] {
+  if (canReportBlocker(task, viewerId)) return [];
   return task.transitions.find((option) => option.to === 'blocked')?.reasons ?? [];
+}
+
+/** Resolving is for the manager, whoever raised the blocker, or whoever it waits on. */
+export function canResolveBlocker(task: TaskDetail, blocker: Blocker, viewerId: string): boolean {
+  return (
+    task.viewerCanManage || blocker.raisedBy.id === viewerId || blocker.waitingOn?.id === viewerId
+  );
 }

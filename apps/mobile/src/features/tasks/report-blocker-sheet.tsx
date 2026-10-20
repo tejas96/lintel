@@ -1,7 +1,7 @@
 import type { Blocker, TaskDetail, UserSummary } from '@lintel/api-contracts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { errorMessage, fieldErrors } from '@/api/api-error';
+import { fieldErrors, unshownErrorMessage } from '@/api/api-error';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { ChoiceChips } from '@/components/choice-chips';
@@ -12,6 +12,7 @@ import { TextField } from '@/components/text-field';
 import { PersonPicker } from '@/features/people/person-picker';
 import { useToast } from '@/feedback/toast';
 import { useReportBlocker, useTask } from '@/queries/task-queries';
+import { useCurrentUser } from '@/session/session-provider';
 import { BLOCKER_CATEGORY_LABELS } from './blockers-section';
 import { blockerRefusal } from './task-affordances';
 
@@ -37,13 +38,14 @@ export function ReportBlockerSheet() {
 /** Say what the task is waiting on; the server blocks it and tells the managers. */
 function ReportBlockerForm({ task }: { readonly task: TaskDetail }) {
   const router = useRouter();
+  const user = useCurrentUser();
   const toast = useToast();
   const report = useReportBlocker(task.id);
   const [category, setCategory] = useState<Blocker['category'] | null>(null);
   const [reason, setReason] = useState('');
   const [waitingOn, setWaitingOn] = useState<UserSummary | null>(null);
   const errors = fieldErrors(report.error);
-  const refusal = blockerRefusal(task);
+  const refusal = blockerRefusal(task, user.id);
   const ready = refusal.length === 0 && category !== null && reason.trim().length >= 3;
 
   const submit = () => {
@@ -61,8 +63,8 @@ function ReportBlockerForm({ task }: { readonly task: TaskDetail }) {
           router.back();
         },
         onError: (error) => {
-          if (Object.keys(fieldErrors(error)).length === 0)
-            toast.show(errorMessage(error), 'error');
+          const message = unshownErrorMessage(error, ['reason']);
+          if (message) toast.show(message, 'error');
         },
       },
     );

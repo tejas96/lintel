@@ -1,8 +1,10 @@
 import { calendarDateInTimeZone } from '@lintel/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { RefreshControl, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { queryKeys } from '@/api/query-keys';
 import { usePullToRefresh } from '@/components/screen';
 import { SkeletonBlock, SkeletonGroup, SkeletonList } from '@/components/skeleton';
 import { ErrorState } from '@/components/state-views';
@@ -27,7 +29,11 @@ export function TaskDetailScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const task = useTask(id);
-  const pull = usePullToRefresh(() => task.refetch());
+  const queryClient = useQueryClient();
+  // Refreshes the task and everything under it (comments, deliverables).
+  const pull = usePullToRefresh(() =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.task(id) }),
+  );
   const today = calendarDateInTimeZone(new Date(), user.timeZone);
 
   return (

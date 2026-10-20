@@ -6,9 +6,10 @@ import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Section } from '@/components/section';
 import { formatRelativeInstant } from '@/formatting/dates';
+import { useCurrentUser } from '@/session/session-provider';
 import { useAppTheme } from '@/theme/app-theme';
 import { RADIUS, SPACE } from '@/theme/layout';
-import { canReportBlocker, isClosed } from './task-affordances';
+import { canReportBlocker, canResolveBlocker, isClosed } from './task-affordances';
 
 export const BLOCKER_CATEGORY_LABELS: Readonly<Record<Blocker['category'], string>> = {
   client: 'Waiting on the client',
@@ -19,7 +20,15 @@ export const BLOCKER_CATEGORY_LABELS: Readonly<Record<Blocker['category'], strin
   other: 'Something else',
 };
 
-function OpenBlocker({ blocker, taskId }: { readonly blocker: Blocker; readonly taskId: string }) {
+function OpenBlocker({
+  blocker,
+  taskId,
+  canResolve,
+}: {
+  readonly blocker: Blocker;
+  readonly taskId: string;
+  readonly canResolve: boolean;
+}) {
   const router = useRouter();
   const { status } = useAppTheme();
   return (
@@ -37,17 +46,19 @@ function OpenBlocker({ blocker, taskId }: { readonly blocker: Blocker; readonly 
         {blocker.waitingOn ? `Waiting on ${blocker.waitingOn.fullName} · ` : ''}
         Raised by {blocker.raisedBy.fullName}, {formatRelativeInstant(blocker.raisedAt)}
       </AppText>
-      <Button
-        label="Mark resolved"
-        variant="secondary"
-        icon="done"
-        onPress={() =>
-          router.push({
-            pathname: '/blockers/[id]/resolve',
-            params: { id: blocker.id, taskId },
-          })
-        }
-      />
+      {canResolve ? (
+        <Button
+          label="Mark resolved"
+          variant="secondary"
+          icon="done"
+          onPress={() =>
+            router.push({
+              pathname: '/blockers/[id]/resolve',
+              params: { id: blocker.id, taskId },
+            })
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -55,14 +66,20 @@ function OpenBlocker({ blocker, taskId }: { readonly blocker: Blocker; readonly 
 /** Open blockers first, with a way to resolve them; reporting is one tap away. */
 export function BlockersSection({ task }: { readonly task: TaskDetail }) {
   const router = useRouter();
+  const user = useCurrentUser();
   const open = task.blockers.filter((blocker) => blocker.resolvedAt === null);
   const resolved = task.blockers.filter((blocker) => blocker.resolvedAt !== null);
-  const canReport = canReportBlocker(task);
+  const canReport = canReportBlocker(task, user.id);
   if (open.length === 0 && (isClosed(task) || !canReport)) return null;
   return (
     <Section title="Blockers" meta={open.length > 0 ? `${open.length} open` : undefined}>
       {open.map((blocker) => (
-        <OpenBlocker key={blocker.id} blocker={blocker} taskId={task.id} />
+        <OpenBlocker
+          key={blocker.id}
+          blocker={blocker}
+          taskId={task.id}
+          canResolve={canResolveBlocker(task, blocker, user.id)}
+        />
       ))}
       {open.length === 0 ? (
         <AppText variant="bodySm" tone="secondary">

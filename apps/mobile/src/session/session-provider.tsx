@@ -30,7 +30,8 @@ interface SessionContextValue {
   /** Re-reads the person (capabilities can change while the app is open). */
   refreshUser(): Promise<void>;
   signOut(): Promise<void>;
-  retryRestore(): void;
+  /** Re-checks a saved session; resolves when the answer (or failure) is in. */
+  retryRestore(): Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -110,10 +111,7 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
     setState({ status: 'signedOut', notice: null });
   }, []);
 
-  const retryRestore = useCallback(() => {
-    setState({ status: 'restoring' });
-    void restore();
-  }, [restore]);
+  const retryRestore = useCallback(() => restore(), [restore]);
 
   const value = useMemo(
     () => ({ state, lastUser, completeSignIn, refreshUser, signOut, retryRestore }),

@@ -1,7 +1,7 @@
 import { calendarDateInTimeZone } from '@lintel/shared';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { errorMessage, fieldErrors } from '@/api/api-error';
+import { fieldErrors, unshownErrorMessage } from '@/api/api-error';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -58,7 +58,8 @@ export function NewLeaveScreen() {
         router.replace({ pathname: '/leave/[id]', params: { id: created.id } });
       },
       (error) => {
-        if (Object.keys(fieldErrors(error)).length === 0) toast.show(errorMessage(error), 'error');
+        const message = unshownErrorMessage(error, ['reason']);
+        if (message) toast.show(message, 'error');
       },
     );
 

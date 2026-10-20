@@ -22,9 +22,13 @@ export async function ensureNotificationChannel(): Promise<void> {
 
 export type PushPermission = Notifications.PermissionStatus;
 
+/**
+ * Android 13+ reports "denied" before the person was ever asked; that still
+ * counts as undecided while the system will show the prompt.
+ */
 export async function currentPushPermission(): Promise<PushPermission> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return status;
+  const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+  return status === 'denied' && canAskAgain ? Notifications.PermissionStatus.UNDETERMINED : status;
 }
 
 export async function requestPushPermission(): Promise<PushPermission> {
