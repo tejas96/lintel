@@ -166,9 +166,9 @@ interface GanttBarProps {
   readonly title: string;
   /** Status word for the accessible name, e.g. "Blocked". */
   readonly statusLabel: string;
-  readonly progress?: number;
+  readonly progress?: number | undefined;
   readonly index?: number;
-  readonly onSelect?: () => void;
+  readonly onSelect?: (() => void) | undefined;
 }
 
 export function GanttBar({
