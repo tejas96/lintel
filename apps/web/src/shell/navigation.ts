@@ -63,7 +63,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/capacity',
     icon: Waypoints,
     requires: ['capacity.view_team', 'capacity.view_all'],
-    built: false,
+    built: true,
   },
   {
     id: 'leave',

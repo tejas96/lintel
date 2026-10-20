@@ -57,6 +57,11 @@ export function formatWeekdayShort(date: string): string {
   return formatter('wd', { weekday: 'short', timeZone: 'UTC' }).format(asUtcNoon(date));
 }
 
+/** "October" for a calendar date. */
+export function formatMonthLong(date: string): string {
+  return formatter('mm', { month: 'long', timeZone: 'UTC' }).format(asUtcNoon(date));
+}
+
 /** "Oct" for a calendar date. */
 export function formatMonthShort(date: string): string {
   return formatter('m', { month: 'short', timeZone: 'UTC' }).format(asUtcNoon(date));
