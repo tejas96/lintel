@@ -1,5 +1,14 @@
-import type { WorkflowScheduler, WorkflowStartRequest } from '@lintel/application';
-import { Client, Connection, WorkflowExecutionAlreadyStartedError } from '@temporalio/client';
+import type {
+  WorkflowScheduler,
+  WorkflowSignalRequest,
+  WorkflowStartRequest,
+} from '@lintel/application';
+import {
+  Client,
+  Connection,
+  WorkflowExecutionAlreadyStartedError,
+  WorkflowNotFoundError,
+} from '@temporalio/client';
 
 export interface TemporalConfiguration {
   readonly address: string;
@@ -20,6 +29,11 @@ export class TemporalWorkflowScheduler implements WorkflowScheduler {
   private client(): Promise<Client> {
     this.clientPromise ??= Connection.connect({ address: this.config.address }).then(
       (connection) => new Client({ connection, namespace: this.config.namespace }),
+      (error: unknown) => {
+        // Do not cache a failed connect: the next call tries again.
+        this.clientPromise = null;
+        throw error;
+      },
     );
     return this.clientPromise;
   }
@@ -49,6 +63,20 @@ export class TemporalWorkflowScheduler implements WorkflowScheduler {
     });
   }
 
+  async signal(request: WorkflowSignalRequest): Promise<boolean> {
+    const client = await this.client();
+    try {
+      await client.workflow
+        .getHandle(request.workflowId)
+        .signal(request.signal, ...request.signalArgs);
+      return true;
+    } catch (error) {
+      // Temporal answers NOT_FOUND for unknown IDs and for workflows that already completed.
+      if (error instanceof WorkflowNotFoundError) return false;
+      throw error;
+    }
+  }
+
   async checkHealth(): Promise<boolean> {
     try {
       const client = await this.client();
@@ -57,6 +85,19 @@ export class TemporalWorkflowScheduler implements WorkflowScheduler {
     } catch {
       this.clientPromise = null;
       return false;
+    }
+  }
+
+  /** Closes the gRPC connection (used by the worker on shutdown). */
+  async close(): Promise<void> {
+    const pending = this.clientPromise;
+    this.clientPromise = null;
+    if (!pending) return;
+    try {
+      const client = await pending;
+      await client.connection.close();
+    } catch {
+      // Never connected: nothing to close.
     }
   }
 }

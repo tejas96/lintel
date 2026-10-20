@@ -13,11 +13,13 @@ import { TaskRepository } from './repositories/task.repository';
 import { TaskItemRepository } from './repositories/task-item.repository';
 import { TemplateRepository } from './repositories/template.repository';
 import { WorkSessionRepository } from './repositories/work-session.repository';
+import { createBackgroundStores } from './worker/background-stores';
 
 /** Builds every repository on top of one executor (the pool or a transaction). */
 export function createStores(executor: DatabaseExecutor): ApplicationStores {
   return {
     access: new ProjectAccessRepository(executor),
+    background: createBackgroundStores(executor),
     identity: new IdentityRepository(executor),
     notifications: new NotificationRepository(executor),
     people: new PeopleRepository(executor),
