@@ -9,6 +9,18 @@ import { WORKFLOW_TYPES } from '../workflows/workflow-contract';
 export const DAILY_OPERATIONS_SCHEDULE_ID = 'lintel-daily-operations';
 export const PERIODIC_REWARDS_SCHEDULE_ID = 'lintel-periodic-rewards';
 
+/** The task queue whose schedules keep the plain IDs (one namespace per environment in production). */
+export const DEFAULT_TASK_QUEUE = 'lintel-main';
+
+/**
+ * Schedule IDs are unique per Temporal namespace. Workers on another task queue
+ * (developers, tests, previews sharing a namespace) get their own suffixed
+ * schedules instead of re-pointing everyone else's at themselves.
+ */
+export function scheduleIdFor(baseId: string, taskQueue: string): string {
+  return taskQueue === DEFAULT_TASK_QUEUE ? baseId : `${baseId}--${taskQueue}`;
+}
+
 export interface DailyOperationsScheduleOptions {
   readonly scheduleId: string;
   readonly taskQueue: string;

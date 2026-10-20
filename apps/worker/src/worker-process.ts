@@ -13,6 +13,7 @@ import {
   DAILY_OPERATIONS_SCHEDULE_ID,
   ensureDailyOperationsSchedule,
   PERIODIC_REWARDS_SCHEDULE_ID,
+  scheduleIdFor,
 } from './schedules/daily-operations.schedule';
 import { ensurePeriodicRewardsSchedule } from './schedules/periodic-rewards.schedule';
 import { temporalSdkLogger } from './temporal-logging';
@@ -69,12 +70,12 @@ export async function startWorkerProcess(
   const client = new Client({ connection: clientConnection, namespace: temporal.namespace });
   const timeZone = await businessTimeZone(organization, env.BUSINESS_TIMEZONE);
   const schedule = await ensureDailyOperationsSchedule(client, {
-    scheduleId: DAILY_OPERATIONS_SCHEDULE_ID,
+    scheduleId: scheduleIdFor(DAILY_OPERATIONS_SCHEDULE_ID, temporal.taskQueue),
     taskQueue: temporal.taskQueue,
     timeZone,
   });
   const rewardsSchedule = await ensurePeriodicRewardsSchedule(client, {
-    scheduleId: PERIODIC_REWARDS_SCHEDULE_ID,
+    scheduleId: scheduleIdFor(PERIODIC_REWARDS_SCHEDULE_ID, temporal.taskQueue),
     taskQueue: temporal.taskQueue,
     timeZone,
   });
