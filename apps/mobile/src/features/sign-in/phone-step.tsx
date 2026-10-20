@@ -77,6 +77,7 @@ export function PhoneStep({ initialNationalNumber, autoFocus, onRequested }: Pho
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
             autoComplete="tel-national"
+            clearButtonMode="while-editing"
             autoFocus={autoFocus}
             returnKeyType="go"
             onSubmitEditing={submit}

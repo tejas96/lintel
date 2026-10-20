@@ -182,6 +182,38 @@ manage credentials for both stores; the manual requirements are:
 
 Point `EXPO_PUBLIC_API_URL` at the production HTTPS API for release builds.
 
-## Verification status
+## Verification status (2026-10-21)
 
-See the final section of this file (kept up to date by whoever last verified the app).
+Verified on this machine (macOS, Xcode 26.6, iOS 26.5 simulator, Node 22.22) against the real
+API on `:4106` with the demo seed (`db:seed` + `db:seed:demo`):
+
+- `pnpm --filter @lintel/mobile typecheck` (app and `app.config.ts`), `pnpm --filter @lintel/mobile test`
+  (vitest: link routing, date/quantity formatting, capability tabs), `pnpm lint`,
+  `pnpm check:file-size`, `pnpm check:boundaries`, repo-wide `pnpm typecheck` / `pnpm test`.
+- `expo export --platform ios` and `--platform android` bundle (Hermes bytecode, ~5.2 MB each).
+  The source map shows one copy each of react, react-native, expo and expo-modules-core (Expo's
+  sticky resolution handles pnpm peer variants; no custom Metro config needed).
+- `expo install --check`: all native modules match SDK 58 (TypeScript is deliberately kept at
+  the repo's 5.9.3 instead of the suggested ~6.0.3; listed in `expo.install.exclude`).
+- iOS development build: `expo prebuild` + `pod install` + `xcodebuild` (Debug, simulator)
+  succeeded and ran on the iPhone 17 Pro simulator. Walked through with real data: sign-in
+  (phone + code) for the designer, team lead and site supervisor; Today (server queue, next-up
+  reasons, swipe-to-start, start/pause); task detail (server transitions and reasons, checklist,
+  deliverable); file upload with progress and deliverable version submission; leave request
+  with live impact preview and handover picker; approvals (deliverable approved, leave approved
+  at level 1 of 2); inbox; projects and project summary; site update with two photos;
+  account (push permission, sessions, sign out → device unregistered); dark mode.
+- Push on the simulator: permission prompt, APNs token obtained and registered as
+  `tokenType: "apns"` (`POST /v1/devices` 200), simulated push (`xcrun simctl push`) shown as a
+  banner and the tap deep-linked to the task from `linkPath`; sign-out sent `DELETE /v1/devices/:id`.
+- Screenshots: `docs/screenshots/mobile/`.
+
+Not verified:
+
+- Real push delivery through FCM (no Firebase project/credentials here; iOS also needs the
+  Firebase iOS SDK, see Push). Android notification channel and FCM token code paths were not run.
+- Android: see the Android build note in the final report of the branch; the app was not run on an
+  Android emulator in this session.
+- Physical devices, release/TestFlight/Play builds and signing.
+- Offline banner and session-expiry flow were exercised only through code paths and unit-level
+  reasoning, not by cutting the network on the simulator.

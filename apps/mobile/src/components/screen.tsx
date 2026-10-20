@@ -31,15 +31,17 @@ export interface ScreenScrollProps {
   readonly contentStyle?: StyleProp<ViewStyle>;
 }
 
-/** Keeps scrolled content from running under the clock on tab roots (no native header there). */
-export function StatusBarShield() {
+/**
+ * Tab roots have no native header, so the page starts below the status bar:
+ * content never runs under the clock and the refresh spinner stays visible.
+ */
+export function TabRootFrame({ children }: { readonly children: ReactNode }) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View
-      pointerEvents="none"
-      style={[styles.shield, { height: insets.top, backgroundColor: colors.canvas }]}
-    />
+    <View style={[styles.fill, { paddingTop: insets.top, backgroundColor: colors.canvas }]}>
+      {children}
+    </View>
   );
 }
 
@@ -67,7 +69,7 @@ export function ScreenScroll({ children, edge, onRefresh, contentStyle }: Screen
     contentContainerStyle: [
       styles.content,
       {
-        paddingTop: edge === 'tab' ? insets.top + SPACE.lg : SPACE.lg,
+        paddingTop: SPACE.lg,
         paddingBottom: insets.bottom + SPACE.huge * 2,
       },
     ],
@@ -85,12 +87,11 @@ export function ScreenScroll({ children, edge, onRefresh, contentStyle }: Screen
     );
   }
   return (
-    <View style={styles.fill}>
+    <TabRootFrame>
       <ScrollView {...shared} contentInsetAdjustmentBehavior="never">
         {column}
       </ScrollView>
-      <StatusBarShield />
-    </View>
+    </TabRootFrame>
   );
 }
 
@@ -130,7 +131,6 @@ export const screenStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  shield: { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0.94 },
   content: { paddingHorizontal: GUTTER },
   column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', gap: SPACE.xxl },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACE.md },

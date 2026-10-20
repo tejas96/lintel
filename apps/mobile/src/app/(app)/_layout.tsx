@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { HeaderCloseButton } from '@/components/header-close-button';
 import { useNotificationNavigation, usePushRegistration } from '@/push/use-push-lifecycle';
 import { useForegroundHeartbeat } from '@/session/use-foreground-heartbeat';
 import { useAppTheme } from '@/theme/app-theme';
@@ -44,11 +45,21 @@ export default function SignedInLayout() {
       <Stack.Screen name="leave/[id]" options={{ title: 'Leave request' }} />
       <Stack.Screen
         name="leave/new"
-        options={{ presentation: 'modal', title: 'Request leave', headerShown: true }}
+        options={{
+          presentation: 'modal',
+          title: 'Request leave',
+          headerShown: true,
+          headerLeft: () => <HeaderCloseButton />,
+        }}
       />
       <Stack.Screen
         name="site-updates/new"
-        options={{ presentation: 'modal', title: 'Site update', headerShown: true }}
+        options={{
+          presentation: 'modal',
+          title: 'Site update',
+          headerShown: true,
+          headerLeft: () => <HeaderCloseButton />,
+        }}
       />
       <Stack.Screen name="account" options={{ title: 'Account' }} />
     </Stack>

@@ -9,15 +9,16 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "prebuild": "expo prebuild --clean",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.config.json",
     "export:ios": "expo export --platform ios --output-dir dist/ios",
-    "export:android": "expo export --platform android --output-dir dist/android"
+    "export:android": "expo export --platform android --output-dir dist/android",
+    "test": "vitest run"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "0.4.2",
     "@expo-google-fonts/geist-mono": "0.4.3",
     "@expo-google-fonts/newsreader": "0.4.1",
-    "@expo/metro-runtime": "~58.0.14",
+    "@expo/metro-runtime": "58.0.14",
     "@lintel/api-contracts": "workspace:*",
     "@lintel/domain": "workspace:*",
     "@lintel/shared": "workspace:*",
@@ -25,30 +26,30 @@
     "@tanstack/react-query": "5.104.5",
     "@ts-rest/core": "catalog:",
     "expo": "58.0.16",
-    "expo-application": "~58.1.2",
-    "expo-constants": "~58.0.12",
-    "expo-dev-client": "~58.0.14",
-    "expo-device": "~58.0.5",
-    "expo-document-picker": "~58.0.4",
-    "expo-font": "~58.0.9",
-    "expo-haptics": "~58.0.7",
-    "expo-image": "~58.0.16",
-    "expo-image-picker": "~58.0.10",
-    "expo-linking": "~58.0.13",
-    "expo-notifications": "~58.1.5",
-    "expo-router": "~58.0.24",
-    "expo-secure-store": "~58.0.2",
-    "expo-splash-screen": "~58.0.10",
-    "expo-status-bar": "~58.0.3",
-    "expo-symbols": "~58.0.4",
-    "expo-system-ui": "~58.0.6",
+    "expo-application": "58.1.2",
+    "expo-constants": "58.0.12",
+    "expo-dev-client": "58.0.14",
+    "expo-device": "58.0.5",
+    "expo-document-picker": "58.0.4",
+    "expo-font": "58.0.9",
+    "expo-haptics": "58.0.7",
+    "expo-image": "58.0.16",
+    "expo-image-picker": "58.0.10",
+    "expo-linking": "58.0.13",
+    "expo-notifications": "58.1.5",
+    "expo-router": "58.0.24",
+    "expo-secure-store": "58.0.2",
+    "expo-splash-screen": "58.0.10",
+    "expo-status-bar": "58.0.3",
+    "expo-symbols": "58.0.4",
+    "expo-system-ui": "58.0.6",
     "react": "19.3.0",
     "react-native": "0.88.0",
-    "react-native-gesture-handler": "~3.3.0",
+    "react-native-gesture-handler": "3.3.0",
     "react-native-keyboard-controller": "1.22.7",
     "react-native-reanimated": "4.7.1",
-    "react-native-safe-area-context": "~5.10.1",
-    "react-native-screens": "~4.30.0",
+    "react-native-safe-area-context": "5.10.1",
+    "react-native-screens": "4.30.0",
     "react-native-svg": "15.16.0",
     "react-native-worklets": "0.13.0",
     "zod": "catalog:"
@@ -56,7 +57,15 @@
   "devDependencies": {
     "@lintel/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "^19.3.0",
-    "typescript": "catalog:"
+    "@types/react": "19.3.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript"
+      ]
+    }
   }
 }
