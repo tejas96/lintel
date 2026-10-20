@@ -49,6 +49,8 @@ cd apps/web && PORT=3100 pnpm start
   images built and started.
 - An independent security review: no critical or high issues; all confirmed findings fixed
   and re-tested (details in `docs/SECURITY.md`).
+- **Not run yet:** the CI pipeline (`.github/workflows/ci.yml`), because the repository has no
+  GitHub remote; the full production compose stack (Temporal on PostgreSQL, Caddy TLS).
 
 ## Decisions I made for you (all reversible)
 
