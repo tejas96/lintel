@@ -9,6 +9,21 @@ import { DATABASE_CONNECTION } from '../../infrastructure/tokens';
 
 const { listAuditLog } = apiContract.operations;
 
+/** Compensation fields audited on reward decisions; hidden without `rewards.view_all`. */
+const COMPENSATION_FIELDS = ['amountMinor', 'adjustedAmountMinor', 'adjustmentReason', 'note'];
+
+function withoutCompensation(
+  values: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!values) return values;
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [
+      key,
+      COMPENSATION_FIELDS.includes(key) ? '[restricted]' : value,
+    ]),
+  );
+}
+
 /** The audit trail (`audit.view`). Other operations routes live in their own modules. */
 @Controller()
 export class AuditController {
@@ -19,9 +34,19 @@ export class AuditController {
     return tsRestHandler(listAuditLog, async ({ query }) => {
       requireCapability(context, 'audit.view');
       const result = await queryAuditLog(this.database.db, query);
+      const seesCompensation = context.actor.capabilities.has('rewards.view_all');
+      const items = result.items.map((item) =>
+        seesCompensation || !item.action.startsWith('rewards.')
+          ? item
+          : {
+              ...item,
+              before: withoutCompensation(item.before),
+              after: withoutCompensation(item.after),
+            },
+      );
       return {
         status: 200,
-        body: pageOf(result.items, query.page, query.pageSize, result.totalItems),
+        body: pageOf(items, query.page, query.pageSize, result.totalItems),
       };
     });
   }

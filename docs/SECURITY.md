@@ -84,3 +84,47 @@ development default, `OTP_PROVIDER` is not `msg91`, `OTP_DEVELOPMENT_CODE` is se
 - [ ] Owner account phone verified; administrator roles reviewed.
 - [ ] Log retention and access reviewed (logs contain masked phones only).
 - [ ] Penetration test of sign-in, file download and project-scoped routes.
+
+## Security review — 2026-10-21
+
+An independent read-only review (code reading + live reproduction against the
+local API) found **no Critical or High issues**. Every project-scoped route
+probed as a non-member returned 404. Findings and their status:
+
+| Finding | Severity | Status |
+|---|---|---|
+| Dashboard leave list showed other people's leave reasons to project managers | Medium | **Fixed** — managers see only leave awaiting their decision; reasons never on the dashboard |
+| A manager could approve their own leave by recording an "urgent absence" | Medium | **Fixed** — never for oneself; only within the person's reporting line or with `leave.approve_any` |
+| Non-managers could add people to a project by assigning them work | Medium | **Fixed** — only project managers add members implicitly; reviewers and "waiting on" people must be members |
+| Administrators could change another administrator's phone (sign-in credential) silently | Medium (suspected) | **Fixed** — owner-only for administrators; any phone change signs the person out everywhere and is audited (masked) |
+| Administrators could sign out the owner; session IDs visible in the audit log | Low | **Fixed** |
+| Self-review of tasks; self-decided scope changes; one person giving both leave approvals | Low | **Fixed** |
+| `deliverables.review` capability not enforced | Low | **Fixed** |
+| OTP delivery timing could reveal accounts (production); parallel guesses could exceed the attempt limit | Low | **Fixed** — delivery not awaited; attempts reserved atomically |
+| Idempotency fingerprint ignored multipart bodies | Low | **Fixed** — uploads are not replayed |
+| Any ZIP accepted | Low | **Fixed** — only Office Open XML |
+| Malformed-JSON errors had no request ID | Low | **Fixed** |
+| Error logs could include SQL parameters | Low | **Fixed** — parameters stripped |
+| Confidential attachment names visible in task detail | Low | **Fixed** for task attachments |
+| Reward amounts readable in the audit log by administrators | Low | **Fixed** — redacted without `rewards.view_all` |
+
+### Known residual risks (accepted for Phase 1, tracked)
+
+- **CSRF token not bound to the session** (double-submit with an unbound token).
+  Exploitation also needs cookie injection on the same site; SameSite=Lax, JSON-only
+  bodies and the CORS allow-list remain. Planned: HMAC(session) tokens and `__Host-` cookies.
+- **Push device tokens are not tied to sessions.** A token re-registered by another
+  signed-in person moves to them (shared phones); revoking a session does not stop
+  pushes until the app unregisters. Planned: link devices to sessions.
+- **Sign-in lockout:** anyone can exhaust a number's verification attempts for 15
+  minutes (inherent to per-number limits). Monitor `rate_limit_counters`.
+- **Deliverable version history** shows file names even when a file is confidential.
+- **Cross-project titles in some notifications** (priority conflicts to each project's
+  manager) and in a requester's own leave-impact list.
+- **Some checks use role names** (budget visibility, command-center entry) rather than
+  capabilities; editing role capabilities does not change them.
+- **No version check** on replacing project members, task collaborators and template
+  archive; a few lists (deliverables, site updates, comments, blockers) are unpaginated.
+- **Idempotency** has no in-flight lock: two identical concurrent requests can both run.
+- When the owner requests leave and no administrator holds `leave.approve_any`, the
+  owner approves their own leave (a studio owner's prerogative).
