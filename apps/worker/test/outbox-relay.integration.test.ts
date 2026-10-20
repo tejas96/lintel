@@ -55,6 +55,12 @@ describe('outbox relay against PostgreSQL and Temporal', () => {
     bundle = await bundleTestWorkflows();
     database = connectTestDatabase();
     fixtures = new FixtureFactory(database);
+    // The test database is shared with other suites (e.g. the API journeys), which
+    // leave events behind with no relay running. Settle them first so these tests
+    // only see the events they create.
+    await database.pool.query(
+      "UPDATE outbox_events SET processed_at = now(), last_error = 'settled by worker test setup' WHERE processed_at IS NULL",
+    );
   });
 
   afterAll(async () => {
