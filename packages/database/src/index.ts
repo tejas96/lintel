@@ -6,4 +6,5 @@ export * from './queries/shared';
 export * from './repositories/identity.repository';
 export * from './repositories/record.repository';
 export * as schema from './schema';
+export { seedFoundation } from './seed/seed-foundation';
 export * from './unit-of-work';
