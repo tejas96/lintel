@@ -6,5 +6,6 @@ export { blockerFollowUpWorkflow } from './blocker-follow-up.workflow';
 export { dailyOperationsWorkflow } from './daily-operations.workflow';
 export { leaveReassessmentWorkflow } from './leave-reassessment.workflow';
 export { notificationDeliveryWorkflow } from './notification-delivery.workflow';
+export { periodicRewardEvaluationWorkflow } from './periodic-reward-evaluation.workflow';
 export { reviewFollowUpWorkflow } from './review-follow-up.workflow';
 export { taskDeadlineWorkflow } from './task-deadline.workflow';

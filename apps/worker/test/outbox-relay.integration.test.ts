@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createActivities, OrganizationContext } from '../src/activities';
 import { silentLogger } from '../src/observability/worker-logger';
 import { OutboxRelay } from '../src/relay/outbox-relay';
+import { withNoopMaintenance } from '../src/testing/noop-maintenance';
 import { connectTestDatabase, FixtureFactory } from './support/database';
 import {
   bundleTestWorkflows,
@@ -116,16 +117,18 @@ describe('outbox relay against PostgreSQL and Temporal', () => {
     const malformedId = await enqueue('TaskBlocked', { taskId: 't1' });
 
     const uow = new DrizzleUnitOfWork(database.db);
-    const activities = createActivities({
-      uow,
-      clock: systemClock,
-      push: new LogPushProvider({ log: () => undefined }),
-      scheduler,
-      organization: new OrganizationContext(uow.stores.settings, systemClock, {
-        smsConfigured: false,
+    const activities = createActivities(
+      ...withNoopMaintenance({
+        uow,
+        clock: systemClock,
+        push: new LogPushProvider({ log: () => undefined }),
+        scheduler,
+        organization: new OrganizationContext(uow.stores.settings, systemClock, {
+          smsConfigured: false,
+        }),
+        logger: silentLogger,
       }),
-      logger: silentLogger,
-    });
+    );
     const worker = await createTestWorker(env, { taskQueue, bundle, activities });
     await worker.runUntil(async () => {
       const result = await relayWith(scheduler).processBatch();
