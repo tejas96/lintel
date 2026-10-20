@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { ENVIRONMENT } from '../config/configuration.module';
 import { adapterFactory } from './adapter.factory';
+import { BusinessContextService } from './business-context.service';
 import {
   CLOCK,
   DATABASE_CONNECTION,
@@ -33,6 +34,7 @@ import {
 @Global()
 @Module({
   providers: [
+    BusinessContextService,
     {
       provide: DATABASE_CONNECTION,
       inject: [ENVIRONMENT],
@@ -66,6 +68,7 @@ import {
     },
   ],
   exports: [
+    BusinessContextService,
     DATABASE_CONNECTION,
     UNIT_OF_WORK,
     CLOCK,
