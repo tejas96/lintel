@@ -1,4 +1,5 @@
 export * from './access';
+export * from './ai';
 export * from './common';
 export * from './identity';
 export * from './notifications';
