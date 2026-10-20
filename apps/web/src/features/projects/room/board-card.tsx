@@ -35,7 +35,7 @@ export function BoardCard({ task, today, dragging, onPointerDown, onMove }: Boar
         dragging && 'border-dashed opacity-40 shadow-none',
       )}
     >
-      {/* Pointer dragging is an enhancement; the "Move to" menu is the keyboard and touch path. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer dragging is an enhancement; the "Move to" menu is the keyboard and touch path */}
       <div
         onPointerDown={onPointerDown}
         // The browser's own link dragging would cancel the pointer drag.
