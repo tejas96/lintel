@@ -38,3 +38,6 @@ firebase-service-account*.json
 # test output
 playwright-report/
 test-results/
+
+# agent worktrees
+.claude/worktrees/
