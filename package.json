@@ -21,6 +21,7 @@
     "db:generate": "pnpm --filter @lintel/database db:generate",
     "db:migrate": "pnpm --filter @lintel/database db:migrate",
     "db:seed": "pnpm --filter @lintel/database db:seed",
+    "db:seed:demo": "pnpm --filter @lintel/database db:seed:demo",
     "infra:up": "docker compose -f infrastructure/docker/compose.yaml up -d",
     "infra:down": "docker compose -f infrastructure/docker/compose.yaml down",
     "infra:ps": "docker compose -f infrastructure/docker/compose.yaml ps"

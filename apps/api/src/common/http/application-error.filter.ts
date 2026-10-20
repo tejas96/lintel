@@ -14,7 +14,7 @@ import type { ZodError } from 'zod';
 
 function zodDetails(error: ZodError | null | undefined, prefix: string) {
   return (error?.issues ?? []).map((issue) => ({
-    field: [prefix, ...issue.path].filter(Boolean).join('.'),
+    field: [prefix, ...issue.path].filter((part) => part !== '').join('.'),
     message: issue.message,
   }));
 }

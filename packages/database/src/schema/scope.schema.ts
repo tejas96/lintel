@@ -21,6 +21,8 @@ export const scopeChangeRequests = pgTable(
     decidedByUserId: uuid('decided_by_user_id').references(() => users.id),
     decidedAt: instant('decided_at'),
     decisionNote: text('decision_note'),
+    /** Working days the proposal pushed the planned end, as assessed when it was proposed. */
+    projectEndImpactDays: integer('project_end_impact_days').notNull().default(0),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
