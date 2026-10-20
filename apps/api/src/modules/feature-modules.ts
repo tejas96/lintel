@@ -1,5 +1,7 @@
 import type { Type } from '@nestjs/common';
 import { DeliverablesModule } from './deliverables/deliverables.module';
+import { LeaveModule } from './leave/leave.module';
+import { OperationsModule } from './operations/operations.module';
 import { PeopleModule } from './people/people.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SettingsModule } from './settings/settings.module';
@@ -19,4 +21,6 @@ export const FEATURE_MODULES: Type[] = [
   TasksModule,
   WorkModule,
   DeliverablesModule,
+  LeaveModule,
+  OperationsModule,
 ];
