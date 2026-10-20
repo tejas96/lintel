@@ -37,10 +37,28 @@ DATABASE_URL=postgres://lintel:lintel-local-only@127.0.0.1:5450/lintel pnpm db:s
 pnpm dev
 ```
 
+Optional demo data (6 realistic fictional projects, a reward policy):
+`DATABASE_URL=… pnpm --filter @lintel/database db:seed:demo`.
+
 Open http://localhost:3100 and sign in with `+91 90000 00001` (owner) — the
 development code is `123456`. Other fictional people use `…00002` to `…00010`
 (administrator, project managers, team lead, designers, site supervisor).
 API docs: http://localhost:4100/docs. Temporal UI: http://localhost:8240.
+
+### Mobile app
+
+```bash
+cd apps/mobile
+EXPO_PUBLIC_API_URL=http://localhost:4100 pnpm ios      # development build on the iOS simulator
+EXPO_PUBLIC_API_URL=http://10.0.2.2:4100 pnpm android   # Android emulator
+```
+
+Setup, push notifications and release signing: [apps/mobile/README.md](apps/mobile/README.md).
+
+### Screenshots
+
+Web: `docs/screenshots/web/` · Mobile: `docs/screenshots/mobile/` (captured from the
+running apps against the demo data).
 
 ## Quality gates
 

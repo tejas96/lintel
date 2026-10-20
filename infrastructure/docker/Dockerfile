@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # Multi-stage build for the Lintel API, worker, web app and migration job.
 #   docker build -f infrastructure/docker/Dockerfile --target api -t lintel-api .
 # Temporal's native worker needs glibc, so the base is Debian slim, not Alpine.
