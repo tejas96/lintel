@@ -51,6 +51,7 @@ export function useDeliverableMutations(projectId: string) {
     queryClient.setQueryData(queryKeys.deliverable(detail.id), detail);
     void queryClient.invalidateQueries({ queryKey: queryKeys.projectDeliverables(projectId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.workQueue });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
   };
   const submitVersion = useMutation({
     mutationFn: (input: {

@@ -42,6 +42,7 @@ export function useTaskActions() {
   const settle = (detail: TaskDetail, message?: string) => {
     queryClient.setQueryData(queryKeys.task(detail.id), detail);
     void queryClient.invalidateQueries({ queryKey: queryKeys.workQueue });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
     void queryClient.invalidateQueries({ queryKey: queryKeys.allTaskLists });
     void queryClient.invalidateQueries({ queryKey: queryKeys.project(detail.project.id) });
     if (message) toast({ tone: 'success', title: message, description: detail.title });

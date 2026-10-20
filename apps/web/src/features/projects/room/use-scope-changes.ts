@@ -24,6 +24,7 @@ export function useScopeChangeMutations(projectId: string) {
     void queryClient.invalidateQueries({ queryKey: queryKeys.scopeChanges(projectId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.allTaskLists });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
   };
   const preview = useMutation({
     mutationFn: (taskShifts: TaskShift[]) =>

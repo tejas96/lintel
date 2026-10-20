@@ -52,7 +52,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/approvals',
     icon: Stamp,
     requires: [],
-    built: false,
+    built: true,
   },
   {
     id: 'capacity',

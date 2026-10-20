@@ -1,6 +1,7 @@
 /** Every React Query key in one place, so invalidation stays consistent. */
 export const queryKeys = {
   workQueue: ['work-queue'] as const,
+  approvals: ['approvals', 'mine'] as const,
   task: (taskId: string) => ['tasks', 'detail', taskId] as const,
   taskComments: (taskId: string) => ['tasks', 'detail', taskId, 'comments'] as const,
   taskList: (filters: Record<string, unknown>) => ['tasks', 'list', filters] as const,
