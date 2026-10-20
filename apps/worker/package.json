@@ -1,0 +1,37 @@
+{
+  "name": "@lintel/worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Temporal worker and transactional outbox relay: reminders, escalations, push delivery and daily operations.",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "bundle": "node dist/bundle-workflows.js",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --watch-path=dist --enable-source-maps dist/main.js",
+    "start": "node --enable-source-maps dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests src",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@lintel/application": "workspace:*",
+    "@lintel/configuration": "workspace:*",
+    "@lintel/database": "workspace:*",
+    "@lintel/domain": "workspace:*",
+    "@lintel/integrations": "workspace:*",
+    "@lintel/shared": "workspace:*",
+    "@temporalio/activity": "catalog:",
+    "@temporalio/client": "catalog:",
+    "@temporalio/common": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:"
+  },
+  "devDependencies": {
+    "@lintel/tsconfig": "workspace:*",
+    "@temporalio/testing": "catalog:",
+    "@types/node": "catalog:",
+    "drizzle-orm": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

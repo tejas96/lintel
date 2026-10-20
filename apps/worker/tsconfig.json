@@ -1,0 +1,5 @@
+{
+  "extends": "@lintel/tsconfig/library.json",
+  "compilerOptions": { "noEmit": true, "types": ["node"], "rootDir": "." },
+  "include": ["src", "test", "vitest.integration.config.ts"]
+}
