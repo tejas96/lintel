@@ -10,6 +10,7 @@ export const WORKFLOW_TYPES = {
   leaveReassessment: 'leaveReassessmentWorkflow',
   notificationDelivery: 'notificationDeliveryWorkflow',
   dailyOperations: 'dailyOperationsWorkflow',
+  periodicRewards: 'periodicRewardEvaluationWorkflow',
 } as const;
 
 export type WorkflowTypeName = (typeof WORKFLOW_TYPES)[keyof typeof WORKFLOW_TYPES];

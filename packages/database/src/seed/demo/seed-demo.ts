@@ -10,6 +10,7 @@ import { projects, tasks } from '../../schema';
 import { createDemoContext, type DemoContext } from './demo-context';
 import { applyDemoProgress } from './demo-progress.writer';
 import { DEMO_PROJECTS, type DemoProject } from './demo-projects';
+import { seedDemoRewards } from './seed-demo-rewards';
 
 async function createDemoProject(context: DemoContext, demo: DemoProject): Promise<string> {
   const templateVersionId = await context.publishedTemplateVersion(demo.projectType);
@@ -101,5 +102,7 @@ export async function seedDemoProjects(
     }
     created.push(`${await createDemoProject(context, demo)} ${demo.name}`);
   }
+  if (await seedDemoRewards(db, context))
+    created.push('Reliable delivery bonus (reward policy + current month evaluation)');
   return { created, skipped };
 }

@@ -173,7 +173,7 @@ describe('follow-up, leave and daily workflows on the Temporal dev server', () =
     expect((calls[1]?.at ?? 0) - start).toBeGreaterThanOrEqual(1400);
   });
 
-  it('runs both daily operations activities', async () => {
+  it('runs every daily operations activity', async () => {
     const outcome = await withWorker(
       {
         notifyProjectRisks: async () => ({
@@ -182,6 +182,12 @@ describe('follow-up, leave and daily workflows on the Temporal dev server', () =
           milestoneChanges: 2,
         }),
         healDeadlineWorkflows: async () => ({ started: 4 }),
+        purgeSecurityRecords: async () => ({
+          rateLimitCounters: 5,
+          otpChallenges: 2,
+          sessions: 1,
+          idempotencyRecords: 0,
+        }),
       },
       async (taskQueue) =>
         env.client.workflow.execute(dailyOperationsWorkflow, {
@@ -194,6 +200,7 @@ describe('follow-up, leave and daily workflows on the Temporal dev server', () =
       projectsNotified: 1,
       milestoneChanges: 2,
       deadlineWorkflowsStarted: 4,
+      securityRecordsPurged: 8,
     });
   });
 });

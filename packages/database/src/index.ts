@@ -17,3 +17,4 @@ export * from './repositories/record.repository';
 export * as schema from './schema';
 export { seedFoundation } from './seed/seed-foundation';
 export * from './unit-of-work';
+export * from './worker/reward-schedule.repository';
