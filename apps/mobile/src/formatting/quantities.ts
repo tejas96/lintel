@@ -18,6 +18,14 @@ export function formatElapsed(totalSeconds: number): string {
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${minutes}:${ss}`;
 }
 
+/** 3 half days → "1½" (the number only, for large numerals). */
+export function formatHalfDayNumber(halfDays: number): string {
+  const whole = Math.floor(halfDays / 2);
+  const half = halfDays % 2 === 1;
+  if (whole === 0 && half) return '½';
+  return `${whole}${half ? '½' : ''}`;
+}
+
 /** Leave balances are counted in half days: 3 → "1½ days". */
 export function formatHalfDays(halfDays: number): string {
   const whole = Math.floor(halfDays / 2);

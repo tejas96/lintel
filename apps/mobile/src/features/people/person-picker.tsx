@@ -1,12 +1,13 @@
 import type { UserSummary } from '@lintel/api-contracts';
 import { ROLE_LABELS } from '@lintel/domain';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { PressableScale } from '@/components/pressable-scale';
+import { useDebouncedValue } from '@/components/search-field';
 import { TextField } from '@/components/text-field';
 import { haptics } from '@/feedback/haptics';
 import { usePeopleSearch } from '@/queries/account-queries';
@@ -20,15 +21,6 @@ export interface PersonPickerProps {
   readonly excludeUserIds?: readonly string[];
 }
 
-function useDebounced(value: string, delayMs: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-  return debounced;
-}
-
 /** Search the studio directory and pick one colleague. */
 export function PersonPicker({
   label,
@@ -38,7 +30,7 @@ export function PersonPicker({
 }: PersonPickerProps) {
   const { colors } = useAppTheme();
   const [search, setSearch] = useState('');
-  const debounced = useDebounced(search.trim(), 300);
+  const debounced = useDebouncedValue(search.trim(), 300);
   const people = usePeopleSearch(debounced);
   if (selected) {
     return (

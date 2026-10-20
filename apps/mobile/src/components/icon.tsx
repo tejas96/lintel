@@ -46,6 +46,7 @@ const ICONS = {
   quietHours: { ios: 'moon', android: 'bedtime' },
   refresh: { ios: 'arrow.clockwise', android: 'refresh' },
   review: { ios: 'eye', android: 'rate_review' },
+  search: { ios: 'magnifyingglass', android: 'search' },
   send: { ios: 'arrow.up.circle.fill', android: 'send' },
   signOut: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout' },
   site: { ios: 'hammer', android: 'construction' },

@@ -43,7 +43,7 @@ export function ProjectCard({ project }: { readonly project: ProjectSummary }) {
         </AppText>
         {project.currentStage ? (
           <AppText variant="bodySm">
-            Stage {project.currentStage.position} of {project.currentStage.totalStages} ·{' '}
+            Stage {project.currentStage.position + 1} of {project.currentStage.totalStages} ·{' '}
             {project.currentStage.name}
           </AppText>
         ) : null}
@@ -64,8 +64,12 @@ export function ProjectCard({ project }: { readonly project: ProjectSummary }) {
         {project.health.overdueTaskCount + project.health.blockedTaskCount > 0 ? (
           <AppText variant="label" color={theme.status.atRisk.fg}>
             {[
-              project.health.overdueTaskCount > 0 ? `${project.health.overdueTaskCount} overdue` : null,
-              project.health.blockedTaskCount > 0 ? `${project.health.blockedTaskCount} blocked` : null,
+              project.health.overdueTaskCount > 0
+                ? `${project.health.overdueTaskCount} overdue`
+                : null,
+              project.health.blockedTaskCount > 0
+                ? `${project.health.blockedTaskCount} blocked`
+                : null,
             ]
               .filter(Boolean)
               .join(' · ')}

@@ -2,9 +2,12 @@ import type { FileSummary } from '@lintel/api-contracts';
 import { useCallback, useRef, useState } from 'react';
 import { errorMessage } from '@/api/api-error';
 import { type LocalFile, uploadFile } from '@/api/file-transfer';
+import { newIdempotencyKey } from '@/api/idempotency-key';
 
 export interface UploadItem {
   readonly key: string;
+  /** Sent as Idempotency-Key; reused by Retry so a lost answer is replayed, not re-uploaded. */
+  readonly idempotencyKey: string;
   readonly file: LocalFile;
   readonly progress: number;
   readonly status: 'uploading' | 'done' | 'failed';
@@ -27,10 +30,11 @@ export function useUploads(onUploaded?: (file: FileSummary) => Promise<unknown> 
   }, []);
 
   const uploadOne = useCallback(
-    async (key: string, file: LocalFile) => {
+    async (key: string, file: LocalFile, idempotencyKey: string) => {
       update(key, { status: 'uploading', progress: 0, error: null });
       try {
         const result = await uploadFile(file, {
+          idempotencyKey,
           onProgress: (progress) => update(key, { progress }),
         });
         await onUploaded?.(result);
@@ -48,6 +52,7 @@ export function useUploads(onUploaded?: (file: FileSummary) => Promise<unknown> 
         counter.current += 1;
         return {
           key: `upload-${counter.current}`,
+          idempotencyKey: newIdempotencyKey(),
           file,
           progress: 0,
           status: 'uploading' as const,
@@ -56,7 +61,7 @@ export function useUploads(onUploaded?: (file: FileSummary) => Promise<unknown> 
         };
       });
       setItems((current) => [...current, ...added]);
-      for (const item of added) await uploadOne(item.key, item.file);
+      for (const item of added) await uploadOne(item.key, item.file, item.idempotencyKey);
     },
     [uploadOne],
   );
@@ -64,7 +69,7 @@ export function useUploads(onUploaded?: (file: FileSummary) => Promise<unknown> 
   const retry = useCallback(
     (key: string) => {
       const item = items.find((candidate) => candidate.key === key);
-      if (item) void uploadOne(key, item.file);
+      if (item) void uploadOne(key, item.file, item.idempotencyKey);
     },
     [items, uploadOne],
   );

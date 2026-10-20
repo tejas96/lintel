@@ -8,6 +8,7 @@ import {
 } from '@ts-rest/core';
 import { API_BASE_URL } from './api-base-url';
 import { apiErrorFrom, ContractMismatchError, NetworkError } from './api-error';
+import { newIdempotencyKey, SAFE_METHODS } from './idempotency-key';
 import { markApiReachable, markApiUnreachable } from './reachability';
 import { reportSessionExpired, sessionToken } from './session-token';
 
@@ -15,6 +16,7 @@ import { reportSessionExpired, sessionToken } from './session-token';
 export const apiContract = initContract().router(apiRouterDefinition, apiContractOptions);
 
 const REQUEST_TIMEOUT_MS = 20_000;
+const RETRY_DELAY_MS = 800;
 
 async function readBody(response: Response): Promise<unknown> {
   if (response.status === 204) return undefined;
@@ -50,22 +52,14 @@ function linkAbort(controller: AbortController, external: AbortSignal | null | u
   else external.addEventListener('abort', () => controller.abort(), { once: true });
 }
 
-/**
- * ts-rest fetcher: bearer auth, timeouts, reachability tracking, session
- * expiry on 401, and response validation.
- */
-async function lintelFetcher(args: ApiFetcherArgs) {
-  const token = sessionToken();
-  const headers: Record<string, string> = { ...args.headers, accept: 'application/json' };
-  if (token) headers.authorization = `Bearer ${token}`;
-  if (args.contentType === 'multipart/form-data') delete headers['content-type'];
+/** One HTTP attempt with a timeout; a network failure becomes `NetworkError`. */
+async function attempt(args: ApiFetcherArgs, headers: Record<string, string>): Promise<Response> {
   const controller = new AbortController();
   const callerSignal = args.signal ?? args.fetchOptions?.signal;
   linkAbort(controller, callerSignal);
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  let response: Response;
   try {
-    response = await fetch(args.path, {
+    return await fetch(args.path, {
       method: args.method,
       headers,
       body: args.body ?? null,
@@ -78,6 +72,29 @@ async function lintelFetcher(args: ApiFetcherArgs) {
     throw new NetworkError();
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+/**
+ * ts-rest fetcher: bearer auth, timeouts, reachability tracking, session
+ * expiry on 401 and response validation. Commands carry an Idempotency-Key
+ * and are retried once after a network failure, so a flaky connection can
+ * never apply the same change twice.
+ */
+async function lintelFetcher(args: ApiFetcherArgs) {
+  const token = sessionToken();
+  const headers: Record<string, string> = { ...args.headers, accept: 'application/json' };
+  if (token) headers.authorization = `Bearer ${token}`;
+  if (args.contentType === 'multipart/form-data') delete headers['content-type'];
+  const isCommand = !SAFE_METHODS.has(args.method.toUpperCase());
+  if (isCommand && token) headers['idempotency-key'] = newIdempotencyKey();
+  let response: Response;
+  try {
+    response = await attempt(args, headers);
+  } catch (error) {
+    if (!(error instanceof NetworkError) || !headers['idempotency-key']) throw error;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    response = await attempt(args, headers);
   }
   markApiReachable();
   const body = await readBody(response);

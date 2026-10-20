@@ -11,6 +11,8 @@ export interface LocalFile {
 }
 
 export interface UploadOptions {
+  /** Reuse the same key when retrying the same file, so a lost answer is replayed. */
+  readonly idempotencyKey?: string;
   readonly onProgress?: (fraction: number) => void;
   readonly signal?: AbortSignal;
 }
@@ -48,6 +50,9 @@ export function uploadFile(file: LocalFile, options: UploadOptions = {}): Promis
     request.open('POST', `${API_BASE_URL}/v1/files`);
     request.setRequestHeader('accept', 'application/json');
     if (token) request.setRequestHeader('authorization', `Bearer ${token}`);
+    if (token && options.idempotencyKey) {
+      request.setRequestHeader('idempotency-key', options.idempotencyKey);
+    }
     request.upload.onprogress = (event) => {
       if (event.lengthComputable && event.total > 0)
         options.onProgress?.(event.loaded / event.total);

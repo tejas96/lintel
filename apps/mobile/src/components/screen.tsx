@@ -1,12 +1,6 @@
 import { type ReactNode, useCallback, useState } from 'react';
-import {
-  RefreshControl,
-  ScrollView,
-  type StyleProp,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { RefreshControl, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/app-theme';
 import { GUTTER, MAX_CONTENT_WIDTH, SPACE } from '@/theme/layout';
@@ -30,13 +24,17 @@ export interface ScreenScrollProps {
   readonly contentStyle?: StyleProp<ViewStyle>;
 }
 
-/** Scrolling page with the warm canvas, a readable column on tablets and pull-to-refresh. */
+/**
+ * Scrolling page with the warm canvas, a readable column on tablets,
+ * pull-to-refresh, and focused inputs kept above the keyboard.
+ */
 export function ScreenScroll({ children, edge, onRefresh, contentStyle }: ScreenScrollProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const pull = usePullToRefresh(onRefresh ?? (() => Promise.resolve()));
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
+      bottomOffset={SPACE.xl}
       style={{ backgroundColor: colors.canvas }}
       contentInsetAdjustmentBehavior={edge === 'stack' ? 'automatic' : 'never'}
       keyboardShouldPersistTaps="handled"
@@ -60,7 +58,7 @@ export function ScreenScroll({ children, edge, onRefresh, contentStyle }: Screen
       ]}
     >
       <View style={[styles.column, contentStyle]}>{children}</View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
