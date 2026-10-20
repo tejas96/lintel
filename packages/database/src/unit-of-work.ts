@@ -6,11 +6,13 @@ import { PeopleRepository } from './repositories/people.repository';
 import { ProjectAccessRepository } from './repositories/project-access.repository';
 import { RecordRepository } from './repositories/record.repository';
 import { SettingsRepository } from './repositories/settings.repository';
+import { createBackgroundStores } from './worker/background-stores';
 
 /** Builds every repository on top of one executor (the pool or a transaction). */
 export function createStores(executor: DatabaseExecutor): ApplicationStores {
   return {
     access: new ProjectAccessRepository(executor),
+    background: createBackgroundStores(executor),
     identity: new IdentityRepository(executor),
     notifications: new NotificationRepository(executor),
     people: new PeopleRepository(executor),

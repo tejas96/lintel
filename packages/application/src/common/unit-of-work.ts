@@ -1,4 +1,5 @@
 import type { ProjectAccessStore } from '../access/project-access.store';
+import type { BackgroundStores } from '../background/background.stores';
 import type { IdentityStore } from '../identity/identity.store';
 import type { NotificationStore } from '../notifications/notification.store';
 import type { PeopleStore } from '../people/people.store';
@@ -11,6 +12,8 @@ import type { RecordStore } from './record.store';
  */
 export interface ApplicationStores {
   readonly access: ProjectAccessStore;
+  /** Worker-only stores (outbox relay, reminders, push delivery). */
+  readonly background: BackgroundStores;
   readonly identity: IdentityStore;
   readonly notifications: NotificationStore;
   readonly people: PeopleStore;
