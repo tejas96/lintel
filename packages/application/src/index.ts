@@ -1,6 +1,7 @@
 export * from './access';
 export * from './ai';
 export * from './common';
+export * from './deliverables';
 export * from './identity';
 export * from './notifications';
 export * from './people';
@@ -8,4 +9,6 @@ export * from './ports';
 export * from './projects';
 export * from './scope-changes';
 export * from './settings';
+export * from './tasks';
 export * from './templates';
+export * from './work';
