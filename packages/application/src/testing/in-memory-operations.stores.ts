@@ -104,8 +104,16 @@ function taskItemStore(world: InMemoryOperationsWorld): TaskItemStore {
       world.blockers.push(record);
       return record;
     },
-    findBlockerForUpdate: unused('findBlockerForUpdate'),
-    resolveBlocker: unused('resolveBlocker'),
+    async findBlockerForUpdate(blockerId) {
+      return world.blockers.find((item) => item.id === blockerId) ?? null;
+    },
+    async resolveBlocker(blockerId, resolution) {
+      const index = world.blockers.findIndex((item) => item.id === blockerId);
+      const blocker = world.blockers[index];
+      if (blocker && !blocker.resolvedAt) {
+        world.blockers[index] = { ...blocker, resolvedAt: resolution.at };
+      }
+    },
     async openBlockerCount(taskId) {
       return world.blockers.filter((item) => item.taskId === taskId && !item.resolvedAt).length;
     },

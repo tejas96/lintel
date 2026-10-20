@@ -1,4 +1,4 @@
-import { domainEvent } from '@lintel/domain';
+import { domainEvent, type TaskActorRelation } from '@lintel/domain';
 import { ConflictError, ForbiddenError, NotFoundError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { OperationsDependencies } from './operations-context';
@@ -16,6 +16,13 @@ const CATEGORY_LABELS: Readonly<Record<BlockerCategory, string>> = {
   manager_decision: 'Needs a manager decision',
   information: 'Missing information',
   other: 'Blocked',
+};
+
+const OWNER_RELATION: TaskActorRelation = {
+  isTaskOwner: true,
+  isCollaborator: false,
+  isReviewer: false,
+  canManage: false,
 };
 
 export interface ReportBlockerInput {
@@ -136,8 +143,12 @@ export class TaskBlockerCommands {
         { ...notice, recipientUserId: blocker.raisedByUserId },
       ]);
       if (input.resumeWork && task.status === 'blocked') {
-        const facts = await loadDecisionFacts(stores, loaded);
-        // Resume only when the rules allow it (no other open blocker, a worker resolving).
+        // The resolver hands the work back to its owner, so the rules are checked as for the
+        // owner; the domain still refuses while another blocker is open.
+        const facts = await loadDecisionFacts(stores, {
+          ...loaded,
+          relation: task.ownerUserId ? OWNER_RELATION : loaded.relation,
+        });
         if (decideFor(facts, 'in_progress', null).allowed) {
           await performTransition(stores, notifier, {
             context,
