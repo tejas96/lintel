@@ -1,12 +1,16 @@
 import type { ApplicationStores, UnitOfWork } from '@lintel/application';
 import type { Database, DatabaseExecutor } from './client';
+import { CapacityReadRepository } from './repositories/capacity-read.repository';
 import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
+import { LeaveRepository } from './repositories/leave.repository';
 import { NotificationRepository } from './repositories/notification.repository';
+import { NotificationInboxRepository } from './repositories/notification-inbox.repository';
 import { PeopleRepository } from './repositories/people.repository';
 import { ProjectRepository } from './repositories/project.repository';
 import { ProjectAccessRepository } from './repositories/project-access.repository';
 import { RecordRepository } from './repositories/record.repository';
+import { RewardRepository } from './repositories/reward.repository';
 import { ScopeChangeRepository } from './repositories/scope-change.repository';
 import { SettingsRepository } from './repositories/settings.repository';
 import { TaskRepository } from './repositories/task.repository';
@@ -20,12 +24,16 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
   return {
     access: new ProjectAccessRepository(executor),
     background: createBackgroundStores(executor),
+    capacity: new CapacityReadRepository(executor),
     identity: new IdentityRepository(executor),
+    inbox: new NotificationInboxRepository(executor),
+    leave: new LeaveRepository(executor),
     notifications: new NotificationRepository(executor),
     people: new PeopleRepository(executor),
     projects: new ProjectRepository(executor),
     records: new RecordRepository(executor),
     scopeChanges: new ScopeChangeRepository(executor),
+    rewards: new RewardRepository(executor),
     settings: new SettingsRepository(executor),
     templates: new TemplateRepository(executor),
     tasks: new TaskRepository(executor),

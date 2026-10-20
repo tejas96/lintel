@@ -1,11 +1,6 @@
 import { type CalendarDate, type Clock, calendarDateInTimeZone } from '@lintel/shared';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
-import type { Notifier } from '../notifications/notifier';
-
-/** Builds a Notifier that writes through the given (transactional) stores. */
-export type NotifierFactory = (
-  stores: Pick<ApplicationStores, 'notifications' | 'records'>,
-) => Promise<Notifier>;
+import type { NotifierFactory } from '../notifications/notifier-factory';
 
 /** What project and scope-change commands need from the outside world. */
 export interface ProjectCommandDependencies {
