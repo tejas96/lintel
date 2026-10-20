@@ -14,7 +14,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --offline --frozen-lockfile
-RUN pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
+RUN NEXT_OUTPUT=standalone pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
 # Self-contained production folders with only runtime dependencies.
 RUN pnpm deploy --filter=@lintel/api --prod --legacy /out/api \
  && pnpm deploy --filter=@lintel/worker --prod --legacy /out/worker \

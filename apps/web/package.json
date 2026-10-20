@@ -4,9 +4,9 @@
   "private": true,
   "description": "Lintel web app (Next.js App Router). Calls the API through the shared ts-rest contract.",
   "scripts": {
-    "dev": "next dev --port 3105",
+    "dev": "next dev --port ${PORT:-3100}",
     "build": "next build",
-    "start": "next start --port 3105",
+    "start": "next start --port ${PORT:-3100}",
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

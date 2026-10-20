@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { SESSION_COOKIE } from './contract';
 
 /** Server-side only: the API as seen from the Next server. */
-export const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4105';
+export const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4100';
 
 export type SessionLookup =
   | { readonly status: 'signed-in'; readonly user: CurrentUser }
