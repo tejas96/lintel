@@ -32,6 +32,8 @@ export function Checkbox({
     <div className={cn('group flex min-h-11 items-start gap-3 py-2', className)}>
       <CheckboxPrimitive.Root
         id={id}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={description ? `${id}-description` : undefined}
         checked={checked}
         disabled={disabled}
         onCheckedChange={(state) => onCheckedChange(state === true)}
@@ -58,6 +60,7 @@ export function Checkbox({
       </CheckboxPrimitive.Root>
       <label htmlFor={id} className="flex cursor-pointer flex-col gap-0.5">
         <span
+          id={`${id}-label`}
           className={cn(
             'type-body text-ink transition-colors duration-(--duration-base)',
             strikeWhenChecked && checked && 'text-ink-faint line-through decoration-ink-faint/60',
@@ -65,7 +68,11 @@ export function Checkbox({
         >
           {label}
         </span>
-        {description && <span className="type-body-sm text-ink-faint">{description}</span>}
+        {description && (
+          <span id={`${id}-description`} className="type-body-sm text-ink-faint">
+            {description}
+          </span>
+        )}
       </label>
     </div>
   );
@@ -92,11 +99,14 @@ export function Switch({
   return (
     <div className={cn('flex min-h-11 items-center justify-between gap-4', className)}>
       <label htmlFor={id} className="flex cursor-pointer flex-col gap-0.5">
-        <span className="type-body text-ink">{label}</span>
+        <span id={`${id}-label`} className="type-body text-ink">
+          {label}
+        </span>
         {description && <span className="type-body-sm text-ink-faint">{description}</span>}
       </label>
       <SwitchPrimitive.Root
         id={id}
+        aria-labelledby={`${id}-label`}
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}

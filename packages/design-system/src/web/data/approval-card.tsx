@@ -19,6 +19,8 @@ interface ApprovalCardProps {
   readonly urgent?: boolean;
   /** The decision buttons. */
   readonly actions: ReactNode;
+  /** Extra input for the decision, such as a comment field, shown above the buttons. */
+  readonly children?: ReactNode;
   readonly className?: string;
 }
 
@@ -32,6 +34,7 @@ export function ApprovalCard({
   preview,
   urgent = false,
   actions,
+  children,
   className,
 }: ApprovalCardProps) {
   return (
@@ -63,6 +66,7 @@ export function ApprovalCard({
             </span>
           </p>
         )}
+        {children}
         <div className="flex flex-wrap gap-2 pt-1">{actions}</div>
       </div>
     </motion.article>
