@@ -1,4 +1,5 @@
 export * from './client';
+export * from './maintenance';
 export * from './migrate';
 export * from './queries/people';
 export * from './queries/shared';
