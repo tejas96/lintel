@@ -17,6 +17,8 @@ export interface LeaveStepRecord {
   readonly level: number;
   readonly approverUserId: string | null;
   readonly status: ApprovalStepStatus;
+  /** Who decided an already-decided step (used to keep two approvals independent). */
+  readonly decidedByUserId?: string | null;
 }
 
 export interface LeaveHandoverRecord {

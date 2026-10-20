@@ -83,9 +83,10 @@ export class InMemoryIdentityStore implements IdentityStore {
       if (c.phoneE164 === phone && !c.consumedAt && !c.invalidatedAt) c.invalidatedAt = at;
     }
   }
-  async recordFailedAttempt(id: string) {
+  async reserveAttempt(id: string) {
     const challenge = this.challenges.find((c) => c.id === id);
-    if (!challenge) return 0;
+    if (!challenge || challenge.consumedAt || challenge.invalidatedAt) return null;
+    if (challenge.attempts >= challenge.maxAttempts) return null;
     const updated = { ...challenge, attempts: challenge.attempts + 1 };
     this.challenges.splice(this.challenges.indexOf(challenge), 1, updated);
     return updated.attempts;
@@ -121,6 +122,12 @@ export class InMemoryIdentityStore implements IdentityStore {
     return (
       this.sessions.find((s) => s.tokenHash === hash && !s.revokedAt && s.expiresAt > now) ?? null
     );
+  }
+  async findSessionOwner(sessionId: string, now: Date) {
+    const session = this.sessions.find(
+      (s) => s.id === sessionId && !s.revokedAt && s.expiresAt > now,
+    );
+    return session ? (this.users.find((user) => user.id === session.userId) ?? null) : null;
   }
   async touchSession() {}
   async revokeSession(id: string, _reason: string, at: Date) {

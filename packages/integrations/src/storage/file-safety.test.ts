@@ -12,9 +12,14 @@ describe('file type detection', () => {
     expect(detectFileType(Buffer.from('%PDF-1.7 rest of file'), 'x.pdf')?.extension).toBe('pdf');
   });
 
-  it('uses the name only to tell Office files apart', () => {
-    expect(detectFileType(pad([0x50, 0x4b, 0x03, 0x04]), 'BOQ.xlsx')?.extension).toBe('xlsx');
-    expect(detectFileType(pad([0x50, 0x4b, 0x03, 0x04]), 'archive.bin')?.extension).toBe('zip');
+  it('accepts Office documents and refuses arbitrary ZIP archives', () => {
+    const office = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+      Buffer.from('....[Content_Types].xml....'),
+    ]);
+    expect(detectFileType(office, 'BOQ.xlsx')?.extension).toBe('xlsx');
+    expect(detectFileType(office, 'archive.bin')).toBeNull();
+    expect(detectFileType(pad([0x50, 0x4b, 0x03, 0x04]), 'payload.zip')).toBeNull();
   });
 
   it('rejects unknown or disguised content', () => {

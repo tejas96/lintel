@@ -2,6 +2,7 @@ import { domainEvent } from '@lintel/domain';
 import { ForbiddenError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { OperationsDependencies } from './operations-context';
+import { admitToProject } from './project-admission';
 import type { TaskRecord } from './task.store';
 import { type LoadedTask, loadTaskForActor } from './task-loader';
 import { notifyAboutTask, quoted, recordTaskChange } from './task-records';
@@ -30,7 +31,7 @@ export class AssignTaskCommands {
       await assertActivePeople(stores, [{ field: 'ownerUserId', userId: input.ownerUserId }]);
       assertReviewerIsNotOwner(input.ownerUserId, task.reviewerUserId);
       if (task.ownerUserId === input.ownerUserId) return task;
-      await stores.tasks.ensureProjectMember(task.projectId, input.ownerUserId);
+      await admitToProject(stores, loaded.access, task.projectId, [input.ownerUserId]);
       if (loaded.collaboratorUserIds.includes(input.ownerUserId)) {
         await stores.tasks.replaceCollaborators(
           task.id,
@@ -91,7 +92,7 @@ export class AssignTaskCommands {
         stores,
         next.map((userId) => ({ field: 'userIds', userId })),
       );
-      for (const userId of next) await stores.tasks.ensureProjectMember(task.projectId, userId);
+      await admitToProject(stores, loaded.access, task.projectId, next);
       await stores.tasks.replaceCollaborators(task.id, next);
       const added = next.filter((id) => !loaded.collaboratorUserIds.includes(id));
       const removed = loaded.collaboratorUserIds.filter((id) => !next.includes(id));

@@ -17,7 +17,7 @@ export function isImageContentType(contentType: string): boolean {
  * `files.view_confidential`; private and unscoped files stay with the uploader.
  */
 export function canReadFile(
-  file: FileRecord,
+  file: Pick<FileRecord, 'status' | 'uploadedByUserId' | 'visibility' | 'projectId'>,
   actor: Actor,
   access: Pick<ProjectAccess, 'canView' | 'canManage'> | null,
 ): boolean {

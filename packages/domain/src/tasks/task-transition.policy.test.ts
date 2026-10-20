@@ -76,6 +76,7 @@ describe('task transition policy', () => {
     ).toBe(true);
     expect(codes(decideTaskTransition(context({ from: 'in_review', to: 'done' })))).toEqual([
       'REVIEWER_ONLY',
+      'SELF_REVIEW',
     ]);
     expect(
       codes(
@@ -107,5 +108,14 @@ describe('task transition policy', () => {
         context({ to: 'cancelled', actor: manager, note: 'Client dropped scope' }),
       ).allowed,
     ).toBe(true);
+  });
+
+  it('never lets the task owner approve their own review, even as a manager', () => {
+    const ownerWhoManages = { ...owner, canManage: true };
+    expect(
+      codes(
+        decideTaskTransition(context({ from: 'in_review', to: 'done', actor: ownerWhoManages })),
+      ),
+    ).toEqual(['SELF_REVIEW']);
   });
 });

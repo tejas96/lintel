@@ -149,7 +149,13 @@ export class InMemoryLeaveStore implements LeaveStore {
   }
   async updateStep(stepId: string, change: LeaveStepChange) {
     const step = this.steps.find((candidate) => candidate.id === stepId);
-    if (step) Object.assign(step, { status: change.status, note: change.note ?? step.note });
+    if (step) {
+      Object.assign(step, {
+        status: change.status,
+        note: change.note ?? step.note,
+        decidedByUserId: change.decidedByUserId ?? step.decidedByUserId ?? null,
+      });
+    }
   }
   async updateHandover(id: string, change: HandoverChange) {
     const handover = this.handovers.find((candidate) => candidate.id === id);

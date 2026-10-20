@@ -4,6 +4,7 @@ import {
   ConflictError,
   definedOnly,
   ForbiddenError,
+  maskPhoneNumber,
   NotFoundError,
   type Patch,
   StaleVersionError,
@@ -12,6 +13,40 @@ import {
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
 import type { PersonInput, PersonRecord } from './people.store';
+
+/**
+ * Rules for editing someone. Returns whether the sign-in phone number changes:
+ * that is an account takeover risk, so administrators' numbers are owner-only
+ * and every change signs the person out everywhere.
+ */
+function guardPersonUpdate(
+  context: RequestContext,
+  before: PersonRecord,
+  changes: Patch<PersonInput>,
+): boolean {
+  const actor = context.actor;
+  if (before.role === 'owner' && actor.role !== 'owner') {
+    throw new ForbiddenError('Only the owner can change the owner account.');
+  }
+  if (changes.reportsToUserId === before.id) {
+    throw new ValidationFailedError('A person cannot report to themselves.');
+  }
+  const phoneChanges = changes.phoneE164 !== undefined && changes.phoneE164 !== before.phoneE164;
+  const editsAnotherAdministrator = before.role === 'administrator' && before.id !== actor.userId;
+  if (phoneChanges && editsAnotherAdministrator && actor.role !== 'owner') {
+    throw new ForbiddenError("Only the owner can change an administrator's phone number.");
+  }
+  return phoneChanges;
+}
+
+function auditSnapshot(person: PersonRecord, includePhone: boolean): Record<string, unknown> {
+  return {
+    role: person.role,
+    teamId: person.teamId,
+    capacityPercent: person.capacityPercent,
+    ...(includePhone ? { phone: maskPhoneNumber(person.phoneE164) } : {}),
+  };
+}
 
 function requireCapability(context: RequestContext, capability: Capability): void {
   if (!context.actor.capabilities.has(capability)) throw new ForbiddenError();
@@ -53,26 +88,23 @@ export class ManagePeopleCommands {
     return this.uow.transaction(async (stores) => {
       const before = await stores.people.findById(userId);
       if (!before) throw new NotFoundError('Person');
-      if (before.role === 'owner' && context.actor.role !== 'owner') {
-        throw new ForbiddenError('Only the owner can change the owner account.');
-      }
-      if (changes.reportsToUserId === userId) {
-        throw new ValidationFailedError('A person cannot report to themselves.');
-      }
+      const phoneChanges = guardPersonUpdate(context, before, changes);
       await this.validate(stores, { ...before, ...definedOnly(changes) }, userId);
       const after = await stores.people.update(userId, expectedVersion, changes);
       if (!after) throw new StaleVersionError('This person');
+      if (phoneChanges) {
+        await stores.identity.revokeAllSessions(userId, 'phone_number_changed', this.clock.now());
+      }
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
         action: 'people.updated',
         entityType: 'user',
         entityId: userId,
-        before: {
-          role: before.role,
-          teamId: before.teamId,
-          capacityPercent: before.capacityPercent,
+        before: auditSnapshot(before, phoneChanges),
+        after: {
+          ...auditSnapshot(after, phoneChanges),
+          ...(phoneChanges ? { sessionsRevoked: true } : {}),
         },
-        after: { role: after.role, teamId: after.teamId, capacityPercent: after.capacityPercent },
         requestId: context.requestId,
       });
       return after;

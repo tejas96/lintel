@@ -51,14 +51,11 @@ export function detectFileType(buffer: Buffer, declaredName: string): DetectedFi
     return { contentType: 'image/vnd.dwg', extension: 'dwg', isImage: false };
   }
   if (startsWith(buffer, [0x50, 0x4b, 0x03, 0x04])) {
+    // Only Office Open XML documents are accepted: ZIP archives that contain
+    // "[Content_Types].xml". Arbitrary archives are refused.
     const extension = declaredName.toLowerCase().split('.').pop() ?? '';
-    return (
-      OFFICE_TYPES[extension] ?? {
-        contentType: 'application/zip',
-        extension: 'zip',
-        isImage: false,
-      }
-    );
+    const isOfficeDocument = buffer.includes('[Content_Types].xml', 0, 'latin1');
+    return isOfficeDocument ? (OFFICE_TYPES[extension] ?? null) : null;
   }
   return null;
 }

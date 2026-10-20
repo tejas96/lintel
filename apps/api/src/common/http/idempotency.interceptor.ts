@@ -38,6 +38,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const key = request.header('idempotency-key');
     const userId = request.auth?.user.id;
     if (!key || !userId || SAFE_METHODS.has(request.method)) return next.handle();
+    // Multipart bodies are parsed later (by multer), so they cannot be fingerprinted
+    // here; uploads are not replayed rather than risk returning the wrong file.
+    if (request.is('multipart/form-data')) return next.handle();
     if (!KEY_PATTERN.test(key))
       throw new ValidationFailedError('Idempotency-Key must be 8–100 letters, digits, - or _.');
     const fingerprint = createHash('sha256')

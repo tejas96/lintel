@@ -56,7 +56,7 @@ export class ReviewDeliverableCommand {
         versionSubmittedBy: version.submittedByUserId,
         reviewerId: actor.userId,
         isAssignedReviewer: deliverable.reviewerUserId === actor.userId,
-        canReviewAny: access.canManage,
+        canReviewAny: access.canManage && context.actor.capabilities.has('deliverables.review'),
         decision: input.decision,
         comment: input.comment,
       };

@@ -77,3 +77,29 @@ export async function findFileSummary(
 export function pickFiles(map: Map<string, FileSummaryView>, ids: readonly string[]) {
   return ids.map((id) => map.get(id)).filter((file): file is FileSummaryView => Boolean(file));
 }
+
+export interface FileAccessFacts {
+  readonly status: 'available' | 'deleted';
+  readonly uploadedByUserId: string;
+  readonly visibility: 'project' | 'confidential' | 'private';
+  readonly projectId: string | null;
+}
+
+/** What `canReadFile` needs to decide whether a viewer may even see a file's name. */
+export async function loadFileAccessFacts(
+  db: DatabaseExecutor,
+  fileIds: readonly string[],
+): Promise<Map<string, FileAccessFacts>> {
+  if (fileIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      id: files.id,
+      status: files.status,
+      uploadedByUserId: files.uploadedByUserId,
+      visibility: files.visibility,
+      projectId: files.projectId,
+    })
+    .from(files)
+    .where(inArray(files.id, [...fileIds]));
+  return new Map(rows.map(({ id, ...facts }) => [id, facts]));
+}

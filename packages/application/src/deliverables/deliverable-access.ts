@@ -75,7 +75,7 @@ export function mayReviewDeliverable(
     versionSubmittedBy: latest.submittedByUserId,
     reviewerId: actor.userId,
     isAssignedReviewer: deliverable.reviewerUserId === actor.userId,
-    canReviewAny: access.canManage,
+    canReviewAny: access.canManage && actor.capabilities.has('deliverables.review'),
     decision: 'approved',
     comment: null,
   }).allowed;

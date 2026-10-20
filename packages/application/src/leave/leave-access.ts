@@ -1,5 +1,6 @@
 import { type Actor, isLegalLeaveTransition } from '@lintel/domain';
 import type { CalendarDate } from '@lintel/shared';
+import type { ApplicationStores } from '../common/unit-of-work';
 import type { LeaveRequestRecord } from './leave.store';
 import { currentStep } from './leave-approval-routing';
 
@@ -64,15 +65,36 @@ export function canCancelLeaveRequest(
   return actor.userId === request.userId && today < request.startDate;
 }
 
-/** Recording an absence: for my reports or my team, or anyone with `leave.approve_any`. */
+/**
+ * Recording an urgent absence approves it immediately, so it is limited to
+ * people who could approve that leave anyway: managers for their direct
+ * reports, or holders of `leave.approve_any`. Never for oneself — that would
+ * bypass the approval chain.
+ */
 export function canRecordAbsenceFor(
   viewer: LeaveViewer,
   subject: { id: string; teamId: string | null; reportsToUserId: string | null },
+  /** True when the viewer is the subject's manager, or their manager's manager, and so on. */
+  viewerIsInReportingLine: boolean,
 ): boolean {
   const capabilities = viewer.actor.capabilities;
   if (!capabilities.has('leave.record_absence')) return false;
-  if (capabilities.has('leave.approve_any')) return true;
-  if (subject.id === viewer.actor.userId) return true;
-  if (subject.reportsToUserId === viewer.actor.userId) return true;
-  return viewer.teamId !== null && subject.teamId === viewer.teamId;
+  if (subject.id === viewer.actor.userId) return false;
+  return capabilities.has('leave.approve_any') || viewerIsInReportingLine;
+}
+
+/** Walks the subject's manager chain (bounded, cycle-safe) looking for the viewer. */
+export async function isInReportingLine(
+  stores: Pick<ApplicationStores, 'people'>,
+  subject: { reportsToUserId: string | null },
+  viewerId: string,
+): Promise<boolean> {
+  const seen = new Set<string>();
+  let managerId = subject.reportsToUserId;
+  while (managerId && !seen.has(managerId) && seen.size < 8) {
+    if (managerId === viewerId) return true;
+    seen.add(managerId);
+    managerId = (await stores.people.findById(managerId))?.reportsToUserId ?? null;
+  }
+  return false;
 }

@@ -9,7 +9,7 @@ import { toCalendarDate, zonedTimeToInstant } from '@lintel/shared';
 import { and, asc, count, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../../client';
 import { SettingsRepository } from '../../../repositories/settings.repository';
-import { leaveRequests, rewardEvaluations } from '../../../schema';
+import { leaveApprovalSteps, leaveRequests, rewardEvaluations } from '../../../schema';
 import { loadLeaveRequestViews } from '../../leave/leave-request.view';
 import { loadUserSummaries } from '../../shared/user-summary.query';
 import type { CommandCenterScope } from './command-center-scope';
@@ -88,23 +88,42 @@ export async function teamSection(
   };
 }
 
-/** Pending and info-requested leave of the people in scope, soonest first. */
-export function leaveAwaitingDecision(
+/**
+ * Leave waiting for a decision, soonest first. The business view (owner and
+ * administrators) sees the studio's queue; a project manager sees only the
+ * requests whose pending step is theirs to decide. Reasons are never shown on
+ * the dashboard — they can be personal and live on the access-checked detail page.
+ */
+export async function leaveAwaitingDecision(
   db: DatabaseExecutor,
   scope: CommandCenterScope,
   plan: CommandCenterPlan,
 ) {
   const wholeStudio =
     plan.scope === 'business' && !plan.projectId && !plan.managerUserId && !plan.teamId;
-  if (!wholeStudio && scope.peopleIds.length === 0) return Promise.resolve([]);
-  return loadLeaveRequestViews(db, {
+  if (!wholeStudio && scope.peopleIds.length === 0) return [];
+  const mine =
+    plan.scope === 'managed'
+      ? db
+          .select({ id: leaveApprovalSteps.leaveRequestId })
+          .from(leaveApprovalSteps)
+          .where(
+            and(
+              eq(leaveApprovalSteps.approverUserId, plan.viewerUserId),
+              eq(leaveApprovalSteps.status, 'pending'),
+            ),
+          )
+      : undefined;
+  const views = await loadLeaveRequestViews(db, {
     where: and(
       inArray(leaveRequests.status, ['pending', 'info_requested']),
       wholeStudio ? undefined : inArray(leaveRequests.userId, scope.peopleIds),
+      mine ? inArray(leaveRequests.id, mine) : undefined,
     ),
     orderBy: [asc(leaveRequests.startDate)],
     limit: 10,
   });
+  return views.map((view) => ({ ...view, reason: null }));
 }
 
 /**

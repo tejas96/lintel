@@ -83,6 +83,7 @@ export async function loadLeaveRequestRecord(
       level: leaveApprovalSteps.level,
       approverUserId: leaveApprovalSteps.approverUserId,
       status: leaveApprovalSteps.status,
+      decidedByUserId: leaveApprovalSteps.decidedByUserId,
     })
     .from(leaveApprovalSteps)
     .where(eq(leaveApprovalSteps.leaveRequestId, requestId))

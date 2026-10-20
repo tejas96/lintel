@@ -3,6 +3,7 @@ import { ForbiddenError } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { OperationsDependencies, OperationsStores } from './operations-context';
+import { admitToProject } from './project-admission';
 import type { TaskRecord } from './task.store';
 import { notifyAboutTask, quoted, recordTaskChange } from './task-records';
 import {
@@ -71,7 +72,12 @@ export class CreateTaskCommand {
         completionCriteria: input.completionCriteria,
         createdByUserId: actor.userId,
       });
-      await this.addPeopleAndChecklist(stores, task, input, collaborators);
+      await admitToProject(stores, access, task.projectId, [
+        input.ownerUserId,
+        input.reviewerUserId,
+        ...collaborators,
+      ]);
+      await this.addCollaboratorsAndChecklist(stores, task, input, collaborators);
       await recordTaskChange(stores.records, context, task, {
         action: 'task.created',
         summary: `Created task #${task.number} ${quoted(task.title)}.`,
@@ -82,15 +88,12 @@ export class CreateTaskCommand {
     });
   }
 
-  private async addPeopleAndChecklist(
+  private async addCollaboratorsAndChecklist(
     stores: OperationsStores,
     task: TaskRecord,
     input: CreateTaskInput,
     collaborators: readonly string[],
   ): Promise<void> {
-    for (const userId of [input.ownerUserId, input.reviewerUserId, ...collaborators]) {
-      if (userId) await stores.tasks.ensureProjectMember(task.projectId, userId);
-    }
     if (collaborators.length > 0) await stores.tasks.replaceCollaborators(task.id, collaborators);
     if (input.checklist.length > 0) {
       await stores.taskItems.addChecklistItems(task.id, input.checklist);

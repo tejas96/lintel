@@ -121,13 +121,20 @@ export class IdentityRepository implements IdentityStore {
       );
   }
 
-  async recordFailedAttempt(challengeId: string) {
+  async reserveAttempt(challengeId: string) {
     const [row] = await this.db
       .update(otpChallenges)
       .set({ attempts: sql`${otpChallenges.attempts} + 1` })
-      .where(eq(otpChallenges.id, challengeId))
+      .where(
+        and(
+          eq(otpChallenges.id, challengeId),
+          sql`${otpChallenges.attempts} < ${otpChallenges.maxAttempts}`,
+          isNull(otpChallenges.consumedAt),
+          isNull(otpChallenges.invalidatedAt),
+        ),
+      )
       .returning({ attempts: otpChallenges.attempts });
-    return row?.attempts ?? 0;
+    return row?.attempts ?? null;
   }
 
   async consumeChallenge(challengeId: string, at: Date) {
@@ -170,6 +177,18 @@ export class IdentityRepository implements IdentityStore {
       )
       .limit(1);
     return row ? toSession(row) : null;
+  }
+
+  async findSessionOwner(sessionId: string, now: Date) {
+    const [row] = await this.db
+      .select({ user: users })
+      .from(sessions)
+      .innerJoin(users, eq(users.id, sessions.userId))
+      .where(
+        and(eq(sessions.id, sessionId), isNull(sessions.revokedAt), gt(sessions.expiresAt, now)),
+      )
+      .limit(1);
+    return row ? toUserRecord(row.user) : null;
   }
 
   async touchSession(sessionId: string, at: Date) {

@@ -2,6 +2,7 @@ import { domainEvent, type TaskActorRelation } from '@lintel/domain';
 import { ConflictError, ForbiddenError, NotFoundError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { OperationsDependencies } from './operations-context';
+import { admitToProject } from './project-admission';
 import { decideFor } from './task-decision';
 import type { BlockerCategory } from './task-item.store';
 import { isParticipant, loadDecisionFacts, loadTaskForActor } from './task-loader';
@@ -45,6 +46,12 @@ export class TaskBlockerCommands {
       await assertActivePeople(stores, [
         { field: 'waitingOnUserId', userId: input.waitingOnUserId },
       ]);
+      // The person waited on is told the task title, so they must be on the project.
+      if (input.waitingOnUserId) {
+        await admitToProject(stores, { ...loaded.access, canManage: false }, task.projectId, [
+          input.waitingOnUserId,
+        ]);
+      }
       const notifier = await this.deps.context.notifierFor(stores);
       if (task.status === 'blocked') {
         if (!isParticipant(loaded.relation)) {

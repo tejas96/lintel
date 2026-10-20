@@ -33,6 +33,9 @@ export class SessionManagement {
     if (!isOwn && !context.actor.capabilities.has('users.manage')) {
       throw new NotFoundError('Session');
     }
+    if (!isOwn && context.actor.role !== 'owner' && (await this.belongsToOwner(sessionId, now))) {
+      throw new ForbiddenError("Only the owner can sign out the owner's devices.");
+    }
     await this.store.revokeSession(sessionId, 'revoked', now);
     await this.records.appendAudit({
       actorUserId: context.actor.userId,
@@ -43,9 +46,18 @@ export class SessionManagement {
     });
   }
 
+  private async belongsToOwner(sessionId: string, now: Date): Promise<boolean> {
+    const owner = await this.store.findSessionOwner(sessionId, now);
+    return owner?.role === 'owner';
+  }
+
   async revokeAllForUser(context: RequestContext, userId: string, reason: string): Promise<number> {
     if (userId !== context.actor.userId && !context.actor.capabilities.has('users.manage')) {
       throw new ForbiddenError();
+    }
+    const target = await this.store.findUserById(userId);
+    if (target?.role === 'owner' && context.actor.role !== 'owner') {
+      throw new ForbiddenError("Only the owner can sign out the owner's devices.");
     }
     const count = await this.store.revokeAllSessions(userId, reason, this.clock.now());
     await this.records.appendAudit({

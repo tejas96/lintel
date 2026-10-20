@@ -56,8 +56,12 @@ export interface IdentityStore {
     requestIpHash: string | null;
   }): Promise<OtpChallengeRecord>;
   invalidateOpenChallenges(phoneE164: string, at: Date): Promise<void>;
-  /** Atomically increments and returns the new attempt count. */
-  recordFailedAttempt(challengeId: string): Promise<number>;
+  /**
+   * Atomically counts one verification attempt if the challenge is still open
+   * and under its limit. Returns the new count, or null when no attempt is left —
+   * so parallel guesses can never exceed `maxAttempts`.
+   */
+  reserveAttempt(challengeId: string): Promise<number | null>;
   /** Marks a challenge used. Returns false if another request consumed it first. */
   consumeChallenge(challengeId: string, at: Date): Promise<boolean>;
 
@@ -73,6 +77,8 @@ export interface IdentityStore {
     expiresAt: Date;
   }): Promise<SessionRecord>;
   findActiveSessionByTokenHash(tokenHash: string, now: Date): Promise<SessionRecord | null>;
+  /** The person an active session belongs to, or null. */
+  findSessionOwner(sessionId: string, now: Date): Promise<UserRecord | null>;
   touchSession(sessionId: string, at: Date): Promise<void>;
   revokeSession(sessionId: string, reason: string, at: Date): Promise<void>;
   revokeAllSessions(userId: string, reason: string, at: Date): Promise<number>;

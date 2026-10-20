@@ -1,5 +1,10 @@
 import { domainEvent, notificationDedupeKey } from '@lintel/domain';
-import { InvalidTransitionError, NotFoundError, StaleVersionError } from '@lintel/shared';
+import {
+  ForbiddenError,
+  InvalidTransitionError,
+  NotFoundError,
+  StaleVersionError,
+} from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import { requireCapability } from '../common/capability-guard';
 import type { RequestContext } from '../common/request-context';
@@ -35,6 +40,9 @@ export class DecideScopeChangeCommand {
         change.projectId,
         'Scope change',
       );
+      if (change.requestedByUserId === context.actor.userId && context.actor.role !== 'owner') {
+        throw new ForbiddenError('Someone else must decide on a scope change you proposed.');
+      }
       if (change.status !== 'proposed') {
         throw new InvalidTransitionError(`This scope change was already ${change.status}.`);
       }

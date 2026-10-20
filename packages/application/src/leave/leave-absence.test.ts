@@ -76,7 +76,8 @@ describe('urgent absence', () => {
       code: 'FORBIDDEN',
     });
     const outsider = world.people.find((candidate) => candidate.id === 'dev');
-    if (outsider) Object.assign(outsider, { teamId: 'site', reportsToUserId: 'lead' });
+    // Outside the project manager's reporting line (reports to the administrator).
+    if (outsider) Object.assign(outsider, { teamId: 'site', reportsToUserId: 'admin' });
     await expect(command.execute(world.ctx('pm'), absence)).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
@@ -129,5 +130,35 @@ describe('handovers', () => {
       id,
     );
     expect(detail.request.handovers[0]?.status).toBe('applied');
+  });
+});
+
+describe('urgent absence permissions', () => {
+  it('cannot be used to approve your own leave', async () => {
+    const world = leaveWorld();
+    await expect(
+      new RecordUrgentAbsenceCommand(world.deps).execute(world.ctx('pm'), {
+        ...absence,
+        userId: 'pm',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('is limited to the reporting line (or leave.approve_any)', async () => {
+    const world = leaveWorld();
+    // "ana" is dev's peer, not their manager, even if granted the capability.
+    const peer = world.ctx('ana');
+    const withCapability = {
+      ...peer,
+      actor: {
+        ...peer.actor,
+        capabilities: new Set([...peer.actor.capabilities, 'leave.record_absence' as const]),
+      },
+    };
+    await expect(
+      new RecordUrgentAbsenceCommand(world.deps).execute(withCapability, absence),
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 });

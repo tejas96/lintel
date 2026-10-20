@@ -8,6 +8,7 @@ import {
 } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { OperationsDependencies, OperationsStores } from './operations-context';
+import { admitToProject } from './project-admission';
 import type { TaskChanges, TaskRecord } from './task.store';
 import type { LoadedTask } from './task-loader';
 import { loadTaskForActor } from './task-loader';
@@ -109,6 +110,9 @@ export class UpdateTaskCommand {
       const dueDateMoves = 'dueDate' in changes && task.status !== 'draft';
       if (dueDateMoves) this.assertScheduleChange(loaded, changes, input.scheduleChangeReason);
       await this.validate(stores, task, changes);
+      if (changes.reviewerUserId) {
+        await admitToProject(stores, loaded.access, task.projectId, [changes.reviewerUserId]);
+      }
       const after = await stores.tasks.update(task.id, input.version, changes);
       if (!after) throw new StaleVersionError('This task');
       if (dueDateMoves) {

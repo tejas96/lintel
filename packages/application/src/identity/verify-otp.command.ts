@@ -64,13 +64,13 @@ export class VerifyOtpCommand {
     }
 
     const challenge = await this.store.openChallenge(input.phoneE164, now);
-    if (!challenge || challenge.attempts >= challenge.maxAttempts) {
-      throw new UnauthenticatedError(GENERIC_FAILURE);
-    }
+    if (!challenge) throw new UnauthenticatedError(GENERIC_FAILURE);
+    const attempts = await this.store.reserveAttempt(challenge.id);
+    if (attempts === null) throw new UnauthenticatedError(GENERIC_FAILURE);
     if (!this.hasher.matches(input.code, challenge.codeHash)) {
-      const attempts = await this.store.recordFailedAttempt(challenge.id);
-      if (attempts >= challenge.maxAttempts)
+      if (attempts >= challenge.maxAttempts) {
         await this.store.invalidateOpenChallenges(input.phoneE164, now);
+      }
       throw new UnauthenticatedError(GENERIC_FAILURE);
     }
     const consumed = await this.store.consumeChallenge(challenge.id, now);
@@ -92,8 +92,9 @@ export class VerifyOtpCommand {
     await this.records.appendAudit({
       actorUserId: user.id,
       action: 'auth.signed_in',
-      entityType: 'session',
-      entityId: session.id,
+      // The session ID is a revocation handle, so it is not exposed through the audit log.
+      entityType: 'user',
+      entityId: user.id,
       after: { client: input.sessionClient },
       requestId: input.client.requestId,
     });

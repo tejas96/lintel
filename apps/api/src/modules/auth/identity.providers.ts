@@ -11,7 +11,7 @@ import {
   VerifyOtpCommand,
 } from '@lintel/application';
 import type { Clock } from '@lintel/shared';
-import type { Provider } from '@nestjs/common';
+import { Logger, type Provider } from '@nestjs/common';
 import {
   CLOCK,
   OTP_PROVIDER,
@@ -33,7 +33,17 @@ export const identityProviders: Provider[] = [
       hasher: SecretHasher,
       random: RandomSource,
       clock: Clock,
-    ) => new RequestOtpCommand(uow.stores.identity, otp, hasher, random, clock, DEFAULT_OTP_POLICY),
+    ) =>
+      new RequestOtpCommand(
+        uow.stores.identity,
+        otp,
+        hasher,
+        random,
+        clock,
+        DEFAULT_OTP_POLICY,
+        (reason) =>
+          new Logger('OtpDelivery').warn(`Sign-in code could not be delivered: ${reason}`),
+      ),
   },
   {
     provide: VerifyOtpCommand,

@@ -52,6 +52,12 @@ export class DecideLeaveRequestCommands {
         throw new ForbiddenError('Only the current approver can decide this request.');
       }
       if (request.version !== input.version) throw stale();
+      const alreadyApproved = request.steps.some(
+        (step) => step.status === 'approved' && step.decidedByUserId === context.actor.userId,
+      );
+      if (input.decision === 'approve' && alreadyApproved) {
+        throw new ForbiddenError('A second approval must come from a different person.');
+      }
       const outcome = resolveLeaveDecision(request.status, request.steps, input.decision);
       const finished = outcome.requestStatus === 'approved' || outcome.requestStatus === 'rejected';
       // The version guard runs first so a concurrent decision fails before touching any step.

@@ -12,6 +12,19 @@ import { RequestValidationError } from '@ts-rest/nest';
 import type { Request, Response } from 'express';
 import type { ZodError } from 'zod';
 
+/**
+ * Unexpected errors are logged without bound SQL parameters (driver messages
+ * embed them, and they can contain phone numbers, hashes or personal text).
+ */
+function safeErrorForLog(exception: unknown): string {
+  if (!(exception instanceof Error)) return 'Non-error thrown';
+  const strip = (text: string) => text.replace(/params:[\s\S]*/i, 'params: [redacted]');
+  return `${exception.name}: ${strip(exception.message)}\n${strip(exception.stack ?? '')
+    .split('\n')
+    .slice(1, 12)
+    .join('\n')}`;
+}
+
 function zodDetails(error: ZodError | null | undefined, prefix: string) {
   return (error?.issues ?? []).map((issue) => ({
     field: [prefix, ...issue.path].filter((part) => part !== '').join('.'),
@@ -36,7 +49,7 @@ export class ApplicationErrorFilter implements ExceptionFilter {
     if (status >= 500) {
       this.logger.error(
         `${request.method} ${request.path} failed (${requestId})`,
-        exception instanceof Error ? exception.stack : String(exception),
+        safeErrorForLog(exception),
       );
     }
     if (body.retryAfterSeconds) response.setHeader('retry-after', String(body.retryAfterSeconds));

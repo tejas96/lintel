@@ -1,7 +1,7 @@
 import { domainEvent } from '@lintel/domain';
 import { NotFoundError, PreconditionFailedError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
-import { canRecordAbsenceFor } from './leave-access';
+import { canRecordAbsenceFor, isInReportingLine } from './leave-access';
 import { planApprovalSteps } from './leave-approval-routing';
 import {
   activeManagerOf,
@@ -48,7 +48,11 @@ export class RequestLeaveCommands {
       const viewer = await requirePerson(stores, actorId);
       const allowed =
         hasCapability(context, 'leave.approve_any') ||
-        canRecordAbsenceFor({ actor: context.actor, teamId: viewer.teamId }, subject);
+        canRecordAbsenceFor(
+          { actor: context.actor, teamId: viewer.teamId },
+          subject,
+          await isInReportingLine(stores, subject, actorId),
+        );
       if (!allowed) throw new NotFoundError('Person');
     }
     return assessLeaveImpact(stores, {

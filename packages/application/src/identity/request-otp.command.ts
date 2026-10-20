@@ -1,9 +1,4 @@
-import {
-  type Clock,
-  DependencyUnavailableError,
-  maskPhoneNumber,
-  RateLimitedError,
-} from '@lintel/shared';
+import { type Clock, maskPhoneNumber, RateLimitedError } from '@lintel/shared';
 import type { ClientContext } from '../common/request-context';
 import type { OtpProvider } from '../ports/otp-provider.port';
 import type { RandomSource, SecretHasher } from '../ports/security.port';
@@ -37,6 +32,8 @@ export class RequestOtpCommand {
     private readonly random: RandomSource,
     private readonly clock: Clock,
     private readonly policy: OtpPolicy,
+    /** Called with a safe reason when the SMS provider fails (for logs and alerts). */
+    private readonly onDeliveryFailure?: (reason: string) => void,
   ) {
     this.limiter = new FixedWindowRateLimiter(store);
   }
@@ -59,24 +56,32 @@ export class RequestOtpCommand {
     });
 
     const user = await this.store.findUserByPhone(input.phoneE164);
-    if (user?.status === 'active') {
-      const delivery = await this.provider.sendCode({
-        phoneE164: input.phoneE164,
-        code,
-        expiresInMinutes: this.policy.expiryMinutes,
-      });
-      if (!delivery.delivered) {
-        await this.store.invalidateOpenChallenges(challenge.phoneE164, now);
-        throw new DependencyUnavailableError(
-          'We could not send the code right now. Please try again.',
-        );
-      }
-    }
+    // Delivery is not awaited: an SMS round-trip only for real accounts would let
+    // response timing reveal which numbers belong to the studio. A failed delivery
+    // invalidates the code; the person simply asks for a new one.
+    if (user?.status === 'active') void this.deliver(challenge.phoneE164, code, now);
     return {
       maskedPhone: maskPhoneNumber(input.phoneE164),
       expiresInSeconds: this.policy.expiryMinutes * 60,
       resendAvailableInSeconds: this.policy.resendCooldownSeconds,
     };
+  }
+
+  private async deliver(phoneE164: string, code: string, now: Date): Promise<void> {
+    try {
+      const delivery = await this.provider.sendCode({
+        phoneE164,
+        code,
+        expiresInMinutes: this.policy.expiryMinutes,
+      });
+      if (!delivery.delivered) {
+        this.onDeliveryFailure?.(delivery.reason);
+        await this.store.invalidateOpenChallenges(phoneE164, now);
+      }
+    } catch (error) {
+      this.onDeliveryFailure?.(error instanceof Error ? error.message : 'Unknown delivery error');
+      await this.store.invalidateOpenChallenges(phoneE164, now).catch(() => undefined);
+    }
   }
 
   private async enforceLimits(phone: string, ipHash: string | null, now: Date): Promise<void> {

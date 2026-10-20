@@ -1,7 +1,7 @@
 import { domainEvent } from '@lintel/domain';
 import { NotFoundError, PreconditionFailedError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
-import { canRecordAbsenceFor } from './leave-access';
+import { canRecordAbsenceFor, isInReportingLine } from './leave-access';
 import {
   businessToday,
   type LeaveDependencies,
@@ -49,7 +49,11 @@ export class RecordUrgentAbsenceCommand {
       const subject = await stores.people.findById(input.userId);
       const recorder = await requirePerson(stores, context.actor.userId);
       const viewer = { actor: context.actor, teamId: recorder.teamId };
-      if (!subject || !canRecordAbsenceFor(viewer, subject)) throw new NotFoundError('Person');
+      const inLine = subject
+        ? await isInReportingLine(stores, subject, context.actor.userId)
+        : false;
+      if (!subject || !canRecordAbsenceFor(viewer, subject, inLine))
+        throw new NotFoundError('Person');
       if (subject.status !== 'active') {
         throw new PreconditionFailedError('Absences can only be recorded for active members.');
       }

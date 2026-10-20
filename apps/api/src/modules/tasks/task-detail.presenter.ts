@@ -1,6 +1,6 @@
 import type { TaskDetail } from '@lintel/api-contracts';
-import { TaskViewerQuery } from '@lintel/application';
-import { type DatabaseConnection, loadTaskDetail } from '@lintel/database';
+import { canReadFile, TaskViewerQuery } from '@lintel/application';
+import { type DatabaseConnection, loadFileAccessFacts, loadTaskDetail } from '@lintel/database';
 import type { Actor } from '@lintel/domain';
 import { Inject, Injectable } from '@nestjs/common';
 import { found } from '../../common/http/access';
@@ -23,8 +23,20 @@ export class TaskDetailPresenter {
     const state = await this.viewer.execute(actor, taskId);
     const today = await this.business.today();
     const view = found(await loadTaskDetail(this.database.db, taskId, today, actor.userId), 'Task');
+    // Confidential and private attachments are left out for people who cannot open them,
+    // so even their names stay private.
+    const facts = await loadFileAccessFacts(
+      this.database.db,
+      view.attachments.map((file) => file.id),
+    );
+    const access = { canView: true, canManage: state.viewerCanManage };
+    const attachments = view.attachments.filter((file) => {
+      const fileFacts = facts.get(file.id);
+      return fileFacts !== undefined && canReadFile(fileFacts, actor, access);
+    });
     return {
       ...view,
+      attachments,
       transitions: state.transitions,
       viewerCanManage: state.viewerCanManage,
       viewerCanEdit: state.viewerCanEdit,

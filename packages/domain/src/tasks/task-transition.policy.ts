@@ -59,6 +59,12 @@ const requireReviewerOrManager: Guard = ({ actor }) =>
     ? null
     : { code: 'REVIEWER_ONLY', message: 'Only the reviewer or a manager can decide on this.' };
 
+/** Separation of duties: nobody approves or sends back their own submitted work. */
+const forbidSelfReview: Guard = ({ actor }) =>
+  actor.isTaskOwner
+    ? { code: 'SELF_REVIEW', message: 'Someone other than the task owner must review this work.' }
+    : null;
+
 const requirePrerequisitesDone: Guard = ({ unmetPrerequisiteTitles }) =>
   unmetPrerequisiteTitles.length === 0
     ? null
@@ -124,9 +130,9 @@ function guardsFor(context: TaskTransitionContext): Guard[] {
         requireDeliverablesSubmitted,
       ];
     case 'changes_requested':
-      return [requireReviewerOrManager, requireNote];
+      return [requireReviewerOrManager, forbidSelfReview, requireNote];
     case 'done':
-      if (from === 'in_review') return [requireReviewerOrManager];
+      if (from === 'in_review') return [requireReviewerOrManager, forbidSelfReview];
       return [
         requireOwnerOrManager,
         ({ requiresReview }) =>
