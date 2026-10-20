@@ -5,6 +5,7 @@ import {
   DraftingCompass,
   Gauge,
   type LucideIcon,
+  ScrollText,
   SlidersHorizontal,
   Stamp,
   Sun,
@@ -103,6 +104,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/settings',
     icon: SlidersHorizontal,
     requires: ['organization.manage_settings', 'roles.manage'],
+    built: true,
+  },
+  {
+    id: 'audit',
+    label: 'Audit log',
+    shortLabel: 'Audit',
+    href: '/audit',
+    icon: ScrollText,
+    requires: ['audit.view'],
     built: true,
   },
 ];
