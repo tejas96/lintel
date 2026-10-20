@@ -31,6 +31,7 @@ export function DeactivatePersonDialog({
   };
   return (
     <Dialog
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       size="sm"

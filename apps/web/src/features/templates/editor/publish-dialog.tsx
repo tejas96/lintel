@@ -28,6 +28,7 @@ export function PublishDialog({
     detail.versions.find((version) => version.status === 'published')?.projectCount ?? 0;
   return (
     <Dialog
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       title={`Publish version ${draft?.versionNumber ?? (published ? published.versionNumber + 1 : 1)}`}

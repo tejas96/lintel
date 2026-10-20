@@ -76,6 +76,7 @@ export function RecordAbsenceSheet({ open, onOpenChange, types, today }: RecordA
 
   return (
     <Sheet
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       width="lg"

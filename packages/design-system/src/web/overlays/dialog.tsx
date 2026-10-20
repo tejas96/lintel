@@ -7,8 +7,11 @@ import type { ReactNode } from 'react';
 import { IconButton } from '../controls/button';
 import { cn } from '../lib/cn';
 import { dialogEnter, seconds } from '../motion/presets';
+import { focusFirstField } from './focus-first-field';
 
 interface DialogProps {
+  /** Forms: start with the cursor in the first text field instead of on Close. */
+  readonly autoFocusField?: boolean;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly title: ReactNode;
@@ -29,6 +32,7 @@ export function Dialog({
   children,
   footer,
   size = 'md',
+  autoFocusField = false,
 }: DialogProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -45,7 +49,11 @@ export function Dialog({
               />
             </DialogPrimitive.Overlay>
             <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-6">
-              <DialogPrimitive.Content asChild forceMount>
+              <DialogPrimitive.Content
+                asChild
+                forceMount
+                {...(autoFocusField ? { onOpenAutoFocus: focusFirstField } : {})}
+              >
                 <motion.div
                   {...dialogEnter}
                   className={cn(

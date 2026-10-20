@@ -74,6 +74,7 @@ export function AddPersonDialog({ open, onOpenChange, teams }: AddPersonDialogPr
 
   return (
     <Dialog
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       title="Add a person"

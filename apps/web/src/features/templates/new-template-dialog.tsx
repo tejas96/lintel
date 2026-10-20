@@ -36,7 +36,9 @@ export function NewTemplateDialog({ open, onOpenChange, templates }: NewTemplate
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<ProjectType>('residential_interior');
   const [source, setSource] = useState<'preset' | 'copy'>('preset');
-  const [copyFrom, setCopyFrom] = useState<string | undefined>(copyable[0]?.id);
+  const [chosenCopy, setCopyFrom] = useState<string | undefined>(undefined);
+  // The list may arrive after the dialog first renders; default to its first template.
+  const copyFrom = chosenCopy ?? copyable[0]?.id;
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
   const copied = copyable.find((template) => template.id === copyFrom);
 
@@ -73,6 +75,7 @@ export function NewTemplateDialog({ open, onOpenChange, templates }: NewTemplate
 
   return (
     <Dialog
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       size="lg"

@@ -63,12 +63,17 @@ export function Checkbox({
       </CheckboxPrimitive.Root>
       <label
         htmlFor={id}
-        className={cn('flex cursor-pointer flex-col gap-0.5', hideLabel && 'sr-only')}
+        className={cn(
+          'flex flex-col gap-0.5',
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+          hideLabel && 'sr-only',
+        )}
       >
         <span
           id={`${id}-label`}
           className={cn(
             'type-body text-ink transition-colors duration-(--duration-base)',
+            disabled && 'text-ink-muted',
             strikeWhenChecked && checked && 'text-ink-faint line-through decoration-ink-faint/60',
           )}
         >

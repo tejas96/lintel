@@ -63,6 +63,7 @@ export function TaskSheet({
 
   return (
     <Sheet
+      autoFocusField
       open={visible && task !== undefined}
       onOpenChange={(next) => !next && onClose()}
       width="lg"

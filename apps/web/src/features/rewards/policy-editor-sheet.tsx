@@ -41,6 +41,11 @@ export function PolicyEditorSheet({ open, onOpenChange, policy }: PolicyEditorSh
     policy ? policy.criteria.map(draftOf) : [newDraft('on_time_delivery_rate')],
   );
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  /** A field's message goes as soon as the person changes that field. */
+  const clear = (prefix: string) =>
+    setErrors((current) =>
+      Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(prefix))),
+    );
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -69,6 +74,7 @@ export function PolicyEditorSheet({ open, onOpenChange, policy }: PolicyEditorSh
 
   return (
     <Sheet
+      autoFocusField
       open={open}
       onOpenChange={onOpenChange}
       width="lg"
@@ -101,7 +107,14 @@ export function PolicyEditorSheet({ open, onOpenChange, policy }: PolicyEditorSh
           }}
         />
         <Field label="Name" error={errors.name} required>
-          <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={200} />
+          <Input
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              clear('name');
+            }}
+            maxLength={200}
+          />
         </Field>
         <Field
           label="Description"
@@ -155,13 +168,19 @@ export function PolicyEditorSheet({ open, onOpenChange, policy }: PolicyEditorSh
           <Input
             inputMode="decimal"
             value={amount}
-            onChange={(event) => setAmount(event.target.value)}
+            onChange={(event) => {
+              setAmount(event.target.value);
+              clear('amountMinor');
+            }}
             leading={<span className="text-[0.9375rem]">₹</span>}
           />
         </Field>
         <CriteriaEditor
           drafts={drafts}
-          onChange={setDrafts}
+          onChange={(next) => {
+            setDrafts(next);
+            clear('criteria');
+          }}
           errors={criterionErrors}
           listError={errors.criteria}
         />
