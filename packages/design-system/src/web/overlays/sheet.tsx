@@ -73,7 +73,7 @@ export function Sheet({
                 exit={panel.from}
                 transition={sheetTransition}
                 className={cn(
-                  'fixed z-50 flex flex-col overflow-hidden border-hairline bg-surface shadow-e4 sm:border',
+                  'fixed z-50 flex flex-col overflow-clip border-hairline bg-surface shadow-e4 sm:border',
                   panel.position,
                   side === 'right' && WIDTHS[width],
                 )}

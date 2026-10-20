@@ -49,7 +49,7 @@ export function Dialog({
                 <motion.div
                   {...dialogEnter}
                   className={cn(
-                    'pointer-events-auto relative flex max-h-[min(90dvh,48rem)] w-full flex-col overflow-hidden',
+                    'pointer-events-auto relative flex max-h-[min(90dvh,48rem)] w-full flex-col overflow-clip',
                     'rounded-xl border border-hairline bg-raised shadow-e4',
                     WIDTHS[size],
                   )}

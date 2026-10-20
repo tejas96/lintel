@@ -79,7 +79,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/rewards',
     icon: Award,
     requires: ['rewards.view_own', 'rewards.view_all'],
-    built: false,
+    built: true,
   },
   {
     id: 'templates',
