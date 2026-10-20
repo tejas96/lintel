@@ -1,8 +1,12 @@
 import type { ProjectAccessStore } from '../access/project-access.store';
+import type { DeliverableStore } from '../deliverables/deliverable.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { NotificationStore } from '../notifications/notification.store';
 import type { PeopleStore } from '../people/people.store';
 import type { SettingsStore } from '../settings/settings.store';
+import type { TaskStore } from '../tasks/task.store';
+import type { TaskItemStore } from '../tasks/task-item.store';
+import type { WorkSessionStore } from '../work/work-session.store';
 import type { RecordStore } from './record.store';
 
 /**
@@ -16,6 +20,10 @@ export interface ApplicationStores {
   readonly people: PeopleStore;
   readonly records: RecordStore;
   readonly settings: SettingsStore;
+  readonly tasks: TaskStore;
+  readonly taskItems: TaskItemStore;
+  readonly workSessions: WorkSessionStore;
+  readonly deliverables: DeliverableStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */
