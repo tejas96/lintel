@@ -103,7 +103,17 @@ export function Combobox({
   const optionId = (index: number) => `${listId}-option-${index}`;
 
   return (
-    <PopoverPrimitive.Root open={open && !disabled} onOpenChange={setOpen}>
+    <PopoverPrimitive.Root
+      open={open && !disabled}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Closing by clicking elsewhere drops the half-typed search, like Escape does.
+        if (!next) {
+          setQuery('');
+          onQueryChange?.('');
+        }
+      }}
+    >
       <PopoverPrimitive.Anchor asChild>
         <div className={cn('relative', className)}>
           <input

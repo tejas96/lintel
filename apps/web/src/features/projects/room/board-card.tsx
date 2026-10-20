@@ -7,6 +7,7 @@ import { ArrowRightLeft, ListChecks } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { DropdownMenu } from 'radix-ui';
+import type { PointerEvent } from 'react';
 import { TASK_STATUS_PRESENTATION, TaskNumber } from '@/features/tasks/task-presentation';
 import { describeDue } from '@/lib/format/dates';
 import { legalTargets } from './use-board-move';
@@ -15,20 +16,13 @@ interface BoardCardProps {
   readonly task: TaskSummary;
   readonly today: string;
   readonly dragging: boolean;
-  readonly onDragStart: () => void;
-  readonly onDragEnd: () => void;
+  /** Starts a pointer drag (mouse or pen); touch and keyboard use "Move to". */
+  readonly onPointerDown: (event: PointerEvent<HTMLDivElement>) => void;
   readonly onMove: (to: TaskStatus) => void;
 }
 
 /** A task card: drag it to a column, or use "Move to" from the keyboard or a phone. */
-export function BoardCard({
-  task,
-  today,
-  dragging,
-  onDragStart,
-  onDragEnd,
-  onMove,
-}: BoardCardProps) {
+export function BoardCard({ task, today, dragging, onPointerDown, onMove }: BoardCardProps) {
   const due = task.dueDate ? describeDue(task.dueDate, today) : null;
   return (
     <motion.li
@@ -38,19 +32,15 @@ export function BoardCard({
       className={cn(
         'group relative list-none rounded-md border border-hairline bg-raised p-3 shadow-e1 transition-[opacity,box-shadow]',
         'hover:shadow-e2',
-        dragging && 'opacity-40',
+        dragging && 'border-dashed opacity-40 shadow-none',
       )}
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer dragging is an enhancement; the "Move to" menu is the keyboard and touch path */}
       <div
-        draggable
-        onDragStart={(event) => {
-          event.dataTransfer.setData('text/plain', task.id);
-          event.dataTransfer.effectAllowed = 'move';
-          onDragStart();
-        }}
-        onDragEnd={onDragEnd}
-        className="flex cursor-grab flex-col gap-2 active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        // The browser's own link dragging would cancel the pointer drag.
+        onDragStart={(event) => event.preventDefault()}
+        className="flex cursor-grab select-none flex-col gap-2 active:cursor-grabbing"
       >
         <div className="flex items-start gap-2">
           <Link

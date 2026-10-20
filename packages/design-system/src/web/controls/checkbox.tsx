@@ -14,6 +14,8 @@ interface CheckboxProps {
   readonly disabled?: boolean;
   /** Visually strike the label when checked (checklists). */
   readonly strikeWhenChecked?: boolean;
+  /** Keep the label for assistive technology only (grids of checkboxes). */
+  readonly hideLabel?: boolean;
   readonly className?: string;
 }
 
@@ -25,6 +27,7 @@ export function Checkbox({
   description,
   disabled = false,
   strikeWhenChecked = false,
+  hideLabel = false,
   className,
 }: CheckboxProps) {
   const id = useId();
@@ -58,11 +61,19 @@ export function Checkbox({
           />
         </svg>
       </CheckboxPrimitive.Root>
-      <label htmlFor={id} className="flex cursor-pointer flex-col gap-0.5">
+      <label
+        htmlFor={id}
+        className={cn(
+          'flex flex-col gap-0.5',
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+          hideLabel && 'sr-only',
+        )}
+      >
         <span
           id={`${id}-label`}
           className={cn(
             'type-body text-ink transition-colors duration-(--duration-base)',
+            disabled && 'text-ink-muted',
             strikeWhenChecked && checked && 'text-ink-faint line-through decoration-ink-faint/60',
           )}
         >

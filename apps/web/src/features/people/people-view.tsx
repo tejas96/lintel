@@ -1,8 +1,6 @@
 'use client';
 
-import type { DirectoryEntry } from '@lintel/api-contracts';
 import {
-  Avatar,
   Button,
   EmptyState,
   ErrorState,
@@ -13,86 +11,49 @@ import {
   Select,
   SkeletonGroup,
   SkeletonText,
-  type TableColumn,
 } from '@lintel/design-system/web';
 import { ROLE_LABELS, ROLES, type Role } from '@lintel/domain';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Search, UserPlus } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { describeError } from '@/lib/api/describe-error';
-import { formatRelativeInstant } from '@/lib/format/dates';
 import { queryKeys } from '@/lib/query/query-keys';
 import { AddPersonDialog } from './add-person-dialog';
+import { EditPersonSheet } from './edit-person-sheet';
+import { peopleColumns } from './people-columns';
 
-const COLUMNS: TableColumn<DirectoryEntry>[] = [
-  {
-    key: 'person',
-    header: 'Person',
-    primary: true,
-    cell: (person) => (
-      <span className="flex items-center gap-3">
-        <Avatar name={person.fullName} hue={person.avatarHue} size="sm" decorative />
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate font-medium text-ink">{person.fullName}</span>
-          <span className="truncate type-body-sm text-ink-faint">
-            {person.designation ?? ROLE_LABELS[person.role]}
-          </span>
-        </span>
-      </span>
-    ),
-  },
-  {
-    key: 'role',
-    header: 'Role',
-    cell: (person) => <span className="text-ink-muted">{ROLE_LABELS[person.role]}</span>,
-  },
-  {
-    key: 'team',
-    header: 'Team',
-    cell: (person) => <span className="text-ink-muted">{person.team?.name ?? 'No team'}</span>,
-  },
-  {
-    key: 'reports',
-    header: 'Reports to',
-    hideOnPhone: true,
-    cell: (person) => (
-      <span className="text-ink-muted">{person.reportsTo?.fullName ?? 'Nobody'}</span>
-    ),
-  },
-  {
-    key: 'phone',
-    header: 'Phone',
-    hideOnPhone: true,
-    cell: (person) => (
-      <span className="font-mono text-[0.8125rem] text-ink-muted">{person.maskedPhone}</span>
-    ),
-  },
-  {
-    key: 'active',
-    header: 'Last active',
-    align: 'end',
-    cell: (person) => (
-      <span className="text-ink-faint">
-        {person.status === 'deactivated'
-          ? 'Deactivated'
-          : person.lastActiveAt
-            ? formatRelativeInstant(person.lastActiveAt)
-            : 'Not yet'}
-      </span>
-    ),
-  },
-];
+type StatusFilter = 'active' | 'deactivated' | 'all';
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'deactivated', label: 'Deactivated' },
+  { value: 'all', label: 'Everyone' },
+] as const;
+
+/** "10 people in the studio. Open anyone to change their role, team or manager." */
+function describeDirectory(count: number, status: StatusFilter, manages: boolean): string {
+  const noun = count === 1 ? 'person' : 'people';
+  const where = { active: ' in the studio', deactivated: ' deactivated', all: '' }[status];
+  const hint = manages ? ' Open anyone to change their role, team or manager.' : '';
+  return `${count} ${noun}${where}.${hint}`;
+}
 
 /** The studio directory: everyone, their role, team and who they report to. */
 export function PeopleView() {
   const { can } = useSession();
+  const manages = can('users.manage');
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<Role | 'any'>('any');
   const [teamId, setTeamId] = useState('any');
+  const [status, setStatus] = useState<StatusFilter>('active');
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<{ open: boolean; id: string | null }>({
+    open: false,
+    id: null,
+  });
   const deferred = useDeferredValue(search.trim());
   const teams = useQuery({
     queryKey: queryKeys.teams,
@@ -101,7 +62,7 @@ export function PeopleView() {
   const query = {
     page: 1,
     pageSize: 100,
-    status: 'active' as const,
+    status,
     ...(deferred ? { search: deferred } : {}),
     ...(role !== 'any' ? { role } : {}),
     ...(teamId !== 'any' ? { teamId } : {}),
@@ -111,6 +72,11 @@ export function PeopleView() {
     queryFn: () => expectStatus(api.people.listPeople({ query }), 200),
     placeholderData: keepPreviousData,
   });
+  const columns = useMemo(
+    () => peopleColumns(manages ? (person) => setEditing({ open: true, id: person.id }) : null),
+    [manages],
+  );
+  const selected = people.data?.items.find((person) => person.id === editing.id) ?? null;
 
   return (
     <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-7 px-5 py-6 md:px-10 md:py-9">
@@ -119,11 +85,11 @@ export function PeopleView() {
           title="People"
           description={
             people.data
-              ? `${people.data.totalItems} ${people.data.totalItems === 1 ? 'person' : 'people'} in the studio.`
+              ? describeDirectory(people.data.totalItems, status, manages)
               : 'Everyone in the studio.'
           }
           actions={
-            can('users.manage') && (
+            manages && (
               <Button
                 variant="primary"
                 leadingIcon={<UserPlus aria-hidden />}
@@ -155,7 +121,7 @@ export function PeopleView() {
               { value: 'any', label: 'Every role' },
               ...ROLES.map((value) => ({ value, label: ROLE_LABELS[value] })),
             ]}
-            className="sm:w-48"
+            className="sm:w-44"
           />
           <Select
             label="Team"
@@ -168,8 +134,17 @@ export function PeopleView() {
                 label: `${team.name} (${team.memberCount})`,
               })),
             ]}
-            className="sm:w-48"
+            className="sm:w-44"
           />
+          {manages && (
+            <Select
+              label="Status"
+              value={status}
+              onValueChange={setStatus}
+              options={STATUS_OPTIONS}
+              className="col-span-2 sm:w-40"
+            />
+          )}
         </div>
       </div>
       {people.isPending && (
@@ -187,20 +162,29 @@ export function PeopleView() {
         <EmptyState
           drawing="chair"
           title="Nobody matches"
-          description="Try a different name, or clear the role and team filters."
+          description="Try a different name, or clear the role, team and status filters."
         />
       )}
       {people.data && people.data.items.length > 0 && (
         <ResponsiveTable
           caption="Studio people"
-          columns={COLUMNS}
+          columns={columns}
           rows={people.data.items}
           rowKey={(person) => person.id}
           className={people.isPlaceholderData ? 'opacity-60' : undefined}
         />
       )}
-      {can('users.manage') && (
-        <AddPersonDialog open={adding} onOpenChange={setAdding} teams={teams.data ?? []} />
+      {manages && (
+        <>
+          <AddPersonDialog open={adding} onOpenChange={setAdding} teams={teams.data ?? []} />
+          <EditPersonSheet
+            person={selected}
+            open={editing.open}
+            onOpenChange={(open) => setEditing((current) => ({ ...current, open }))}
+            teams={teams.data ?? []}
+            onRefresh={() => void people.refetch()}
+          />
+        </>
       )}
     </div>
   );

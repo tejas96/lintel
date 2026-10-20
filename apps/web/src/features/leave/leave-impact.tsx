@@ -1,7 +1,7 @@
 import type { LeaveImpact } from '@lintel/api-contracts';
 import { Avatar, StatusGlyph } from '@lintel/design-system/web';
 import { CircleAlert, TriangleAlert } from 'lucide-react';
-import { formatCalendarDate } from '@/lib/format/dates';
+import { formatCalendarDate, withReadableDates } from '@/lib/format/dates';
 
 /**
  * What the leave touches, as the server worked it out: working days, work due
@@ -10,9 +10,12 @@ import { formatCalendarDate } from '@/lib/format/dates';
 export function LeaveImpactSummary({
   impact,
   today,
+  subject,
 }: {
   readonly impact: LeaveImpact;
   readonly today: string;
+  /** Whose leave it is, when it is not the viewer's own ("Dev"). */
+  readonly subject?: string;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -56,7 +59,9 @@ export function LeaveImpactSummary({
                       {conflict.severity === 'critical' ? ' (critical)' : ' (warning)'}
                     </span>
                   </p>
-                  <p className="type-body-sm text-ink-muted">{conflict.explanation}</p>
+                  <p className="type-body-sm text-ink-muted">
+                    {withReadableDates(conflict.explanation)}
+                  </p>
                 </div>
               </li>
             ))}
@@ -105,7 +110,9 @@ export function LeaveImpactSummary({
         impact.overlappingAbsences.length === 0 &&
         impact.blockingProblems.length === 0 && (
           <p className="type-body-sm text-ink-muted">
-            Nothing you own is due or planned in these days, and nobody else on your team is away.
+            {subject
+              ? `Nothing ${subject} owns is due or planned in these days, and nobody else on their team is away.`
+              : 'Nothing you own is due or planned in these days, and nobody else on your team is away.'}
           </p>
         )}
     </div>

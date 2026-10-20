@@ -96,6 +96,32 @@
   border-radius: inherit;
 }
 
+/*
+ * Blind emboss: a mark pressed into the paper, drawn in the paper's own colour
+ * and read only through its light and shadow edges (reward seals).
+ */
+:root {
+  --lt-emboss-highlight: rgb(255 255 255 / 0.95);
+  --lt-emboss-shadow: rgb(30 28 25 / 0.24);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lt-emboss-highlight: rgb(255 255 255 / 0.09);
+    --lt-emboss-shadow: rgb(0 0 0 / 0.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --lt-emboss-highlight: rgb(255 255 255 / 0.09);
+  --lt-emboss-shadow: rgb(0 0 0 / 0.7);
+}
+
+.lt-emboss {
+  filter: drop-shadow(-0.75px -0.75px 0.4px var(--lt-emboss-highlight))
+    drop-shadow(1.25px 1.5px 1.25px var(--lt-emboss-shadow));
+}
+
 /* Diagonal hatching for leave days, skipped stages and unavailable time. */
 .lt-hatch {
   background-image: repeating-linear-gradient(

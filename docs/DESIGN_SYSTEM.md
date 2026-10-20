@@ -63,6 +63,17 @@ phones), `Popover`, `Tooltip`, toasts (`ToastProvider`, `useToast`). Data: `Badg
 300 ms). Layout: `Card`, `CardHeader`, `PageHeader`, `Tabs`, `TabNav` (routed tabs),
 `SegmentedControl`, `ResponsiveTable` (table on wide screens, cards on phones).
 
+- `Checkbox hideLabel` keeps the label for assistive technology only, for grids of
+  checkboxes whose row and column headers already say what each box means
+  (the notification matrix).
+- `Dialog` and `Sheet` take `autoFocusField`: an overlay that is a form opens with the
+  cursor in its first text field instead of on Close. Leave it off for overlays that
+  only confirm or read. Both panels clip (`overflow-clip`) rather than hide overflow,
+  so focusing a field can never scroll the panel's frame out of place.
+- `lt-emboss` (components.css) is a blind emboss: paper-coloured SVG read through a
+  highlight and a shadow, with light and dark values. It is used once, for the reward
+  seal.
+
 ## Motion
 
 Presets live in `src/web/motion/presets.ts` (from `tokens/motion.ts`): `pageEnter`,
@@ -94,3 +105,42 @@ tokens at AA contrast on every surface of their theme.
   screens not built yet stay in the list with `built: false` and are never shown.
 - Theme and Calm motion are cookies, so the server renders the right `data-theme` and
   `data-motion` on first paint.
+
+## Web app patterns
+
+- **Stale versions.** Writes that send `expectedVersion` treat a 409 as "someone else
+  changed this": `useStaleVersion()` catches it and `StaleVersionNotice` offers a
+  refresh, while the action stays disabled until the newer version is loaded. Nothing
+  overwrites silently. Panels holding a draft (the leave decision note) are keyed by
+  the record's version so a refresh starts them clean.
+- **Server validation beside the field.** `ApiError.fieldErrors()` feeds `Field`'s
+  error. The template editor goes further: `template-issues.ts` maps field paths
+  (`definition.stages.2.tasks.0.title`, or `definition.tasks.<key>` for workflow rules)
+  onto stages, tasks and milestones; the stage outline counts problems per stage, and
+  the issues panel lists each one ("Task: Use at least 2 characters.") with a Go to
+  button that opens the item with focus in the field. Schema wording is rewritten in
+  plain words.
+- **Client-side guards, server-side truth.** The dependency picker disables choices
+  that would make a loop and says why ("Already waits for this task, so it would
+  loop."); the server checks again on save.
+- **Capacity.** `LoadBar` and the `Avatar` load ring share one tone scale
+  (`load-presentation.ts`). In a day's bar confirmed work is solid, tentative work
+  faint and blocked time hatched. Approved leave hatches the cell, leave waiting for
+  approval outlines it with a dashed line, and studio holidays are one full-height
+  band with the holiday's name set vertically.
+- **The reward seal** presses into the page once per approved reward per device, and
+  only for the person rewarded; reviewers see it at rest, and under Calm motion it
+  fades in without movement. Decide once per mount (a ref), so React's double effects
+  in development cannot cancel the press.
+- **Board drag** uses pointer events, not HTML drag and drop: a 5 px threshold before
+  lifting, a ghost in a portal with `dragLift`, edge auto-scroll, Escape to cancel,
+  and the click after a drop swallowed. Touch and keyboard use the card's Move to
+  menu, which reaches the same mutation.
+- **Phone layouts.** A horizontal scroll wrapper (`overflow-x-auto`) around a table
+  with `sr-only` text must also be `relative`; otherwise the absolutely positioned
+  sr-only spans escape it and widen the phone's layout viewport. Grids that collapse
+  to one column use `grid-cols-[minmax(0,1fr)]` so long content cannot widen the track.
+- **Uploads** build `FormData` by hand: the contract client's multipart helper
+  JSON-encodes non-file fields, which the API rejects.
+- **Server sentences** sometimes carry ISO dates; `withReadableDates()` turns them into
+  "Tuesday 27 October" before they are shown.

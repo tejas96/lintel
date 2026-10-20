@@ -42,7 +42,7 @@ export function MobileTopBar({ onOpenPalette }: { readonly onOpenPalette: () => 
       </button>
       <Sheet open={accountOpen} onOpenChange={setAccountOpen} side="bottom" title="Account">
         <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <PreferencesPanel />
+          <PreferencesPanel onNavigate={() => setAccountOpen(false)} />
         </div>
       </Sheet>
     </header>

@@ -5,6 +5,7 @@ import {
   DraftingCompass,
   Gauge,
   type LucideIcon,
+  ScrollText,
   SlidersHorizontal,
   Stamp,
   Sun,
@@ -63,7 +64,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/capacity',
     icon: Waypoints,
     requires: ['capacity.view_team', 'capacity.view_all'],
-    built: false,
+    built: true,
   },
   {
     id: 'leave',
@@ -79,7 +80,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/rewards',
     icon: Award,
     requires: ['rewards.view_own', 'rewards.view_all'],
-    built: false,
+    built: true,
   },
   {
     id: 'templates',
@@ -87,7 +88,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/templates',
     icon: Workflow,
     requires: ['templates.manage'],
-    built: false,
+    built: true,
   },
   {
     id: 'people',
@@ -103,6 +104,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/settings',
     icon: SlidersHorizontal,
     requires: ['organization.manage_settings', 'roles.manage'],
+    built: true,
+  },
+  {
+    id: 'audit',
+    label: 'Audit log',
+    shortLabel: 'Audit',
+    href: '/audit',
+    icon: ScrollText,
+    requires: ['audit.view'],
     built: true,
   },
 ];

@@ -7,8 +7,11 @@ import type { ReactNode } from 'react';
 import { IconButton } from '../controls/button';
 import { cn } from '../lib/cn';
 import { seconds, sheetTransition } from '../motion/presets';
+import { focusFirstField } from './focus-first-field';
 
 interface SheetProps {
+  /** Forms: start with the cursor in the first text field instead of on Close. */
+  readonly autoFocusField?: boolean;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   /** Called after the closing animation, e.g. to navigate back from a routed drawer. */
@@ -50,6 +53,7 @@ export function Sheet({
   footer,
   side = 'right',
   width = 'md',
+  autoFocusField = false,
 }: SheetProps) {
   const panel = PANEL[side];
   return (
@@ -66,14 +70,18 @@ export function Sheet({
                 transition={{ duration: seconds('base') }}
               />
             </DialogPrimitive.Overlay>
-            <DialogPrimitive.Content asChild forceMount>
+            <DialogPrimitive.Content
+              asChild
+              forceMount
+              {...(autoFocusField ? { onOpenAutoFocus: focusFirstField } : {})}
+            >
               <motion.div
                 initial={panel.from}
                 animate={panel.to}
                 exit={panel.from}
                 transition={sheetTransition}
                 className={cn(
-                  'fixed z-50 flex flex-col overflow-hidden border-hairline bg-surface shadow-e4 sm:border',
+                  'fixed z-50 flex flex-col overflow-clip border-hairline bg-surface shadow-e4 sm:border',
                   panel.position,
                   side === 'right' && WIDTHS[width],
                 )}

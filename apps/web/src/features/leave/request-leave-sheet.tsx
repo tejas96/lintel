@@ -1,23 +1,22 @@
 'use client';
 
 import type { LeaveType } from '@lintel/api-contracts';
-import {
-  Button,
-  DatePicker,
-  Field,
-  SegmentedControl,
-  Select,
-  Sheet,
-  SkeletonText,
-  Textarea,
-  useToast,
-} from '@lintel/design-system/web';
-import type { DayPortion } from '@lintel/domain';
+import { Button, Field, Sheet, Textarea, useToast } from '@lintel/design-system/web';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useSession } from '@/features/session/session-provider';
 import { api, expectStatus } from '@/lib/api/api-client';
+import { isApiError } from '@/lib/api/api-error';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
-import { LeaveImpactSummary } from './leave-impact';
+import type { HandoverProposal } from './decision/use-leave-decision';
+import {
+  type HandoverDrafts,
+  HandoverProposals,
+  handoverErrorsFrom,
+  handoversFrom,
+} from './handover-proposals';
+import { LeavePeriodFields, useLeavePeriodForm } from './leave-period-fields';
+import { LeavePreviewPanel } from './leave-preview-panel';
 import { useLeavePreview } from './use-leave';
 
 interface RequestLeaveSheetProps {
@@ -27,43 +26,24 @@ interface RequestLeaveSheetProps {
   readonly today: string;
 }
 
-const PORTIONS = [
-  { value: 'full', label: 'Full day' },
-  { value: 'first_half', label: 'Morning' },
-  { value: 'second_half', label: 'Afternoon' },
-] as const satisfies readonly { value: DayPortion; label: string }[];
-
-/** Pick the days; the impact updates as you choose, before anything is sent. */
+/** Pick the days; the impact updates as you choose, and you can propose who covers your work. */
 export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestLeaveSheetProps) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
   const toast = useToast();
   const fail = useFailureToast();
-  const active = types.filter((type) => type.isActive);
-  const [typeId, setTypeId] = useState<string | undefined>(active[0]?.id);
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState<string | null>(null);
-  const [dayPortion, setDayPortion] = useState<DayPortion>('full');
+  const form = useLeavePeriodForm(types);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const type = active.find((candidate) => candidate.id === typeId);
-  const end = endDate ?? startDate;
-  const singleDay = startDate !== null && end === startDate;
-  const period =
-    typeId && startDate && end && end >= startDate
-      ? {
-          leaveTypeId: typeId,
-          startDate,
-          endDate: end,
-          dayPortion: singleDay ? dayPortion : ('full' as const),
-        }
-      : null;
-  const preview = useLeavePreview(period, open);
+  const [drafts, setDrafts] = useState<HandoverDrafts>({});
+  const [handoverErrors, setHandoverErrors] = useState<Record<string, string>>({});
+  const preview = useLeavePreview(form.period, open);
   const submit = useMutation({
-    mutationFn: () => {
-      if (!period) throw new Error('Choose the days first.');
+    mutationFn: (handovers: HandoverProposal[]) => {
+      if (!form.period) throw new Error('Choose the days first.');
       return expectStatus(
         api.leave.requestLeave({
-          body: { ...period, reason: reason.trim() || null, handovers: [] },
+          body: { ...form.period, reason: reason.trim() || null, handovers },
         }),
         201,
       );
@@ -75,20 +55,26 @@ export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestL
         title: 'Leave requested',
         description: `${request.durationLabel}. Your approver has been told.`,
       });
-      setStartDate(null);
-      setEndDate(null);
+      form.reset();
       setReason('');
+      setDrafts({});
+      setHandoverErrors({});
       onOpenChange(false);
     },
-    onError: (failure) => fail(failure, 'send the request'),
+    onError: (failure, handovers) => {
+      if (isApiError(failure)) setHandoverErrors(handoverErrorsFrom(failure, handovers));
+      fail(failure, 'send the request');
+    },
   });
   const send = () => {
-    if (type?.requiresReason && reason.trim().length < 3) {
-      setError(`${type.name} needs a short reason.`);
+    if (form.type?.requiresReason && reason.trim().length < 3) {
+      setError(`${form.type.name} needs a short reason.`);
       return;
     }
     setError(null);
-    submit.mutate();
+    // Only tasks still affected by the chosen days can be handed over.
+    const affected = new Set(preview.data?.conflicts.map((conflict) => conflict.taskId));
+    submit.mutate(handoversFrom(drafts).filter((handover) => affected.has(handover.taskId)));
   };
   const blocked = (preview.data?.blockingProblems.length ?? 0) > 0;
 
@@ -106,7 +92,7 @@ export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestL
           </Button>
           <Button
             variant="primary"
-            disabled={!period || blocked || preview.isFetching}
+            disabled={!form.period || blocked || preview.isFetching}
             pending={submit.isPending}
             onClick={send}
           >
@@ -116,49 +102,11 @@ export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestL
       }
     >
       <div className="flex flex-col gap-6 p-5 sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Type of leave" hint={type?.description ?? undefined}>
-            <Select
-              value={typeId}
-              onValueChange={setTypeId}
-              options={active.map((candidate) => ({ value: candidate.id, label: candidate.name }))}
-            />
-          </Field>
-          <div className="hidden sm:block" />
-          <Field label="First day" required>
-            <DatePicker
-              value={startDate}
-              onValueChange={(value) => {
-                setStartDate(value);
-                if (value && endDate && endDate < value) setEndDate(null);
-              }}
-              min={today}
-              today={today}
-            />
-          </Field>
-          <Field label="Last day" hint="Leave empty for a single day.">
-            <DatePicker
-              value={endDate}
-              onValueChange={setEndDate}
-              min={startDate ?? today}
-              today={today}
-            />
-          </Field>
-        </div>
-        {singleDay && type?.allowsHalfDay && (
-          <SegmentedControl
-            label="Which part of the day"
-            value={dayPortion}
-            onValueChange={setDayPortion}
-            options={PORTIONS}
-            size="sm"
-            className="self-start"
-          />
-        )}
+        <LeavePeriodFields form={form} today={today} earliest={today} />
         <Field
           label="Reason"
-          required={type?.requiresReason ?? false}
-          hint={type?.requiresReason ? undefined : 'Optional.'}
+          required={form.type?.requiresReason ?? false}
+          hint={form.type?.requiresReason ? undefined : 'Optional.'}
           error={error}
         >
           <Textarea
@@ -168,28 +116,16 @@ export function RequestLeaveSheet({ open, onOpenChange, types, today }: RequestL
             maxLength={1000}
           />
         </Field>
-        <section aria-live="polite" className="rounded-lg border border-hairline bg-surface p-4">
-          {!period && (
-            <p className="type-body-sm text-ink-faint">
-              Choose the days to see how long it is and what it affects.
-            </p>
-          )}
-          {period && preview.isPending && <SkeletonText lines={3} />}
-          {period && preview.data && (
-            <div
-              className={
-                preview.isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'
-              }
-            >
-              <LeaveImpactSummary impact={preview.data} today={today} />
-            </div>
-          )}
-          {period && preview.isError && (
-            <p className="type-body-sm text-overdue">
-              The preview couldn’t be worked out. Check the dates and try again.
-            </p>
-          )}
-        </section>
+        <LeavePreviewPanel period={form.period} preview={preview} today={today} />
+        {form.period && preview.data && (
+          <HandoverProposals
+            conflicts={preview.data.conflicts}
+            drafts={drafts}
+            onChange={setDrafts}
+            requesterId={user.id}
+            errors={handoverErrors}
+          />
+        )}
       </div>
     </Sheet>
   );
