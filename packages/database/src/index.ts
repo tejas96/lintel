@@ -1,7 +1,10 @@
 export * from './client';
 export * from './migrate';
+export * from './queries/deliverables';
 export * from './queries/people';
 export * from './queries/shared';
+export * from './queries/tasks';
+export * from './queries/work';
 export * from './repositories/identity.repository';
 export * from './repositories/record.repository';
 export * as schema from './schema';
