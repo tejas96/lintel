@@ -16,6 +16,8 @@ import {
 export interface NavItem {
   readonly id: string;
   readonly label: string;
+  /** Shorter name for the phone tab bar, when the full one would wrap. */
+  readonly shortLabel?: string;
   readonly href: string;
   readonly icon: LucideIcon;
   /** Shown when the person holds any of these; everyone when empty. */
@@ -41,10 +43,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     id: 'command-center',
     label: 'Command center',
+    shortLabel: 'Studio',
     href: '/command-center',
     icon: Gauge,
     requires: ['dashboard.view_business'],
-    built: false,
+    built: true,
   },
   {
     id: 'approvals',

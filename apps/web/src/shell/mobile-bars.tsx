@@ -130,7 +130,7 @@ function TabLink({ item, active }: { readonly item: NavItem; readonly active: bo
         />
       )}
       <Icon aria-hidden className={cn('size-5', active && 'text-accent')} strokeWidth={1.75} />
-      {item.label}
+      <span className="max-w-full truncate px-1">{item.shortLabel ?? item.label}</span>
     </Link>
   );
 }
