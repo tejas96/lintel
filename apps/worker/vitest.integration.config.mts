@@ -1,4 +1,10 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+
+// Reuse the repository's .env (DATABASE_URL, TEMPORAL_*); explicit variables win.
+const rootEnv = resolve(process.cwd(), '../../.env');
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 /**
  * Integration tests run against the local Temporal dev server (127.0.0.1:7240,
