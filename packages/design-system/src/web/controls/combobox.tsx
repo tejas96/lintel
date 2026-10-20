@@ -58,7 +58,10 @@ export function Combobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const selected = options.find((option) => option.value === value) ?? null;
+  // Remember every option seen, so a chosen item keeps its label while a search narrows the list.
+  const known = useRef(new Map<string, ComboboxOption>());
+  for (const option of options) known.current.set(option.value, option);
+  const selected = value ? (known.current.get(value) ?? null) : null;
   const filtered = useMemo(
     () => options.filter((option) => matches(option, query)),
     [options, query],
@@ -67,6 +70,7 @@ export function Combobox({
   const choose = (option: ComboboxOption) => {
     onValueChange(option.value);
     setQuery('');
+    onQueryChange?.('');
     setOpen(false);
   };
   const updateQuery = (next: string) => {

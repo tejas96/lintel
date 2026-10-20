@@ -73,7 +73,11 @@ export function DatePicker({
   useEffect(() => {
     if (!open) return;
     const key = toKey(focusDate);
-    grid.current?.querySelector<HTMLButtonElement>(`[data-day="${key}"]`)?.focus();
+    // The popover mounts in a portal; wait a frame so the day buttons exist.
+    const frame = window.requestAnimationFrame(() =>
+      grid.current?.querySelector<HTMLButtonElement>(`[data-day="${key}"]`)?.focus(),
+    );
+    return () => window.cancelAnimationFrame(frame);
   }, [open, focusDate]);
 
   const outOfRange = (date: Date) => {

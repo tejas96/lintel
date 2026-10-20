@@ -58,7 +58,10 @@ export function Select<TValue extends string>({
           className,
         )}
       >
-        <SelectPrimitive.Value placeholder={placeholder} />
+        {/* The label is rendered directly so it shows before hydration too. */}
+        <SelectPrimitive.Value placeholder={placeholder}>
+          {options.find((option) => option.value === value)?.label}
+        </SelectPrimitive.Value>
         <SelectPrimitive.Icon>
           <ChevronDown aria-hidden className="size-4 text-ink-faint" />
         </SelectPrimitive.Icon>

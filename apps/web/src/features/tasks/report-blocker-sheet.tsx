@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Combobox, cn, Field, Sheet, Textarea } from '@lintel/design-system/web';
+import { Button, cn, Field, Sheet, Textarea } from '@lintel/design-system/web';
 import {
   Building2,
   CircleHelp,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { RadioGroup } from 'radix-ui';
 import { type FormEvent, useState } from 'react';
-import { usePeopleOptions } from '@/features/people/use-people-options';
+import { PersonCombobox } from '@/features/people/person-combobox';
 import { type BlockerInput, useTaskActions } from './use-task-actions';
 
 type Category = BlockerInput['category'];
@@ -52,7 +52,6 @@ export function ReportBlockerSheet({ task, onClose }: ReportBlockerSheetProps) {
   const [reason, setReason] = useState('');
   const [waitingOn, setWaitingOn] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const people = usePeopleOptions();
   const { reportBlocker } = useTaskActions();
 
   const submit = (event: FormEvent) => {
@@ -154,15 +153,7 @@ export function ReportBlockerSheet({ task, onClose }: ReportBlockerSheetProps) {
           label="Who are you waiting on?"
           hint="Optional. They will see this on their own list."
         >
-          <Combobox
-            options={people.options}
-            value={waitingOn}
-            onValueChange={setWaitingOn}
-            onQueryChange={people.onQueryChange}
-            loading={people.loading}
-            placeholder="Search people"
-            clearable
-          />
+          <PersonCombobox value={waitingOn} onValueChange={setWaitingOn} clearable />
         </Field>
       </form>
     </Sheet>
