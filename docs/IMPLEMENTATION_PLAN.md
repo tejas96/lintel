@@ -40,28 +40,32 @@ Last updated: 2026-10-21 (overnight build session).
 - ✅ Tasks (explained transitions, assignment, dependencies with loop refusal, checklists, blockers, comments), work queue, work sessions, priority conflicts, deliverables with versions and review, file upload/download with content checks, site updates — 28 unit + 4 integration tests, ~150 live checks.
 - ✅ Demo seed: 6 projects through the real use case, mixed health.
 
-## Stage 4 — Web experiences 🔄
+## Stage 4 — Web experiences 🟡
 
-- ✅ Design tokens (light/dark, status, type, motion).
-- 🔄 Design system components, app shell, sign-in, Today, task detail, projects, control room (web builder).
-- ⏳ Command center, capacity, leave, approvals, rewards, templates editor, settings UI.
+- ✅ Design tokens (light/dark, status, type, motion) → generated theme CSS; `@lintel/design-system` web components.
+- ✅ App shell (capability-gated nav, ⌘K, notifications bell), sign-in, Today, task page + drawer, projects (cards/table, 4-step wizard), project control room (overview, board, Gantt timeline, list, deliverables, scope changes, activity), people, settings (studio, roles, holidays), approvals inbox, leave (balances, requests, impact preview), owner command center — verified in a browser against live data at 1440/390 px, light/dark, calm motion; 30 screenshots in `docs/screenshots/web/`.
+- 🔄 Leave decision page, handover proposals, urgent absence, capacity grid, rewards, template editor, people admin forms, account & notification preferences, audit log, and untested interactions (uploads, comments, work timer, scope-change propose/decide, drag & drop) — second web builder.
 
-## Stage 5 — Leave, notifications, rewards, Temporal 🔄
+## Stage 5 — Leave, notifications, rewards, Temporal ✅
 
 - ✅ Domain: leave periods/conflicts/policy, capacity calculator, reward criteria/metrics/eligibility, notification policy, deadline escalation plan.
 - ✅ Notifier (dedupe, quiet hours, outbox event).
-- 🔄 Leave, capacity, rewards, notifications, devices, command center, approvals queue (builder C).
+- ✅ Leave (two-level approval, info round-trip, cancel, urgent absence, handovers), capacity, rewards (policies, idempotent evaluation, decisions, restricted amounts), notifications + preferences, devices, command center, approvals queue — 56 unit + 2 integration tests, live checks per role.
+- ✅ Worker extras: daily security housekeeping; monthly/quarterly reward evaluation Schedule (`lintel-periodic-rewards`).
 - ✅ Worker: outbox relay + deadline, review, blocker, leave, notification-delivery workflows + daily 08:30 schedule — 44 unit + 15 Temporal integration tests; verified on the main database (89 events relayed, reminders and escalations created).
 
-## Stage 6 — Mobile 🔄
+## Stage 6 — Mobile ✅ (store release ⛔)
 
-- 🔄 Expo SDK 58 app: sign-in, Today, task detail, projects, leave, approvals, site updates, notifications, account, push registration (mobile builder).
+- ✅ Expo SDK 58 / React Native 0.88 app: sign-in (SMS autofill), Today (swipe actions), task detail (server transitions, timer, checklist, blockers, camera/photo/file uploads, deliverables, comments), projects, leave (impact preview, handovers, decisions), approvals, site log for supervisors, inbox with deep links, account (sessions, quiet hours, push permission).
+- ✅ iOS development build compiled with Xcode and run on the iPhone 17 Pro simulator; Android debug build run on a Pixel 8 emulator; `expo export` for both platforms; 27 iOS + 4 Android screenshots in `docs/screenshots/mobile/`.
+- ⛔ Real push delivery (needs Firebase + APNs), physical devices, release signing and store submission.
 
 ## Stage 7 — Hardening ⏳
 
-- ⏳ Production Dockerfile + compose + Caddy; backup script.
-- ⏳ CI pipeline running `pnpm check`.
-- ⏳ End-to-end journey tests (owner creates project → … → reward review).
+- ✅ Production Dockerfile + compose (Temporal on PostgreSQL) + Caddy; backup script; `.dockerignore`.
+- ✅ CI workflow (`.github/workflows/ci.yml`) running every quality gate.
+- ✅ API end-to-end journeys: project lifecycle (template → assign → block → deliverable review loop → done → milestone → outsider 404) and people operations (leave conflicts → two-level approval → handover → capacity → inbox → idempotent rewards → restrictions).
+- ✅ Idempotency-Key replay for retried commands.
 - ⏳ Security review against `SECURITY.md` checklist; dependency audit.
 
 ## Stage 8 — Phase 2 preparation ✅
