@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  BellRing,
   DraftingCompass,
   LogOut,
   type LucideIcon,
@@ -86,6 +87,13 @@ export function usePaletteCommands(query: string, open: boolean): PaletteCommand
         ]
       : [];
     const preferences: PaletteCommand[] = [
+      {
+        id: 'account',
+        label: 'Your account',
+        icon: BellRing,
+        keywords: 'profile notifications devices sessions quiet hours',
+        run: () => router.push('/account'),
+      },
       ...(theme !== 'dark'
         ? [{ id: 'theme-dark', label: 'Use dark theme', icon: Moon, run: () => setTheme('dark') }]
         : []),

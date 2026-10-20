@@ -1,24 +1,16 @@
 'use client';
 
-import { Avatar, Button, SegmentedControl, Switch } from '@lintel/design-system/web';
+import { Avatar, Button } from '@lintel/design-system/web';
 import { ROLE_LABELS } from '@lintel/domain';
-import { LogOut, Monitor, Moon, Sun } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { BellRing, LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { useSession } from '@/features/session/session-provider';
-import { useDisplayPreferences } from '@/providers/app-providers';
-import type { ThemePreference } from '@/providers/preferences';
+import { AppearanceControls } from './appearance-controls';
 import { useSignOut } from './use-sign-out';
 
-const THEME_OPTIONS = [
-  { value: 'system', label: 'Auto', icon: <Monitor aria-hidden /> },
-  { value: 'light', label: 'Light', icon: <Sun aria-hidden /> },
-  { value: 'dark', label: 'Dark', icon: <Moon aria-hidden /> },
-] as const satisfies readonly { value: ThemePreference; label: string; icon: ReactNode }[];
-
-/** Who is signed in, display preferences and sign out. */
-export function PreferencesPanel() {
+/** Who is signed in, display preferences, the account page and sign out. */
+export function PreferencesPanel({ onNavigate }: { readonly onNavigate?: () => void }) {
   const { user } = useSession();
-  const { theme, setTheme, calmMotion, setCalmMotion } = useDisplayPreferences();
   const signOut = useSignOut();
   return (
     <div className="flex flex-col gap-4">
@@ -33,22 +25,15 @@ export function PreferencesPanel() {
       </div>
       <div className="flex flex-col gap-2 border-t border-hairline pt-4">
         <p className="type-label text-ink-muted">Appearance</p>
-        <SegmentedControl
-          label="Colour theme"
-          value={theme}
-          onValueChange={setTheme}
-          options={THEME_OPTIONS}
-          size="sm"
-          className="w-full [&>button]:flex-1"
-        />
-        <Switch
-          label="Calm motion"
-          description="Keep fades, skip movement and count-ups."
-          checked={calmMotion}
-          onCheckedChange={setCalmMotion}
-        />
+        <AppearanceControls />
       </div>
-      <div className="border-t border-hairline pt-3">
+      <div className="flex flex-col gap-1 border-t border-hairline pt-3">
+        <Button asChild variant="quiet" size="sm" className="w-full justify-start">
+          <Link href="/account" {...(onNavigate ? { onClick: onNavigate } : {})}>
+            <BellRing aria-hidden className="size-4" />
+            Account, notifications and devices
+          </Link>
+        </Button>
         <Button
           variant="quiet"
           size="sm"

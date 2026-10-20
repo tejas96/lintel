@@ -5,6 +5,7 @@ import { ROLE_LABELS } from '@lintel/domain';
 import { ChevronsUpDown, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { Wordmark } from '@/features/auth/brand-mark';
 import { useSession } from '@/features/session/session-provider';
 import type { NavItem } from './navigation';
@@ -20,6 +21,7 @@ interface SidebarProps {
 /** Desktop navigation, sitting on the canvas beside the page's sheet. */
 export function Sidebar({ items, activeId, onOpenPalette }: SidebarProps) {
   const { user } = useSession();
+  const [accountOpen, setAccountOpen] = useState(false);
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[15.5rem] flex-col px-3 pt-4 pb-3 md:flex">
       <div className="flex h-11 items-center justify-between pl-2.5">
@@ -81,6 +83,8 @@ export function Sidebar({ items, activeId, onOpenPalette }: SidebarProps) {
 
       <Popover
         label="Your account and preferences"
+        open={accountOpen}
+        onOpenChange={setAccountOpen}
         side="top"
         align="start"
         className="w-[18rem] p-4"
@@ -100,7 +104,7 @@ export function Sidebar({ items, activeId, onOpenPalette }: SidebarProps) {
           </button>
         }
       >
-        <PreferencesPanel />
+        <PreferencesPanel onNavigate={() => setAccountOpen(false)} />
       </Popover>
     </aside>
   );
