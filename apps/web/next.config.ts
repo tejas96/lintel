@@ -6,6 +6,7 @@ const apiInternalUrl = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4105';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  devIndicators: false,
   // The design system's web components ship as TypeScript source.
   transpilePackages: ['@lintel/design-system'],
   async rewrites() {

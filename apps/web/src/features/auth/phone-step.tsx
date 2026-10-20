@@ -38,6 +38,7 @@ export function PhoneStep({ onCodeSent }: { readonly onCodeSent: (request: CodeR
   const [country, setCountry] = useState<CountryCode>('+91');
   const [digits, setDigits] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [recentlySent, setRecentlySent] = useState(false);
   const cooldown = useCountdown();
 
   const requestCode = useMutation({
@@ -48,7 +49,7 @@ export function PhoneStep({ onCodeSent }: { readonly onCodeSent: (request: CodeR
     onError: (failure) => {
       if (isApiError(failure) && failure.status === 429 && failure.retryAfterSeconds) {
         cooldown.start(failure.retryAfterSeconds);
-        setError('A code was sent a moment ago. You can ask for another when the timer ends.');
+        setRecentlySent(true);
         return;
       }
       if (isApiError(failure)) {
@@ -66,8 +67,19 @@ export function PhoneStep({ onCodeSent }: { readonly onCodeSent: (request: CodeR
       return;
     }
     setError(null);
+    setRecentlySent(false);
     requestCode.mutate({ countryCallingCode: country, nationalNumber: digits });
   };
+
+  /** A code is already on its way: go straight to entering it. */
+  const enterExistingCode = () =>
+    onCodeSent({
+      countryCallingCode: country,
+      nationalNumber: digits,
+      maskedPhone: `${country} •••••• ${digits.slice(-4)}`,
+      expiresInSeconds: 300,
+      resendAvailableInSeconds: cooldown.remaining,
+    });
 
   const waiting = cooldown.remaining > 0;
   return (
@@ -104,6 +116,21 @@ export function PhoneStep({ onCodeSent }: { readonly onCodeSent: (request: CodeR
       >
         {waiting ? `Send code again in ${formatClock(cooldown.remaining)}` : 'Text me a code'}
       </Button>
+      {recentlySent && (
+        <div
+          role="status"
+          className="-mt-2 flex flex-col items-start gap-1 type-body-sm text-ink-muted"
+        >
+          <p>A code was sent to this number a moment ago.</p>
+          <button
+            type="button"
+            onClick={enterExistingCode}
+            className="min-h-11 rounded-sm font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Enter the code I already have
+          </button>
+        </div>
+      )}
     </form>
   );
 }

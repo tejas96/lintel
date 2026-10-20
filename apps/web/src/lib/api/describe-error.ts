@@ -46,7 +46,7 @@ export function describeError(error: unknown, options: DescribeOptions = {}): Er
       kind: 'unavailable',
       title: 'Not switched on yet',
       message: `This part of Lintel is not available on your studio’s server yet. Nothing is lost; it will appear here once it is turned on.`,
-      requestId,
+      requestId: null,
     };
   }
   if (error.status === 404) {
