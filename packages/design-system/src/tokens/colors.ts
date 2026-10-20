@@ -24,6 +24,11 @@ export interface ThemeColors {
   readonly sageSoft: string;
   readonly focusRing: string;
   readonly scrim: string;
+  /** Deep cyanotype ground for the one "drawing sheet" moment per screen (hero, brand panel). */
+  readonly blueprint: string;
+  readonly onBlueprint: string;
+  readonly onBlueprintMuted: string;
+  readonly blueprintLine: string;
 }
 
 export const LIGHT_COLORS: ThemeColors = {
@@ -48,6 +53,10 @@ export const LIGHT_COLORS: ThemeColors = {
   sageSoft: '#DCE4D8',
   focusRing: '#2D44B0',
   scrim: 'rgba(20, 19, 17, 0.48)',
+  blueprint: '#1C2E80',
+  onBlueprint: '#F5F3EE',
+  onBlueprintMuted: '#C3CBEF',
+  blueprintLine: 'rgba(195, 203, 239, 0.16)',
 };
 
 export const DARK_COLORS: ThemeColors = {
@@ -72,6 +81,10 @@ export const DARK_COLORS: ThemeColors = {
   sageSoft: '#26302A',
   focusRing: '#93A3F5',
   scrim: 'rgba(0, 0, 0, 0.60)',
+  blueprint: '#17204D',
+  onBlueprint: '#EEF0FB',
+  onBlueprintMuted: '#AEB8E6',
+  blueprintLine: 'rgba(174, 184, 230, 0.1)',
 };
 
 /** Project identity colours (Gantt bars, chips). Never used for status. */

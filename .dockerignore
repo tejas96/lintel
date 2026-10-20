@@ -1,0 +1,22 @@
+# Keep the Docker build context small and free of secrets and local state.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/.expo
+**/coverage
+**/*.tsbuildinfo
+.claude
+.git
+.github
+docs/screenshots
+apps/mobile/ios
+apps/mobile/android
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.keystore
+*.jks

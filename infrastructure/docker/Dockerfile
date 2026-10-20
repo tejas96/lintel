@@ -2,7 +2,7 @@
 # Multi-stage build for the Lintel API, worker, web app and migration job.
 #   docker build -f infrastructure/docker/Dockerfile --target api -t lintel-api .
 # Temporal's native worker needs glibc, so the base is Debian slim, not Alpine.
-ARG NODE_IMAGE=node:22-bookworm-slim
+ARG NODE_IMAGE=node:22.22.3-bookworm-slim
 
 FROM ${NODE_IMAGE} AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true NEXT_TELEMETRY_DISABLED=1
@@ -14,7 +14,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --offline --frozen-lockfile
-RUN pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
+RUN NEXT_OUTPUT=standalone pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
 # Self-contained production folders with only runtime dependencies.
 RUN pnpm deploy --filter=@lintel/api --prod --legacy /out/api \
  && pnpm deploy --filter=@lintel/worker --prod --legacy /out/worker \

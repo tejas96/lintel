@@ -1,30 +1,58 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
-  "globalDependencies": ["tooling/typescript/*.json"],
-  "globalEnv": ["NODE_ENV"],
+  "globalDependencies": [
+    "tooling/typescript/*.json"
+  ],
+  "globalEnv": [
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", "!**/*.test.ts", "!**/*.test.tsx"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.ts",
+        "!**/*.test.tsx"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "test:integration": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": false,
-      "passThroughEnv": ["DATABASE_URL", "TEST_DATABASE_URL"]
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "TEST_DATABASE_URL"
+      ]
     },
     "dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": false,
       "persistent": true
     }
-  }
+  },
+  "globalPassThroughEnv": [
+    "NEXT_OUTPUT"
+  ]
 }
