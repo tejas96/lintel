@@ -87,7 +87,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/templates',
     icon: Workflow,
     requires: ['templates.manage'],
-    built: false,
+    built: true,
   },
   {
     id: 'people',
