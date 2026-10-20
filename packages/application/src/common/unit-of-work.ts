@@ -1,4 +1,7 @@
+import type { ProjectAccessStore } from '../access/project-access.store';
 import type { IdentityStore } from '../identity/identity.store';
+import type { NotificationStore } from '../notifications/notification.store';
+import type { PeopleStore } from '../people/people.store';
 import type { SettingsStore } from '../settings/settings.store';
 import type { RecordStore } from './record.store';
 
@@ -7,7 +10,10 @@ import type { RecordStore } from './record.store';
  * add their store here; use cases depend only on the stores they use.
  */
 export interface ApplicationStores {
+  readonly access: ProjectAccessStore;
   readonly identity: IdentityStore;
+  readonly notifications: NotificationStore;
+  readonly people: PeopleStore;
   readonly records: RecordStore;
   readonly settings: SettingsStore;
 }
