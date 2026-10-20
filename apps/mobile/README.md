@@ -206,8 +206,6 @@ API on `:4106` with the demo seed (`db:seed` + `db:seed:demo`):
 - Push on the simulator: permission prompt, APNs token obtained and registered as
   `tokenType: "apns"` (`POST /v1/devices` 200), simulated push (`xcrun simctl push`) shown as a
   banner and the tap deep-linked to the task from `linkPath`; sign-out sent `DELETE /v1/devices/:id`.
-- Screenshots: `docs/screenshots/mobile/`.
-
 - Android development build: `expo prebuild --platform android` + `./gradlew assembleDebug`
   (arm64, JDK 17) — BUILD SUCCESSFUL; installed on the Pixel 8 API 36 emulator (Metro via
   `adb reverse tcp:8106 tcp:8106`, API at `10.0.2.2:4106` rewritten automatically). Verified sign-in,
@@ -215,6 +213,11 @@ API on `:4106` with the demo seed (`db:seed` + `db:seed:demo`):
   prompt, and the "push isn't set up in this build" message when `google-services.json` is absent.
 - Session expiry: revoking the app's session from another client made the next request return
   401 and the app returned to sign-in with "Your session has ended. Please sign in again."
+- Screenshots: `docs/screenshots/mobile/` (iOS light and dark, plus `android-*`).
+
+Known API issue: `GET /v1/notifications?unreadOnly=false` returns unread items only, because
+`z.coerce.boolean()` turns the string `"false"` into `true`. The app omits the flag; the
+contract should parse `'true'`/`'false'` explicitly.
 
 Not verified:
 
