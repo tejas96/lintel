@@ -39,8 +39,8 @@ interface ChosenTemplate {
   readonly version: TemplateVersionRecord;
 }
 
-/** Number of project colours in the design system palette. */
-const PROJECT_COLOR_COUNT = 8;
+/** Number of project colours in the design system palette (PROJECT_SWATCHES). */
+const PROJECT_COLOR_COUNT = 6;
 
 function startDateOf(value: string): CalendarDate {
   if (isCalendarDate(value)) return value;
