@@ -29,6 +29,11 @@ export class TemporalWorkflowScheduler implements WorkflowScheduler {
   private client(): Promise<Client> {
     this.clientPromise ??= Connection.connect({ address: this.config.address }).then(
       (connection) => new Client({ connection, namespace: this.config.namespace }),
+      (error: unknown) => {
+        // Do not cache a failed connect: the next call tries again.
+        this.clientPromise = null;
+        throw error;
+      },
     );
     return this.clientPromise;
   }

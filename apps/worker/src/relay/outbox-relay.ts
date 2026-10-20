@@ -25,9 +25,27 @@ export interface OutboxRelayDependencies {
 export interface OutboxRelayOptions {
   readonly batchSize: number;
   readonly idleDelayMs: number;
+  /** Bounds each Temporal call, so claimed rows are never locked indefinitely. */
+  readonly dispatchTimeoutMs: number;
 }
 
-export const DEFAULT_RELAY_OPTIONS: OutboxRelayOptions = { batchSize: 50, idleDelayMs: 2000 };
+export const DEFAULT_RELAY_OPTIONS: OutboxRelayOptions = {
+  batchSize: 50,
+  idleDelayMs: 2000,
+  dispatchTimeoutMs: 15_000,
+};
+
+/** Rejects when `work` takes longer than `milliseconds` (the call itself is idempotent). */
+function withTimeout<T>(work: Promise<T>, milliseconds: number, what: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${what} timed out after ${milliseconds} ms`)),
+      milliseconds,
+    );
+  });
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
+}
 
 export interface RelayBatchResult {
   claimed: number;
@@ -47,11 +65,14 @@ type EventOutcome = 'processed' | 'ignored' | 'failed';
 export class OutboxRelay {
   private stopping = false;
   private wake: (() => void) | null = null;
+  private readonly options: OutboxRelayOptions;
 
   constructor(
     private readonly deps: OutboxRelayDependencies,
-    private readonly options: OutboxRelayOptions = DEFAULT_RELAY_OPTIONS,
-  ) {}
+    options: Partial<OutboxRelayOptions> = {},
+  ) {
+    this.options = { ...DEFAULT_RELAY_OPTIONS, ...options };
+  }
 
   /** Polls until `stop()`; a full batch is followed immediately by the next one. */
   async run(): Promise<void> {
@@ -108,7 +129,11 @@ export class OutboxRelay {
         await outbox.complete(event.id, [], route.note, this.deps.clock.now());
         return 'ignored';
       }
-      const { runs, note } = await this.dispatch(route.command, event);
+      const { runs, note } = await withTimeout(
+        this.dispatch(route.command, event),
+        this.options.dispatchTimeoutMs,
+        `${route.command.mode} ${route.command.workflowId}`,
+      );
       await outbox.complete(event.id, runs, note, this.deps.clock.now());
       return 'processed';
     } catch (error) {

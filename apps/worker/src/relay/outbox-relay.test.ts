@@ -1,4 +1,4 @@
-import type { OutboxRecord } from '@lintel/application';
+import type { OutboxRecord, WorkflowScheduler } from '@lintel/application';
 import { fixedClock } from '@lintel/shared';
 import { describe, expect, it } from 'vitest';
 import { silentLogger } from '../observability/worker-logger';
@@ -120,6 +120,28 @@ describe('outbox relay', () => {
     expect(unknown?.note).toContain('No workflow handles RewardEvaluated');
     expect(completed).toMatchObject({ runs: [], note: expect.stringContaining('not running') });
     expect(unblocked?.runs[0]).toMatchObject({ workflowId: 'blocker:b-running', signalled: true });
+  });
+
+  it('gives up on a hung Temporal call and retries the event later', async () => {
+    const { outbox } = setup();
+    const hungScheduler: WorkflowScheduler = {
+      start: () => new Promise<void>(() => undefined),
+      signalWithStart: async () => undefined,
+      signal: async () => false,
+      checkHealth: async () => true,
+    };
+    const hung = new OutboxRelay(
+      {
+        uow: new FakeUnitOfWork({ background: { outbox } }),
+        scheduler: hungScheduler,
+        clock: fixedClock(NOW),
+        logger: silentLogger,
+      },
+      { dispatchTimeoutMs: 20 },
+    );
+    outbox.pending.push(record('e1', 'NotificationCreated', { notificationId: 'n1' }));
+    expect(await hung.processBatch()).toMatchObject({ failed: 1 });
+    expect(outbox.retries[0]?.retry.error).toContain('timed out after 20 ms');
   });
 
   it('stops polling promptly when asked', async () => {
