@@ -5,4 +5,7 @@ export * from './identity';
 export * from './notifications';
 export * from './people';
 export * from './ports';
+export * from './projects';
+export * from './scope-changes';
 export * from './settings';
+export * from './templates';
