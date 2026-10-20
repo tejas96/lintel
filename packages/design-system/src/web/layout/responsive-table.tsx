@@ -21,7 +21,7 @@ interface ResponsiveTableProps<TRow> {
   readonly columns: readonly TableColumn<TRow>[];
   readonly rows: readonly TRow[];
   readonly rowKey: (row: TRow) => string;
-  readonly className?: string;
+  readonly className?: string | undefined;
 }
 
 /**
