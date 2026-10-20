@@ -71,12 +71,12 @@ pnpm test:integration
 
 - Product: [vision](docs/PRODUCT_VISION.md) · [requirements & business rules](docs/PRODUCT_REQUIREMENTS.md) · [design references](docs/DESIGN_REFERENCES.md) · [design system](docs/DESIGN_SYSTEM.md)
 - Engineering: [architecture](docs/ARCHITECTURE.md) · [decisions](docs/DECISIONS/README.md) · [database](docs/DATABASE.md) · [security](docs/SECURITY.md) · [integrations](docs/INTEGRATIONS.md) · [operations](docs/OPERATIONS.md)
-- Planning: [implementation plan & progress](docs/IMPLEMENTATION_PLAN.md) · [AI in Phase 2](docs/AI_PHASE_TWO.md)
+- Planning: [morning handoff](docs/HANDOFF.md) · [implementation plan & progress](docs/IMPLEMENTATION_PLAN.md) · [AI in Phase 2](docs/AI_PHASE_TWO.md)
 - Contributors and coding agents: [AGENTS.md](AGENTS.md)
 
 ## Status
 
-Phase 1 is under active construction. See
-[docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for what is done,
-verified, in progress, or blocked on external accounts (MSG91, Firebase/APNs,
-app-store signing).
+Phase 1 is built and verified locally: API, worker, web and mobile. Real SMS, push
+delivery, store releases and the production server wait on external accounts
+(MSG91, Firebase/APNs, Apple/Google, Oracle Cloud). See
+[docs/HANDOFF.md](docs/HANDOFF.md) and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).

@@ -26,7 +26,7 @@ Last updated: 2026-10-21, end of the overnight build session.
 ## Stage 2 — Identity and contracts ✅
 
 - ✅ Domain: roles, capabilities, access rules.
-- ✅ ts-rest contracts for every module (≈95 routes) + OpenAPI at `/docs`; contract tests.
+- ✅ ts-rest contracts for every module (103 routes) + OpenAPI at `/docs`; contract tests.
 - ✅ OTP sign-in (hashed codes, limits, enumeration-safe), sessions (cookie + CSRF, bearer), sign-out, session list/revoke — 6 unit tests + live curl verification.
 - ✅ MSG91 adapter (unit-tested against documented contract) + local development provider.
 - ✅ Initial migration (44 tables) and idempotent seed.
