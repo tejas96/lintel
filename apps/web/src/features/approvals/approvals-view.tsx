@@ -30,10 +30,15 @@ const KINDS: Readonly<
     onWeb: true,
   },
   scope_change: { label: 'Scope change', action: 'See the impact and decide', onWeb: true },
-  leave_request: { label: 'Leave request', action: 'Decide on the leave', onWeb: false },
-  reward_review: { label: 'Reward review', action: 'Review the reward', onWeb: false },
+  leave_request: { label: 'Leave request', action: 'See the impact and decide', onWeb: true },
+  reward_review: { label: 'Reward review', action: 'Review the reward', onWeb: true },
   priority_conflict: { label: 'Priority conflict', action: 'Resolve the conflict', onWeb: false },
 };
+
+/** Reward reviews are decided in the review queue of the rewards screen. */
+function webPathOf(item: ApprovalItem): string {
+  return item.type === 'reward_review' ? '/rewards/review' : item.linkPath;
+}
 
 /** Everything waiting for this person's decision, most urgent first, each a step from its page. */
 export function ApprovalsView() {
@@ -99,7 +104,7 @@ export function ApprovalsView() {
                 actions={
                   kind.onWeb ? (
                     <Button asChild variant="primary" size="sm">
-                      <Link href={item.linkPath}>{kind.action}</Link>
+                      <Link href={webPathOf(item)}>{kind.action}</Link>
                     </Button>
                   ) : (
                     <p className="type-body-sm text-ink-muted">

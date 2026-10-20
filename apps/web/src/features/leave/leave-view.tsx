@@ -1,107 +1,128 @@
 'use client';
 
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  pageEnter,
-  Skeleton,
-  SkeletonGroup,
-} from '@lintel/design-system/web';
-import { CalendarPlus } from 'lucide-react';
+import { Button, PageHeader, pageEnter, TabPanel, Tabs } from '@lintel/design-system/web';
+import { CalendarPlus, Siren } from 'lucide-react';
 import { motion } from 'motion/react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
-import { describeError } from '@/lib/api/describe-error';
 import { todayIn } from '@/lib/format/dates';
-import { LeaveBalances } from './leave-balances';
-import { LeaveRequestItem } from './leave-request-item';
+import { MyLeave } from './my-leave';
+import { OthersLeave } from './others-leave';
+import { RecordAbsenceSheet } from './record-absence-sheet';
 import { RequestLeaveSheet } from './request-leave-sheet';
-import { useLeaveBalances, useLeaveTypes, useMyLeaveRequests } from './use-leave';
+import { useLeaveList, useLeaveTypes } from './use-leave';
 
-const UPCOMING = new Set(['pending', 'info_requested', 'approved']);
+type LeaveTab = 'mine' | 'to-decide' | 'team';
 
-/** The person's own leave: what is left, what is planned, and a request that shows its impact first. */
+function parseTab(value: string | null, allowed: readonly LeaveTab[]): LeaveTab {
+  return allowed.find((tab) => tab === value) ?? 'mine';
+}
+
+/**
+ * Leave for everyone: your own time off; for approvers, the requests waiting
+ * on them and their team's leave; for managers, recording an urgent absence.
+ */
 export function LeaveView() {
-  const { user } = useSession();
+  const { user, can } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const today = todayIn(user.timeZone);
   const types = useLeaveTypes();
-  const balances = useLeaveBalances();
-  const requests = useMyLeaveRequests();
+  const approves = can('leave.approve_team', 'leave.approve_any');
+  const seesTeam = approves || can('capacity.view_team');
+  const allowed: LeaveTab[] = [
+    'mine',
+    ...(approves ? ['to-decide' as const] : []),
+    ...(seesTeam ? ['team' as const] : []),
+  ];
+  const tab = parseTab(params.get('view'), allowed);
+  const toDecide = useLeaveList('to_decide', approves);
   const [requesting, setRequesting] = useState(false);
-  const items = requests.data?.items ?? [];
-  const upcoming = items.filter(
-    (request) => UPCOMING.has(request.status) && request.endDate >= today,
-  );
-  const past = items.filter((request) => !upcoming.includes(request));
+  const [recording, setRecording] = useState(false);
+  const waiting = toDecide.data?.totalItems;
+
+  const select = (next: LeaveTab) =>
+    router.replace(next === 'mine' ? pathname : `${pathname}?view=${next}`, { scroll: false });
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 py-6 md:px-10 md:py-9">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-5 py-6 md:px-10 md:py-9">
       <motion.div {...pageEnter}>
         <PageHeader
           title="Leave"
-          description="Your time off, what’s left this year, and requests on their way to approval."
+          description={
+            approves
+              ? 'Your time off, and the requests that wait on your decision.'
+              : 'Your time off, what’s left this year, and requests on their way to approval.'
+          }
           actions={
-            <Button
-              variant="primary"
-              leadingIcon={<CalendarPlus aria-hidden />}
-              onClick={() => setRequesting(true)}
-              disabled={!types.data}
-            >
-              Request leave
-            </Button>
+            <>
+              {can('leave.record_absence') && (
+                <Button
+                  leadingIcon={<Siren aria-hidden />}
+                  onClick={() => setRecording(true)}
+                  disabled={!types.data}
+                >
+                  Record an absence
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                leadingIcon={<CalendarPlus aria-hidden />}
+                onClick={() => setRequesting(true)}
+                disabled={!types.data}
+              >
+                Request leave
+              </Button>
+            </>
           }
         />
       </motion.div>
-      {balances.isPending && (
-        <SkeletonGroup
-          label="Loading your leave balances"
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      {allowed.length > 1 ? (
+        <Tabs
+          label="Whose leave"
+          value={tab}
+          onValueChange={select}
+          items={[
+            { value: 'mine', label: 'Mine' },
+            ...(approves
+              ? [
+                  {
+                    value: 'to-decide' as const,
+                    label: 'To decide',
+                    ...(waiting ? { count: waiting } : {}),
+                  },
+                ]
+              : []),
+            ...(seesTeam ? [{ value: 'team' as const, label: 'Team' }] : []),
+          ]}
         >
-          {[0, 1, 2, 3].map((tile) => (
-            <Skeleton key={tile} className="h-24 rounded-lg" />
-          ))}
-        </SkeletonGroup>
-      )}
-      {balances.data && <LeaveBalances balances={balances.data} />}
-      {requests.isError && (
-        <ErrorState
-          {...describeError(requests.error, { resource: 'collection' })}
-          onRetry={() => requests.refetch()}
-        />
-      )}
-      {requests.data && items.length === 0 && (
-        <EmptyState
-          drawing="lamp"
-          title="No leave planned"
-          description="Request time off here. You’ll see the work it affects and who else is away before you send it."
-        />
-      )}
-      {upcoming.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="type-title-md text-ink">Coming up</h2>
-          <ul className="flex flex-col gap-2">
-            {upcoming.map((request) => (
-              <LeaveRequestItem key={request.id} request={request} today={today} />
-            ))}
-          </ul>
-        </section>
-      )}
-      {past.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="type-title-md text-ink">Earlier and closed</h2>
-          <ul className="flex flex-col gap-2">
-            {past.map((request) => (
-              <LeaveRequestItem key={request.id} request={request} today={today} />
-            ))}
-          </ul>
-        </section>
+          <TabPanel value="mine" className="pt-6 outline-none">
+            <MyLeave today={today} />
+          </TabPanel>
+          <TabPanel value="to-decide" className="pt-6 outline-none">
+            <OthersLeave scope="to_decide" today={today} />
+          </TabPanel>
+          <TabPanel value="team" className="pt-6 outline-none">
+            <OthersLeave scope="team" today={today} />
+          </TabPanel>
+        </Tabs>
+      ) : (
+        <MyLeave today={today} />
       )}
       {types.data && (
         <RequestLeaveSheet
           open={requesting}
           onOpenChange={setRequesting}
+          types={types.data}
+          today={today}
+        />
+      )}
+      {types.data && can('leave.record_absence') && (
+        <RecordAbsenceSheet
+          open={recording}
+          onOpenChange={setRecording}
           types={types.data}
           today={today}
         />

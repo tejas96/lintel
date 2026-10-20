@@ -14,6 +14,22 @@ export function daysBetween(from: string, to: string): number {
   return dayNumber(to) - dayNumber(from);
 }
 
+/** The calendar date `count` days after `date` (negative goes back). */
+export function addDays(date: string, count: number): string {
+  return new Date((dayNumber(date) + count) * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** Every calendar date from `start` to `end`, inclusive. */
+export function eachDate(start: string, end: string): string[] {
+  const length = Math.max(0, daysBetween(start, end) + 1);
+  return Array.from({ length }, (_, index) => addDays(start, index));
+}
+
+/** 0 = Sunday … 6 = Saturday. */
+export function weekdayOf(date: string): number {
+  return new Date((dayNumber(date) + 0.5) * DAY_MS).getUTCDay();
+}
+
 const formatters = new Map<string, Intl.DateTimeFormat>();
 function formatter(key: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   let existing = formatters.get(key);
@@ -34,6 +50,16 @@ export function formatCalendarDate(date: string, today?: string): string {
     : formatter('dmy', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
         asUtcNoon(date),
       );
+}
+
+/** "Mon", "Tue"… for a calendar date. */
+export function formatWeekdayShort(date: string): string {
+  return formatter('wd', { weekday: 'short', timeZone: 'UTC' }).format(asUtcNoon(date));
+}
+
+/** "Oct" for a calendar date. */
+export function formatMonthShort(date: string): string {
+  return formatter('m', { month: 'short', timeZone: 'UTC' }).format(asUtcNoon(date));
 }
 
 /** "Wednesday 21 October". */
