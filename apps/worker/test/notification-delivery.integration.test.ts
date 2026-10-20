@@ -10,6 +10,7 @@ import { createActivities, OrganizationContext } from '../src/activities';
 import { silentLogger } from '../src/observability/worker-logger';
 import { ScriptedPushProvider } from '../src/testing/fake-push';
 import { FakeWorkflowScheduler } from '../src/testing/fake-world';
+import { withNoopMaintenance } from '../src/testing/noop-maintenance';
 import { notificationDeliveryWorkflow } from '../src/workflows/notification-delivery.workflow';
 import { connectTestDatabase, FixtureFactory } from './support/database';
 import {
@@ -44,16 +45,18 @@ describe('notificationDeliveryWorkflow with real activities and database', () =>
 
   async function deliver(push: PushProvider, notificationId: string): Promise<string> {
     const uow = new DrizzleUnitOfWork(database.db);
-    const activities = createActivities({
-      uow,
-      clock: systemClock,
-      push,
-      scheduler: new FakeWorkflowScheduler(),
-      organization: new OrganizationContext(uow.stores.settings, systemClock, {
-        smsConfigured: false,
+    const activities = createActivities(
+      ...withNoopMaintenance({
+        uow,
+        clock: systemClock,
+        push,
+        scheduler: new FakeWorkflowScheduler(),
+        organization: new OrganizationContext(uow.stores.settings, systemClock, {
+          smsConfigured: false,
+        }),
+        logger: silentLogger,
       }),
-      logger: silentLogger,
-    });
+    );
     const taskQueue = uniqueTaskQueue('delivery');
     const worker = await createTestWorker(env, { taskQueue, bundle, activities });
     return worker.runUntil(async () => {

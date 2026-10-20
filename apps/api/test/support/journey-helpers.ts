@@ -38,3 +38,39 @@ export function nextMonday(from = new Date()): string {
   while (date.getUTCDay() !== 1);
   return date.toISOString().slice(0, 10);
 }
+
+type Client = ReturnType<typeof client>;
+
+/** Creates a residential project from the published template, staffed for journeys. */
+export async function createJourneyProject(
+  owner: Client,
+  people: { pm: string; designer: string; lead: string; site: string },
+): Promise<string> {
+  const templates = await owner.get('/v1/templates?projectType=residential_interior').expect(200);
+  const template = templates.body.find(
+    (item: { publishedVersion: unknown }) => item.publishedVersion,
+  );
+  const created = await owner
+    .post('/v1/projects', {
+      name: `Journey Residence ${Date.now()}`,
+      clientName: 'Journey Family',
+      clientPhone: null,
+      clientEmail: null,
+      siteAddress: 'Plot 7, Test Lane',
+      projectType: 'residential_interior',
+      description: null,
+      criticality: 'normal',
+      managerUserId: people.pm,
+      plannedStartDate: nextMonday(),
+      templateVersionId: template.publishedVersion.id,
+      templateOptions: [],
+      members: [
+        { userId: people.designer, projectRole: 'designer' },
+        { userId: people.lead, projectRole: 'reviewer' },
+        { userId: people.site, projectRole: 'site_supervisor' },
+      ],
+      budgetMinor: 250_000_00,
+    })
+    .expect(201);
+  return created.body.id as string;
+}

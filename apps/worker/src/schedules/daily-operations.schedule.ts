@@ -7,6 +7,7 @@ import {
 import { WORKFLOW_TYPES } from '../workflows/workflow-contract';
 
 export const DAILY_OPERATIONS_SCHEDULE_ID = 'lintel-daily-operations';
+export const PERIODIC_REWARDS_SCHEDULE_ID = 'lintel-periodic-rewards';
 
 export interface DailyOperationsScheduleOptions {
   readonly scheduleId: string;

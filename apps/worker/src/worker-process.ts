@@ -5,13 +5,16 @@ import { systemClock } from '@lintel/shared';
 import { Client, Connection } from '@temporalio/client';
 import { NativeConnection, Runtime, Worker } from '@temporalio/worker';
 import { createActivities, OrganizationContext } from './activities';
+import { createMaintenanceDependencies } from './maintenance.factory';
 import { describeError, type WorkerLogger } from './observability/worker-logger';
 import { createPushProvider } from './push-provider.factory';
 import { OutboxRelay } from './relay/outbox-relay';
 import {
   DAILY_OPERATIONS_SCHEDULE_ID,
   ensureDailyOperationsSchedule,
+  PERIODIC_REWARDS_SCHEDULE_ID,
 } from './schedules/daily-operations.schedule';
+import { ensurePeriodicRewardsSchedule } from './schedules/periodic-rewards.schedule';
 import { temporalSdkLogger } from './temporal-logging';
 import { workflowSource } from './workflow-source';
 
@@ -49,14 +52,10 @@ export async function startWorkerProcess(
   const organization = new OrganizationContext(uow.stores.settings, systemClock, {
     smsConfigured: env.SMS_NOTIFICATIONS_ENABLED,
   });
-  const activities = createActivities({
-    uow,
-    clock: systemClock,
-    push,
-    scheduler,
-    organization,
-    logger,
-  });
+  const activities = createActivities(
+    { uow, clock: systemClock, push, scheduler, organization, logger },
+    createMaintenanceDependencies({ database, uow, clock: systemClock, logger, organization }),
+  );
 
   const nativeConnection = await NativeConnection.connect({ address: temporal.address });
   const worker = await Worker.create({
@@ -74,11 +73,12 @@ export async function startWorkerProcess(
     taskQueue: temporal.taskQueue,
     timeZone,
   });
-  logger.info('Daily operations schedule ready', {
-    scheduleId: DAILY_OPERATIONS_SCHEDULE_ID,
-    outcome: schedule,
+  const rewardsSchedule = await ensurePeriodicRewardsSchedule(client, {
+    scheduleId: PERIODIC_REWARDS_SCHEDULE_ID,
+    taskQueue: temporal.taskQueue,
     timeZone,
   });
+  logger.info('Schedules ready', { daily: schedule, periodicRewards: rewardsSchedule, timeZone });
 
   const relay = new OutboxRelay({ uow, scheduler, clock: systemClock, logger });
   const workerRun = worker.run();
