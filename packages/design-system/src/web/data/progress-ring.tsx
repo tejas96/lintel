@@ -60,10 +60,9 @@ export function ProgressRing({
           stroke="currentColor"
           strokeWidth={thickness}
           strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: clamped }}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: clamped, opacity: clamped === 0 ? 0 : 1 }}
           transition={dataTransition}
-          style={{ opacity: clamped === 0 ? 0 : 1 }}
         />
       </svg>
       {children && (

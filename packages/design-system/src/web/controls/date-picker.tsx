@@ -67,7 +67,9 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
   const selected = value ? parseISO(value) : null;
   const todayDate = today ? parseISO(today) : new Date();
-  const [focusDate, setFocusDate] = useState<Date>(selected ?? todayDate);
+  // Open on the chosen date, else today, else the earliest date allowed.
+  const firstAllowed = min && min > toKey(todayDate) ? parseISO(min) : todayDate;
+  const [focusDate, setFocusDate] = useState<Date>(selected ?? firstAllowed);
   const grid = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
@@ -106,9 +108,11 @@ export function DatePicker({
 
   return (
     <PopoverPrimitive.Root
+      // Modal so the calendar keeps focus even inside a dialog or sheet's focus trap.
+      modal
       open={open}
       onOpenChange={(next) => {
-        if (next) setFocusDate(selected ?? todayDate);
+        if (next) setFocusDate(selected ?? firstAllowed);
         setOpen(next);
       }}
     >

@@ -68,7 +68,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/leave',
     icon: CalendarRange,
     requires: ['leave.request'],
-    built: false,
+    built: true,
   },
   {
     id: 'rewards',
