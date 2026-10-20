@@ -2,7 +2,10 @@ import type { ProjectAccessStore } from '../access/project-access.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { NotificationStore } from '../notifications/notification.store';
 import type { PeopleStore } from '../people/people.store';
+import type { ProjectStore } from '../projects/project.store';
+import type { ScopeChangeStore } from '../scope-changes/scope-change.store';
 import type { SettingsStore } from '../settings/settings.store';
+import type { TemplateStore } from '../templates/template.store';
 import type { RecordStore } from './record.store';
 
 /**
@@ -14,8 +17,11 @@ export interface ApplicationStores {
   readonly identity: IdentityStore;
   readonly notifications: NotificationStore;
   readonly people: PeopleStore;
+  readonly projects: ProjectStore;
   readonly records: RecordStore;
+  readonly scopeChanges: ScopeChangeStore;
   readonly settings: SettingsStore;
+  readonly templates: TemplateStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */
