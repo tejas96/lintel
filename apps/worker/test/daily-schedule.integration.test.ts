@@ -42,6 +42,7 @@ describe('daily operations schedule', () => {
       type: 'startWorkflow',
       workflowType: 'dailyOperationsWorkflow',
       taskQueue: 'lintel-worker-test-schedule',
+      workflowExecutionTimeout: 12 * 3600 * 1000,
     });
     expect(description.policies.overlap).toBe('SKIP');
     const next = description.info.nextActionTimes[0];

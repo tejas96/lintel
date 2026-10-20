@@ -30,7 +30,10 @@ function scheduleParts(options: DailyOperationsScheduleOptions) {
     workflowId: `${options.scheduleId}-run`,
     taskQueue: options.taskQueue,
     args: [],
-  };
+    // With overlap SKIP, a run nobody executes (no worker on the queue) must not block
+    // every later day: give each run a bounded lifetime.
+    workflowExecutionTimeout: '12 hours',
+  } as const;
   // One run at a time; if the server was down at 08:30, catch up within six hours.
   const policies = { overlap: ScheduleOverlapPolicy.SKIP, catchupWindow: '6 hours' } as const;
   return { spec, action, policies };
