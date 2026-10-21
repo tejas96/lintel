@@ -8,11 +8,9 @@ import {
   pageEnter,
   SkeletonGroup,
   SkeletonText,
-  TabNav,
 } from '@lintel/design-system/web';
 import { Download } from 'lucide-react';
 import { motion } from 'motion/react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { InsightFilterBar } from '@/features/insights/insight-filter-bar';
@@ -20,12 +18,16 @@ import { useFilterOptions } from '@/features/insights/use-filter-options';
 import { insightSearch, useInsightFilters } from '@/features/insights/use-insight-filters';
 import { useSession } from '@/features/session/session-provider';
 import { todayIn } from '@/lib/format/dates';
+import { ReportTabs } from './report-tabs';
 
 const SECTIONS: readonly { report: ReportName; label: string; title: string }[] = [
   { report: 'delivery', label: 'Delivery', title: 'delivery reliability' },
   { report: 'workload', label: 'Workload', title: 'workload and capacity' },
   { report: 'leave', label: 'Leave', title: 'leave taken' },
   { report: 'approvals', label: 'Approvals', title: 'approvals turnaround' },
+  { report: 'estimates', label: 'Estimates', title: 'estimate accuracy' },
+  { report: 'rework', label: 'Rework', title: 'rework rate' },
+  { report: 'delays', label: 'Delays', title: 'approval delays' },
 ];
 
 /**
@@ -53,9 +55,9 @@ export function ReportsFrame({ children }: { readonly children: ReactNode }) {
           title="Reports"
           description={
             business
-              ? 'How reliably the studio delivers, how full people are, leave taken and how fast decisions are made — counted from the records.'
+              ? 'How reliably the studio delivers, how full people are, leave taken, how fast decisions are made and what history teaches about estimates, rework and waiting — counted from the records.'
               : allowed
-                ? 'Delivery, workload and decisions for the projects you manage, counted from the records.'
+                ? 'Delivery, workload, decisions, estimates, rework and waiting for the projects you manage, counted from the records.'
                 : undefined
           }
         />
@@ -72,9 +74,8 @@ export function ReportsFrame({ children }: { readonly children: ReactNode }) {
         />
       ) : (
         <>
-          <TabNav
-            label="Reports"
-            link={Link}
+          <ReportTabs
+            activeKey={current?.report ?? null}
             items={SECTIONS.map((section) => ({
               href: `/reports/${section.report}${search}`,
               label: section.label,
