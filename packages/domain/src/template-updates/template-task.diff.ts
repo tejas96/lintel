@@ -38,12 +38,17 @@ function changedTask(
     status: task.status,
     dates: duration?.dates ?? null,
   };
-  if (task.status === 'done') {
+  if (task.status === 'done' || task.status === 'in_review') {
     return {
       ...base,
       fields: holdTemplateChanges(fields),
       optIn: null,
-      blocked: { reason: 'Finished work stays as it was recorded.' },
+      blocked: {
+        reason:
+          task.status === 'done'
+            ? 'Finished work stays as it was recorded.'
+            : 'It is waiting for review. Decide the review first.',
+      },
     };
   }
   if (!isNotStartedTask(task.status)) {
