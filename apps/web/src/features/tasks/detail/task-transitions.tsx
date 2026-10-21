@@ -6,6 +6,7 @@ import { Hand, Info, OctagonPause, Pause, Play } from 'lucide-react';
 import { useState } from 'react';
 import { useTaskActions } from '../use-task-actions';
 import { WorkTimer } from '../work-timer';
+import { startMove } from '../work-tracking';
 
 const FORWARD = new Set(['in_review', 'done']);
 
@@ -24,11 +25,17 @@ export function TaskTransitions({ task, onReportBlocker }: TaskTransitionsProps)
   const [noteFor, setNoteFor] = useState<TransitionOption | null>(null);
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState<string | null>(null);
-  const allowed = task.transitions.filter((option) => option.allowed && option.to !== 'blocked');
+  // With time tracking, "Start work" starts a session and moves the task in one
+  // step, so the plain status button for that move is not shown as well.
+  const startsWork =
+    task.workTrackingEnabled && startMove(task.status, task.transitions) !== null;
+  const workable = task.workTrackingEnabled && (task.status === 'in_progress' || startsWork);
+  const allowed = task.transitions.filter(
+    (option) =>
+      option.allowed && option.to !== 'blocked' && !(startsWork && option.to === 'in_progress'),
+  );
   const canBlock = task.transitions.some((option) => option.allowed && option.to === 'blocked');
   const refused = task.transitions.filter((option) => !option.allowed && option.reasons.length > 0);
-  const workable =
-    task.workTrackingEnabled && ['ready', 'in_progress', 'changes_requested'].includes(task.status);
 
   const move = (option: TransitionOption, withNote: string | null) =>
     actions.transition.mutate(

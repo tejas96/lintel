@@ -31,8 +31,7 @@ export const E2E = {
   apiUrl: `http://127.0.0.1:${apiPort}`,
   webUrl: `http://localhost:${webPort}`,
   databaseUrl:
-    process.env.E2E_DATABASE_URL ??
-    'postgres://lintel:lintel-local-only@127.0.0.1:5450/lintel_channels_e2e',
+    process.env.E2E_DATABASE_URL ?? 'postgres://lintel:lintel-local-only@127.0.0.1:5450/lintel_e2e',
   /** The development sign-in code the API accepts in this suite. */
   otpCode: '123456',
 } as const;

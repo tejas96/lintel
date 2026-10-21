@@ -6,7 +6,7 @@ import { Check, Hand, OctagonPause, Pause, Play, Send } from 'lucide-react';
 import { useTask } from '@/features/tasks/use-task';
 import { useTaskActions } from '@/features/tasks/use-task-actions';
 import { WorkTimer } from '@/features/tasks/work-timer';
-import { canStartFrom, useWorkTracking } from '@/features/tasks/work-tracking';
+import { canStartFrom, startMove, useWorkTracking } from '@/features/tasks/work-tracking';
 
 interface HeroActionsProps {
   readonly task: TaskSummary;
@@ -29,8 +29,10 @@ function StartControl({ task, detail, run }: StartControlProps) {
   const queueTracking = useWorkTracking();
   const tracking = detail?.workTrackingEnabled ?? queueTracking;
   const sessionStartedAt = detail?.activeWorkSessionStartedAt ?? null;
+  // Once the detail has loaded, only offer a start the server would allow.
+  const startRefused = detail !== undefined && startMove(task.status, detail.transitions) === null;
   if (!tracking) {
-    if (!canStartFrom(task.status)) return null;
+    if (!canStartFrom(task.status) || startRefused) return null;
     const version = detail?.version ?? task.version;
     return (
       <Button
@@ -60,7 +62,7 @@ function StartControl({ task, detail, run }: StartControlProps) {
       </Button>
     );
   }
-  if (!canStartFrom(task.status) && task.status !== 'in_progress') return null;
+  if (task.status !== 'in_progress' && (!canStartFrom(task.status) || startRefused)) return null;
   return (
     <Button
       variant="blueprint"

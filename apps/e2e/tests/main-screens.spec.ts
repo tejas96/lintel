@@ -31,6 +31,26 @@ const SCREENS: Readonly<Record<SessionRole, readonly Screen[]>> = {
       path: '/account',
       ready: (page) => page.getByRole('heading', { name: 'Notifications' }),
     },
+    {
+      name: 'delivery report',
+      path: '/reports/delivery',
+      ready: (page) => page.getByText('Tasks on time').first(),
+    },
+    {
+      name: 'workload report',
+      path: '/reports/workload',
+      ready: (page) => page.getByText('Available hours').first(),
+    },
+    {
+      name: 'leave settings',
+      path: '/settings/leave',
+      ready: (page) => page.getByRole('heading', { name: 'Leave types' }),
+    },
+    {
+      name: 'working week settings',
+      path: '/settings/working-week',
+      ready: (page) => page.getByText('Studio week').first(),
+    },
   ],
   projectManager: [
     {
@@ -69,6 +89,8 @@ test.describe('dark theme', () => {
     { name: 'today (dark)', path: '/today', text: 'Next priority' },
     { name: 'command center (dark)', path: '/command-center', text: 'Banyan Court Villa' },
     { name: 'account (dark)', path: '/account', text: 'How each kind of notification reaches you' },
+    { name: 'workload report (dark)', path: '/reports/workload', text: 'Hours by week' },
+    { name: 'leave settings (dark)', path: '/settings/leave', text: 'Second approval' },
   ]) {
     test(`${screen.name} has no serious accessibility problems`, async ({ page }, testInfo) => {
       await page.goto(screen.path);
@@ -91,5 +113,24 @@ test.describe('project detail', () => {
       .click();
     await expect(page.getByRole('heading', { name: 'Saska Residence' })).toBeVisible();
     await expectAccessible(page, testInfo, 'project detail');
+  });
+});
+
+test.describe('project documents', () => {
+  test.use({ storageState: sessionFile('projectManager') });
+
+  test('the documents tab has no serious accessibility problems', async ({ page }, testInfo) => {
+    await page.goto('/projects');
+    await page
+      .getByRole('link', { name: /Saska Residence/ })
+      .first()
+      .click();
+    await page
+      .getByRole('tab', { name: 'Documents' })
+      .or(page.getByRole('link', { name: 'Documents' }))
+      .first()
+      .click();
+    await expect(page.getByText('All documents').first()).toBeVisible();
+    await expectAccessible(page, testInfo, 'project documents');
   });
 });

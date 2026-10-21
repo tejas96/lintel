@@ -42,8 +42,8 @@ pnpm infra:up && pnpm build        # the suite runs the built API and web app
 pnpm test:e2e                      # Playwright + axe, ~1 minute after the first web build
 ```
 
-- Ports 4131 (API) and 3131 (web); database `E2E_DATABASE_URL` (default
-  `…/lintel_channels_e2e` locally, `…/lintel_e2e` in CI). The API's start command resets
+- Ports 4131 (API) and 3131 (web); database `E2E_DATABASE_URL` (default `…/lintel_e2e`,
+  locally and in CI; create it once with `createdb lintel_e2e`). The API's start command resets
   that database (its name must contain `e2e`), migrates and seeds it, so each run starts
   from the same demo studio. Object storage uses the local RustFS with bucket `lintel-e2e`.
 - The web build bakes the `/api` rewrite in: the suite rebuilds `apps/web` when it does

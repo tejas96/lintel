@@ -36,7 +36,7 @@ function Gauge({
   return (
     <span className="relative flex h-full w-full max-w-9 items-end justify-center">
       <motion.span
-        className="absolute bottom-0 w-full origin-bottom rounded-t-[5px] border border-b-0 border-rule bg-sunken/80"
+        className="absolute bottom-0 w-full origin-bottom rounded-t-[5px] border border-b-0 border-rule bg-ink/[0.07]"
         style={{ height: available }}
         {...motionProps(index * 0.03)}
       />
@@ -120,7 +120,7 @@ export function WorkloadChart({
         ))}
       </div>
       <figcaption className="flex flex-wrap gap-x-4 gap-y-2">
-        <LegendItem swatch="border border-rule bg-sunken">Available</LegendItem>
+        <LegendItem swatch="border border-rule bg-ink/[0.07]">Available</LegendItem>
         <LegendItem swatch="bg-on-track-solid">Planned, coloured by load</LegendItem>
         {tracking && <LegendItem swatch="h-0.5 rounded-full bg-ink">Logged</LegendItem>}
       </figcaption>
