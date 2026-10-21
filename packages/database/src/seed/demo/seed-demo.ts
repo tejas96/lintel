@@ -75,6 +75,8 @@ async function proposeScopeChange(context: DemoContext, demo: DemoProject, proje
       title: change.title,
       description: change.description,
       taskShifts: [{ taskId: next.id, shiftWorkingDays: change.shift }],
+      newTasks: [],
+      cancelTaskIds: [],
     },
   );
 }

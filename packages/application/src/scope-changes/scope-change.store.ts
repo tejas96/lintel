@@ -1,4 +1,10 @@
-import type { Capability, MilestoneStatus, TaskDependencyEdge, TaskStatus } from '@lintel/domain';
+import type {
+  Capability,
+  MilestoneStatus,
+  TaskDependencyEdge,
+  TaskPriority,
+  TaskStatus,
+} from '@lintel/domain';
 
 export interface ScheduleTaskFact {
   readonly id: string;
@@ -56,6 +62,40 @@ export interface NewScopeChange {
   readonly requestedByUserId: string;
   readonly impacts: readonly ScopeChangeImpact[];
   readonly projectEndImpactDays: number;
+  readonly newTasks: readonly ScopeChangeNewTask[];
+  readonly cancellations: readonly ScopeChangeCancellation[];
+}
+
+/** A task the proposal adds; it is created only if the change is approved. */
+export interface ScopeChangeNewTask {
+  readonly title: string;
+  readonly stageId: string | null;
+  readonly plannedStartDate: string | null;
+  readonly dueDate: string | null;
+  readonly ownerUserId: string | null;
+  readonly priority: TaskPriority;
+}
+
+export interface StoredScopeChangeNewTask extends ScopeChangeNewTask {
+  readonly id: string;
+  readonly createdTaskId: string | null;
+}
+
+/** A task the proposal cancels, with the status it had when proposed. */
+export interface ScopeChangeCancellation {
+  readonly taskId: string;
+  readonly statusAtProposal: TaskStatus;
+}
+
+export interface StoredScopeChangeCancellation extends ScopeChangeCancellation {
+  readonly id: string;
+  readonly taskTitle: string;
+}
+
+export interface ScopeStageFact {
+  readonly id: string;
+  readonly name: string;
+  readonly status: 'pending' | 'active' | 'completed' | 'skipped';
 }
 
 export interface ScopeChangeDecision {
@@ -100,4 +140,14 @@ export interface ScopeChangeStore {
   extendProjectEnd(projectId: string, plannedEndDate: string): Promise<void>;
   /** Active people whose role currently grants the capability. */
   userIdsWithCapability(capability: Capability): Promise<string[]>;
+  stagesOf(projectId: string): Promise<ScopeStageFact[]>;
+  newTasksOf(scopeChangeId: string): Promise<StoredScopeChangeNewTask[]>;
+  cancellationsOf(scopeChangeId: string): Promise<StoredScopeChangeCancellation[]>;
+  /** Links an approved addition to the task it created. */
+  linkCreatedTask(newTaskId: string, taskId: string): Promise<void>;
+  /** Records whether approval cancelled the task, or why it left it as it was. */
+  settleCancellation(
+    cancellationId: string,
+    outcome: { readonly appliedAt: Date } | { readonly skipReason: string },
+  ): Promise<void>;
 }

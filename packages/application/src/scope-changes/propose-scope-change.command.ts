@@ -1,42 +1,42 @@
 import { notificationDedupeKey } from '@lintel/domain';
-import { NotFoundError, ValidationFailedError } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import type { ProjectCommandDependencies } from '../projects/command-dependencies';
-import type { ProjectScheduleFacts, ScopeChangeImpact } from './scope-change.store';
-import {
-  calculateScopeChangeImpact,
-  type ScopeChangeImpactResult,
-  scopeChangeShiftIssues,
-  type TaskShiftRequest,
-} from './scope-change-impact';
+import type {
+  ProjectScheduleFacts,
+  ScopeChangeImpact,
+  ScopeChangeNewTask,
+} from './scope-change.store';
+import type { ScopeChangeRequest } from './scope-change-additions';
+import { type AssessedScopeChange, assessScopeChangeRequest } from './scope-change-assessment';
 
-export interface ScopeChangeProposal {
+export interface ScopeChangeProposal extends ScopeChangeRequest {
   readonly title: string;
   readonly description: string;
-  readonly taskShifts: readonly TaskShiftRequest[];
 }
 
 export interface ScopeChangePreview {
   readonly impacts: ScopeChangeImpact[];
   readonly projectEndImpactDays: number;
+  readonly newTasks: ScopeChangeNewTask[];
+  readonly cancellations: { readonly taskId: string; readonly taskTitle: string }[];
 }
 
-function contractImpacts(result: ScopeChangeImpactResult): ScopeChangeImpact[] {
-  return result.impacts.map((impact) => ({
-    taskId: impact.taskId,
-    taskTitle: impact.taskTitle,
-    currentDueDate: impact.currentDueDate,
-    proposedDueDate: impact.proposedDueDate,
-    shiftWorkingDays: impact.shiftWorkingDays,
-    isDownstream: impact.isDownstream,
-  }));
+/** "2 moved, 1 added, 1 cancelled" — only the parts the change has. */
+export function describeScopeChange(assessed: AssessedScopeChange): string {
+  const parts = [
+    assessed.impacts.length > 0 ? `${assessed.impacts.length} moved` : null,
+    assessed.newTasks.length > 0 ? `${assessed.newTasks.length} added` : null,
+    assessed.cancellations.length > 0 ? `${assessed.cancellations.length} cancelled` : null,
+  ].filter((part): part is string => part !== null);
+  return `${parts.join(', ')} task(s)`;
 }
 
 /**
- * Anyone on a project can preview or propose a scope change. Proposing
- * stores the request with its schedule impact and asks every approver.
+ * Anyone on a project can preview or propose a scope change: date moves,
+ * new tasks and cancellations together. Proposing stores the request with
+ * its schedule impact and asks every approver.
  */
 export class ProposeScopeChangeCommand {
   constructor(private readonly deps: ProjectCommandDependencies) {}
@@ -44,12 +44,17 @@ export class ProposeScopeChangeCommand {
   async preview(
     context: RequestContext,
     projectId: string,
-    shifts: readonly TaskShiftRequest[],
+    request: ScopeChangeRequest,
   ): Promise<ScopeChangePreview> {
     const stores = this.deps.uow.stores;
     await new ProjectAccessService(stores.access).requireView(context.actor, projectId);
-    const { result } = await this.assess(stores, projectId, shifts);
-    return { impacts: contractImpacts(result), projectEndImpactDays: result.projectEndImpactDays };
+    const assessed = await assessScopeChangeRequest(stores, projectId, request);
+    return {
+      impacts: assessed.impacts,
+      projectEndImpactDays: assessed.result.projectEndImpactDays,
+      newTasks: assessed.newTasks,
+      cancellations: assessed.cancellations.map(({ taskId, taskTitle }) => ({ taskId, taskTitle })),
+    };
   }
 
   async propose(
@@ -59,21 +64,27 @@ export class ProposeScopeChangeCommand {
   ): Promise<{ id: string }> {
     return this.deps.uow.transaction(async (stores) => {
       await new ProjectAccessService(stores.access).requireView(context.actor, projectId);
-      const { facts, result } = await this.assess(stores, projectId, proposal.taskShifts);
+      const assessed = await assessScopeChangeRequest(stores, projectId, proposal);
+      const { result } = assessed;
       const { id } = await stores.scopeChanges.insert({
         projectId,
         title: proposal.title,
         description: proposal.description,
         requestedByUserId: context.actor.userId,
-        impacts: contractImpacts(result),
+        impacts: assessed.impacts,
         projectEndImpactDays: result.projectEndImpactDays,
+        newTasks: assessed.newTasks,
+        cancellations: assessed.cancellations.map(({ taskId, statusAtProposal }) => ({
+          taskId,
+          statusAtProposal,
+        })),
       });
       await stores.records.appendActivity({
         projectId,
         taskId: null,
         actorUserId: context.actor.userId,
         type: 'scope_change.proposed',
-        summary: `Proposed scope change "${proposal.title}" affecting ${result.impacts.length} task(s).`,
+        summary: `Proposed scope change "${proposal.title}": ${describeScopeChange(assessed)}.`,
         payload: { scopeChangeId: id, projectEndImpactDays: result.projectEndImpactDays },
       });
       await stores.records.appendAudit({
@@ -84,36 +95,27 @@ export class ProposeScopeChangeCommand {
         after: {
           projectId,
           title: proposal.title,
-          taskCount: result.impacts.length,
+          taskCount: assessed.impacts.length,
+          newTaskCount: assessed.newTasks.length,
+          cancelledTaskIds: proposal.cancelTaskIds,
           projectEndImpactDays: result.projectEndImpactDays,
         },
         requestId: context.requestId,
       });
-      await this.askApprovers(stores, context, facts, { id, title: proposal.title, result });
+      await this.askApprovers(stores, context, assessed.facts, {
+        id,
+        title: proposal.title,
+        days: result.projectEndImpactDays,
+      });
       return { id };
     });
-  }
-
-  private async assess(
-    stores: ApplicationStores,
-    projectId: string,
-    shifts: readonly TaskShiftRequest[],
-  ): Promise<{ facts: ProjectScheduleFacts; result: ScopeChangeImpactResult }> {
-    const facts = await stores.scopeChanges.scheduleFacts(projectId);
-    if (!facts) throw new NotFoundError('Project');
-    const issues = scopeChangeShiftIssues(facts, shifts);
-    if (issues.length > 0) {
-      throw new ValidationFailedError('Some task changes need attention.', issues);
-    }
-    const calendar = await stores.settings.defaultCalendar();
-    return { facts, result: calculateScopeChangeImpact(facts, shifts, calendar) };
   }
 
   private async askApprovers(
     stores: ApplicationStores,
     context: RequestContext,
     facts: ProjectScheduleFacts,
-    change: { id: string; title: string; result: ScopeChangeImpactResult },
+    change: { id: string; title: string; days: number },
   ): Promise<void> {
     const approvers = (
       await stores.scopeChanges.userIdsWithCapability('scope_changes.approve')
@@ -121,8 +123,8 @@ export class ProposeScopeChangeCommand {
     if (approvers.length === 0) return;
     const names = await stores.projects.userNames([context.actor.userId]);
     const requester = names.get(context.actor.userId) ?? 'A team member';
-    const days = change.result.projectEndImpactDays;
-    const impact = days > 0 ? ` It would move the planned end by ${days} working day(s).` : '';
+    const impact =
+      change.days > 0 ? ` It would move the planned end by ${change.days} working day(s).` : '';
     const notifier = await this.deps.notifierFor(stores);
     for (const userId of approvers) {
       await notifier.notify({
@@ -130,7 +132,7 @@ export class ProposeScopeChangeCommand {
         kind: 'scope_change_requested',
         title: `Scope change in ${facts.name}`,
         body: `${requester} proposed "${change.title}".${impact}`,
-        linkPath: `/projects/${facts.projectId}/scope-changes`,
+        linkPath: `/projects/${facts.projectId}/scope`,
         subjectType: 'scope_change',
         subjectId: change.id,
         dedupeKey: notificationDedupeKey({

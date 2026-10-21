@@ -1,7 +1,11 @@
 import { domainEvent } from '@lintel/domain';
 import { ForbiddenError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
-import type { OperationsDependencies } from './operations-context';
+import type {
+  OperationsContext,
+  OperationsDependencies,
+  OperationsStores,
+} from './operations-context';
 import { admitToProject } from './project-admission';
 import type { TaskRecord } from './task.store';
 import { type LoadedTask, loadTaskForActor } from './task-loader';
@@ -14,6 +18,77 @@ function assertCanAssign(loaded: LoadedTask): void {
   }
 }
 
+export interface AssignTaskInput {
+  readonly ownerUserId: string;
+  readonly reason: string | null;
+  readonly version: number;
+}
+
+/**
+ * Sets or changes a task's accountable owner inside the caller's transaction:
+ * checks the right to assign, admits the person to the project, audits the
+ * change, notifies the new and previous owner and starts reminders. Shared by
+ * direct assignment and accepted reassignment requests.
+ */
+export async function assignTaskOwner(
+  stores: OperationsStores,
+  operations: OperationsContext,
+  context: RequestContext,
+  taskId: string,
+  input: AssignTaskInput,
+): Promise<TaskRecord> {
+  const loaded = await loadTaskForActor(stores, context.actor, taskId, true);
+  const { task } = loaded;
+  assertCanAssign(loaded);
+  if (task.version !== input.version) throw new StaleVersionError('This task');
+  await assertActivePeople(stores, [{ field: 'ownerUserId', userId: input.ownerUserId }]);
+  assertReviewerIsNotOwner(input.ownerUserId, task.reviewerUserId);
+  if (task.ownerUserId === input.ownerUserId) return task;
+  await admitToProject(stores, loaded.access, task.projectId, [input.ownerUserId]);
+  if (loaded.collaboratorUserIds.includes(input.ownerUserId)) {
+    await stores.tasks.replaceCollaborators(
+      task.id,
+      loaded.collaboratorUserIds.filter((id) => id !== input.ownerUserId),
+    );
+  }
+  const after = await stores.tasks.update(task.id, input.version, {
+    ownerUserId: input.ownerUserId,
+    acknowledgedAt: null,
+  });
+  if (!after) throw new StaleVersionError('This task');
+  await recordTaskChange(stores.records, context, after, {
+    action: 'task.assigned',
+    summary: `Assigned ${quoted(after.title)} to a new owner.`,
+    before: { ownerUserId: task.ownerUserId },
+    after: { ownerUserId: input.ownerUserId, reason: input.reason },
+  });
+  const notifier = await operations.notifierFor(stores);
+  const reason = input.reason ? ` Reason: ${input.reason}` : '';
+  await notifyAboutTask(notifier, context.actor.userId, after, `v${after.version}`, [
+    {
+      kind: 'task_assigned',
+      recipientUserId: input.ownerUserId,
+      title: `New task: ${quoted(after.title)}`,
+      body: `${after.dueDate ? `Due ${after.dueDate}.` : 'A task was assigned to you.'}${reason}`,
+    },
+    {
+      kind: 'task_reassigned',
+      recipientUserId: task.ownerUserId,
+      title: `${quoted(after.title)} was reassigned`,
+      body: `Someone else now owns this task.${reason}`,
+    },
+  ]);
+  await stores.records.enqueueEvent(
+    domainEvent('TaskAssigned', 'task', after.id, {
+      taskId: after.id,
+      projectId: after.projectId,
+      ownerId: input.ownerUserId,
+      assignedBy: context.actor.userId,
+    }),
+  );
+  return after;
+}
+
 /** Ownership, collaborators and acknowledgement of a task. */
 export class AssignTaskCommands {
   constructor(private readonly deps: OperationsDependencies) {}
@@ -21,60 +96,11 @@ export class AssignTaskCommands {
   async assign(
     context: RequestContext,
     taskId: string,
-    input: { ownerUserId: string; reason: string | null; version: number },
+    input: AssignTaskInput,
   ): Promise<TaskRecord> {
-    return this.deps.uow.transaction(async (stores) => {
-      const loaded = await loadTaskForActor(stores, context.actor, taskId, true);
-      const { task } = loaded;
-      assertCanAssign(loaded);
-      if (task.version !== input.version) throw new StaleVersionError('This task');
-      await assertActivePeople(stores, [{ field: 'ownerUserId', userId: input.ownerUserId }]);
-      assertReviewerIsNotOwner(input.ownerUserId, task.reviewerUserId);
-      if (task.ownerUserId === input.ownerUserId) return task;
-      await admitToProject(stores, loaded.access, task.projectId, [input.ownerUserId]);
-      if (loaded.collaboratorUserIds.includes(input.ownerUserId)) {
-        await stores.tasks.replaceCollaborators(
-          task.id,
-          loaded.collaboratorUserIds.filter((id) => id !== input.ownerUserId),
-        );
-      }
-      const after = await stores.tasks.update(task.id, input.version, {
-        ownerUserId: input.ownerUserId,
-        acknowledgedAt: null,
-      });
-      if (!after) throw new StaleVersionError('This task');
-      await recordTaskChange(stores.records, context, after, {
-        action: 'task.assigned',
-        summary: `Assigned ${quoted(after.title)} to a new owner.`,
-        before: { ownerUserId: task.ownerUserId },
-        after: { ownerUserId: input.ownerUserId, reason: input.reason },
-      });
-      const notifier = await this.deps.context.notifierFor(stores);
-      const reason = input.reason ? ` Reason: ${input.reason}` : '';
-      await notifyAboutTask(notifier, context.actor.userId, after, `v${after.version}`, [
-        {
-          kind: 'task_assigned',
-          recipientUserId: input.ownerUserId,
-          title: `New task: ${quoted(after.title)}`,
-          body: `${after.dueDate ? `Due ${after.dueDate}.` : 'A task was assigned to you.'}${reason}`,
-        },
-        {
-          kind: 'task_reassigned',
-          recipientUserId: task.ownerUserId,
-          title: `${quoted(after.title)} was reassigned`,
-          body: `Someone else now owns this task.${reason}`,
-        },
-      ]);
-      await stores.records.enqueueEvent(
-        domainEvent('TaskAssigned', 'task', after.id, {
-          taskId: after.id,
-          projectId: after.projectId,
-          ownerId: input.ownerUserId,
-          assignedBy: context.actor.userId,
-        }),
-      );
-      return after;
-    });
+    return this.deps.uow.transaction((stores) =>
+      assignTaskOwner(stores, this.deps.context, context, taskId, input),
+    );
   }
 
   async setCollaborators(

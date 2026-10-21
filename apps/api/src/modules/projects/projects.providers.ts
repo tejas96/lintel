@@ -20,27 +20,25 @@ export const PROJECT_COMMAND_DEPENDENCIES = Symbol('PROJECT_COMMAND_DEPENDENCIES
 
 type Dependencies = ProjectCommandDependencies;
 
+/** Unit of work, clock and notifier factory for project use cases (shared with template updates). */
+export const projectCommandDependenciesProvider: Provider = {
+  provide: PROJECT_COMMAND_DEPENDENCIES,
+  inject: [UNIT_OF_WORK, CLOCK, BusinessContextService],
+  useFactory: (
+    uow: UnitOfWork<ApplicationStores>,
+    clock: Clock,
+    business: BusinessContextService,
+  ): Dependencies => ({
+    uow,
+    clock,
+    notifierFor: async (stores) =>
+      new Notifier(stores.notifications, stores.records, clock, await business.notifierDefaults()),
+  }),
+};
+
 /** Wires project, milestone and scope-change use cases to their adapters. */
 export const projectProviders: Provider[] = [
-  {
-    provide: PROJECT_COMMAND_DEPENDENCIES,
-    inject: [UNIT_OF_WORK, CLOCK, BusinessContextService],
-    useFactory: (
-      uow: UnitOfWork<ApplicationStores>,
-      clock: Clock,
-      business: BusinessContextService,
-    ): Dependencies => ({
-      uow,
-      clock,
-      notifierFor: async (stores) =>
-        new Notifier(
-          stores.notifications,
-          stores.records,
-          clock,
-          await business.notifierDefaults(),
-        ),
-    }),
-  },
+  projectCommandDependenciesProvider,
   {
     provide: ProjectAccessService,
     inject: [UNIT_OF_WORK],

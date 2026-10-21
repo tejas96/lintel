@@ -1,4 +1,4 @@
-import { domainEvent, notificationDedupeKey } from '@lintel/domain';
+import { domainEvent } from '@lintel/domain';
 import {
   ForbiddenError,
   InvalidTransitionError,
@@ -11,7 +11,9 @@ import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import type { ProjectCommandDependencies } from '../projects/command-dependencies';
 import { applyApprovedSchedule } from './apply-approved-schedule';
+import { type AppliedScopeAdditions, applyScopeAdditions } from './apply-scope-additions';
 import type { ScopeChangeRecord } from './scope-change.store';
+import { sendScopeDecisionNotices } from './scope-change-notices';
 
 export interface ScopeChangeDecisionInput {
   readonly decision: 'approved' | 'rejected';
@@ -19,9 +21,12 @@ export interface ScopeChangeDecisionInput {
   readonly expectedVersion: number;
 }
 
+const NOTHING_ADDED: AppliedScopeAdditions = { created: [], cancelled: [] };
+
 /**
  * Approvers accept or reject a proposed scope change. Approval applies the
- * new dates in the same transaction and keeps the history; baselines never move.
+ * new dates, creates the added tasks and cancels the removed ones in the
+ * same transaction, keeping the history; baselines never move.
  */
 export class DecideScopeChangeCommand {
   constructor(private readonly deps: ProjectCommandDependencies) {}
@@ -46,23 +51,33 @@ export class DecideScopeChangeCommand {
       if (change.status !== 'proposed') {
         throw new InvalidTransitionError(`This scope change was already ${change.status}.`);
       }
+      const decidedAt = this.deps.clock.now();
       const decided = await stores.scopeChanges.decide(scopeChangeId, input.expectedVersion, {
         status: input.decision,
         decidedByUserId: context.actor.userId,
-        decidedAt: this.deps.clock.now(),
+        decidedAt,
         note: input.note,
       });
       if (!decided) throw new StaleVersionError('This scope change');
-      const moves =
-        input.decision === 'approved'
-          ? await applyApprovedSchedule(stores, {
-              scopeChange: change,
-              note: input.note,
-              decidedByUserId: context.actor.userId,
-            })
-          : [];
-      await this.record(stores, context, change, input, moves.length);
-      await this.notify(stores, context, change, input, moves);
+      const approved = input.decision === 'approved';
+      const approval = {
+        scopeChange: change,
+        note: input.note,
+        decidedByUserId: context.actor.userId,
+        at: decidedAt,
+      };
+      const moves = approved ? await applyApprovedSchedule(stores, approval) : [];
+      const additions = approved ? await applyScopeAdditions(stores, approval) : NOTHING_ADDED;
+      await this.record(stores, context, change, input, { moved: moves.length, additions });
+      const project = await stores.projects.findById(change.projectId);
+      await sendScopeDecisionNotices(await this.deps.notifierFor(stores), context, {
+        change,
+        decision: input.decision,
+        note: input.note,
+        projectName: project?.name ?? 'the project',
+        moves,
+        additions,
+      });
       return { projectId: change.projectId };
     });
   }
@@ -72,16 +87,24 @@ export class DecideScopeChangeCommand {
     context: RequestContext,
     change: ScopeChangeRecord,
     input: ScopeChangeDecisionInput,
-    movedCount: number,
+    applied: { moved: number; additions: AppliedScopeAdditions },
   ): Promise<void> {
-    const moved = input.decision === 'approved' ? ` ${movedCount} task(s) rescheduled.` : '';
+    const counts = {
+      movedCount: applied.moved,
+      createdCount: applied.additions.created.length,
+      cancelledCount: applied.additions.cancelled.length,
+    };
+    const outcome =
+      input.decision === 'approved'
+        ? ` ${counts.movedCount} task(s) rescheduled, ${counts.createdCount} added, ${counts.cancelledCount} cancelled.`
+        : '';
     await stores.records.appendActivity({
       projectId: change.projectId,
       taskId: null,
       actorUserId: context.actor.userId,
       type: `scope_change.${input.decision}`,
-      summary: `Scope change "${change.title}" ${input.decision}.${moved}`,
-      payload: { scopeChangeId: change.id, note: input.note, movedCount },
+      summary: `Scope change "${change.title}" ${input.decision}.${outcome}`,
+      payload: { scopeChangeId: change.id, note: input.note, ...counts },
     });
     await stores.records.appendAudit({
       actorUserId: context.actor.userId,
@@ -89,7 +112,13 @@ export class DecideScopeChangeCommand {
       entityType: 'scope_change',
       entityId: change.id,
       before: { status: change.status },
-      after: { status: input.decision, note: input.note, movedCount },
+      after: {
+        status: input.decision,
+        note: input.note,
+        ...counts,
+        createdTaskIds: applied.additions.created.map((task) => task.taskId),
+        cancelledTaskIds: applied.additions.cancelled.map((task) => task.taskId),
+      },
       requestId: context.requestId,
     });
     await stores.records.enqueueEvent(
@@ -99,58 +128,5 @@ export class DecideScopeChangeCommand {
         status: input.decision,
       }),
     );
-  }
-
-  private async notify(
-    stores: ApplicationStores,
-    context: RequestContext,
-    change: ScopeChangeRecord,
-    input: ScopeChangeDecisionInput,
-    moves: readonly { ownerUserId: string | null }[],
-  ): Promise<void> {
-    const project = await stores.projects.findById(change.projectId);
-    const projectName = project?.name ?? 'the project';
-    const notifier = await this.deps.notifierFor(stores);
-    const link = `/projects/${change.projectId}/scope-changes`;
-    if (change.requestedByUserId !== context.actor.userId) {
-      await notifier.notify({
-        recipientUserId: change.requestedByUserId,
-        kind: 'scope_change_decided',
-        title: `Scope change ${input.decision}`,
-        body: `"${change.title}" in ${projectName} was ${input.decision}: ${input.note}`,
-        linkPath: link,
-        subjectType: 'scope_change',
-        subjectId: change.id,
-        dedupeKey: notificationDedupeKey({
-          kind: 'scope_change_decided',
-          recipientId: change.requestedByUserId,
-          subjectId: change.id,
-          window: 'decision',
-        }),
-      });
-    }
-    const perOwner = new Map<string, number>();
-    for (const move of moves) {
-      if (move.ownerUserId)
-        perOwner.set(move.ownerUserId, (perOwner.get(move.ownerUserId) ?? 0) + 1);
-    }
-    for (const [ownerUserId, count] of perOwner) {
-      if (ownerUserId === context.actor.userId) continue;
-      await notifier.notify({
-        recipientUserId: ownerUserId,
-        kind: 'scope_change_decided',
-        title: `New dates in ${projectName}`,
-        body: `Approved scope change "${change.title}" moved ${count} of your task(s).`,
-        linkPath: link,
-        subjectType: 'scope_change',
-        subjectId: change.id,
-        dedupeKey: notificationDedupeKey({
-          kind: 'scope_change_decided',
-          recipientId: ownerUserId,
-          subjectId: change.id,
-          window: 'schedule',
-        }),
-      });
-    }
   }
 }

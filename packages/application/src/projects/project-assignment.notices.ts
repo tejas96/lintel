@@ -11,6 +11,8 @@ export interface AssignmentAnnouncement {
   readonly actorUserId: string;
   readonly project: { readonly id: string; readonly name: string };
   readonly assigned: readonly AssignedTask[];
+  /** Makes the notice unique per occasion (e.g. a template update); omit for project creation. */
+  readonly window?: string;
 }
 
 /**
@@ -50,6 +52,7 @@ export async function announceNewAssignments(
         kind: 'task_assigned',
         recipientId: userId,
         subjectId: project.id,
+        ...(announcement.window ? { window: announcement.window } : {}),
       }),
     });
   }

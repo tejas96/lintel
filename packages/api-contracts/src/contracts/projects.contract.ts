@@ -18,9 +18,12 @@ import {
   projectStatusSchema,
   projectSummarySchema,
   projectTypeSchema,
-  scopeChangeObject,
-  scopeChangeSchema,
 } from '../schemas/project.schema';
+import {
+  scopeChangeDetailSchema,
+  scopeChangePreviewSchema,
+  scopeChangeRequestSchema,
+} from '../schemas/scope-change.schema';
 
 const c = initContract();
 
@@ -133,32 +136,26 @@ export const projectsContract = c.router({
     method: 'GET',
     path: '/projects/:id/scope-changes',
     pathParams: idParams,
-    responses: { 200: z.array(scopeChangeSchema) },
+    responses: { 200: z.array(scopeChangeDetailSchema) },
   },
   previewScopeChange: {
     method: 'POST',
     path: '/projects/:id/scope-changes/preview',
     pathParams: idParams,
-    body: z.object({
-      taskShifts: z
-        .array(z.object({ taskId: idSchema, shiftWorkingDays: z.number().int().min(-60).max(120) }))
-        .min(1),
-    }),
-    responses: { 200: scopeChangeObject.pick({ impacts: true, projectEndImpactDays: true }) },
-    summary: 'Show which tasks and dates a proposed change would move, without saving it.',
+    body: scopeChangeRequestSchema,
+    responses: { 200: scopeChangePreviewSchema },
+    summary:
+      'Show which tasks and dates a proposed change would move, add or cancel, and its effect on the end date, without saving it.',
   },
   proposeScopeChange: {
     method: 'POST',
     path: '/projects/:id/scope-changes',
     pathParams: idParams,
-    body: z.object({
+    body: scopeChangeRequestSchema.extend({
       title: shortTextSchema,
       description: noteSchema,
-      taskShifts: z.array(
-        z.object({ taskId: idSchema, shiftWorkingDays: z.number().int().min(-60).max(120) }),
-      ),
     }),
-    responses: { 201: scopeChangeSchema },
+    responses: { 201: scopeChangeDetailSchema },
   },
   decideScopeChange: {
     method: 'POST',
@@ -169,7 +166,8 @@ export const projectsContract = c.router({
       note: noteSchema,
       version: versionSchema,
     }),
-    responses: { 200: scopeChangeSchema },
-    summary: 'Approve (applies the new dates, keeping the history) or reject a scope change.',
+    responses: { 200: scopeChangeDetailSchema },
+    summary:
+      'Approve (applies the new dates, creates added tasks and cancels removed ones, keeping the history) or reject a scope change.',
   },
 });
