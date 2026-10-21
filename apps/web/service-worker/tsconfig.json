@@ -1,0 +1,13 @@
+{
+  "extends": "@lintel/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": []
+  },
+  "include": ["*.ts"]
+}

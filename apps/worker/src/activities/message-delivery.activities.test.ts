@@ -136,7 +136,7 @@ describe('email delivery', () => {
   it('keeps sensitive kinds generic', async () => {
     const fake = world('email', 'pending', { kind: 'reward_updated', title: 'Reward: ₹5,000' });
     await fake.activities.deliverMessage('notification-1', 'email');
-    expect(fake.email.sent[0]?.subject).toBe('Lintel');
+    expect(fake.email.sent[0]?.subject).toBe('You have a private update');
     expect(fake.email.sent[0]?.text).not.toContain('₹');
     expect(fake.email.sent[0]?.html).not.toContain('₹');
   });

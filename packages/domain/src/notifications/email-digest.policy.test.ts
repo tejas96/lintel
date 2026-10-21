@@ -49,7 +49,7 @@ describe('email digest grouping', () => {
       item('reward_updated', '2026-11-09T05:00:00Z', 'Reward approved: ₹5,000'),
     ]);
     const entry = plan?.sections[0]?.entries[0];
-    expect(entry?.title).toBe('Lintel');
+    expect(entry?.title).toBe('You have a private update');
     expect(entry?.body).not.toContain('₹');
     expect(entry?.linkPath).toBe(`/tasks/${counter}`);
   });

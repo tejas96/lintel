@@ -11,7 +11,9 @@ import {
   SkeletonText,
 } from '@lintel/design-system/web';
 import { useState } from 'react';
+import { WebPushSettings } from '@/features/push/web-push-settings';
 import { describeError } from '@/lib/api/describe-error';
+import { EmailSettings } from './email-settings';
 import { NotificationMatrix } from './notification-matrix';
 import { useNotificationPreferences, useSavePreferences } from './use-notification-preferences';
 
@@ -43,14 +45,23 @@ function PreferencesForm({ saved }: { readonly saved: NotificationPreferences })
   const [own, setOwn] = useState(saved.quietHours !== null);
   const [start, setStart] = useState(saved.quietHours?.start ?? '21:00');
   const [end, setEnd] = useState(saved.quietHours?.end ?? '08:00');
+  const [emailDigest, setEmailDigest] = useState(saved.emailDigest);
   const quietHours = own ? { start, end } : null;
-  const next = { ...preferences, quietHours };
+  const next = { ...preferences, quietHours, emailDigest };
   const dirty = JSON.stringify(next) !== JSON.stringify(saved);
   const sameTimes = own && start === end;
 
   return (
     <div className="flex flex-col gap-6">
+      <WebPushSettings />
       <NotificationMatrix preferences={preferences} onChange={setPreferences} />
+      {saved.delivery.email && (
+        <EmailSettings
+          delivery={saved.delivery}
+          emailDigest={emailDigest}
+          onEmailDigestChange={setEmailDigest}
+        />
+      )}
       <section className="flex flex-col gap-3 rounded-lg border border-hairline bg-raised p-5">
         <div className="flex flex-col gap-1">
           <h3 className="type-title-md text-ink">Quiet hours</h3>

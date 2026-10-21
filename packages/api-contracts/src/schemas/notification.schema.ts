@@ -38,6 +38,8 @@ export const notificationPreferencesObject = z.object({
     email: z.boolean(),
     /** Whether an email address is on file for the person (never the address itself). */
     hasEmailAddress: z.boolean(),
+    /** When the daily digest goes out, "HH:mm" in the studio's timezone. */
+    emailDigestTime: z.string(),
   }),
 });
 export type NotificationPreferences = z.infer<typeof notificationPreferencesObject>;

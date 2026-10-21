@@ -35,7 +35,12 @@ describe('notification channel preferences', () => {
     const response = await testApp.http.get('/v1/notifications/preferences').set(auth());
     expect(response.status).toBe(200);
     expect(response.body.emailDigest).toBe('off');
-    expect(response.body.delivery).toEqual({ sms: false, email: false, hasEmailAddress: true });
+    expect(response.body.delivery).toEqual({
+      sms: false,
+      email: false,
+      hasEmailAddress: true,
+      emailDigestTime: '18:00',
+    });
     expect(JSON.stringify(response.body)).not.toContain('tara.lead@studio.example');
     const email = response.body.channels.find(
       (row: { kind: string; channel: string }) =>

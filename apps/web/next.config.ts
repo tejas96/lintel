@@ -29,6 +29,20 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
         ],
       },
+      {
+        // The web push worker: always revalidated, and only allowed to load itself and
+        // talk to Firebase's registration endpoints.
+        source: '/firebase-messaging-sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self'; script-src 'self'; connect-src 'self' https://*.googleapis.com",
+          },
+        ],
+      },
     ];
   },
 };

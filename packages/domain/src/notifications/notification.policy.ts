@@ -127,11 +127,10 @@ export function notificationDedupeKey(input: {
 }
 
 /**
- * What may leave Lintel for a lock screen or a mailbox: sensitive kinds get a
- * generic sentence, the full text stays in the app. Push, email and the daily
- * digest all use this rule.
+ * What may appear on a lock screen: sensitive kinds get a generic sentence,
+ * the full text stays in the app.
  */
-export function messagePreviewFor(
+export function pushPreviewFor(
   kind: NotificationKind,
   title: string,
   body: string,
@@ -140,10 +139,18 @@ export function messagePreviewFor(
   return { title: 'Lintel', body: 'You have a private update. Open the app to see it.' };
 }
 
-export function pushPreviewFor(
+/**
+ * What may reach a mailbox (single emails and the daily digest): the same
+ * rule as push, worded for an email where "Lintel" alone would not be a title.
+ */
+export function messagePreviewFor(
   kind: NotificationKind,
   title: string,
   body: string,
 ): { title: string; body: string } {
-  return messagePreviewFor(kind, title, body);
+  if (!SENSITIVE_NOTIFICATION_KINDS.has(kind)) return { title, body };
+  return {
+    title: 'You have a private update',
+    body: 'Open Lintel to see it. The details stay in the app.',
+  };
 }
