@@ -38,6 +38,11 @@ const KINDS: Readonly<
     action: 'Read the request and decide',
     onWeb: true,
   },
+  date_change_request: {
+    label: 'New-date request',
+    action: 'Accept or decline the new date',
+    onWeb: true,
+  },
 };
 
 /** Reward reviews are decided in the review queue of the rewards screen. */

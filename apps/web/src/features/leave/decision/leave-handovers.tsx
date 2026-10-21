@@ -30,6 +30,8 @@ interface LeaveHandoversProps {
   readonly mutation: HandoverMutation;
   /** Recorded by a manager: nobody had the chance to propose cover. */
   readonly urgent?: boolean;
+  /** People chosen from the cover suggestions, by task. */
+  readonly coverChoice?: Readonly<Record<string, string>>;
 }
 
 /** Who covers which task while the person is away, and each answer so far. */
@@ -41,6 +43,7 @@ export function LeaveHandovers({
   today,
   mutation,
   urgent = false,
+  coverChoice = {},
 }: LeaveHandoversProps) {
   if (handovers.length === 0) {
     return (
@@ -62,6 +65,7 @@ export function LeaveHandovers({
           requesterId={requesterId}
           today={today}
           mutation={mutation}
+          preferredUserId={coverChoice[handover.task.id] ?? null}
         />
       ))}
     </ul>
@@ -75,7 +79,11 @@ function HandoverRow({
   requesterId,
   today,
   mutation,
-}: { readonly handover: LeaveHandover } & Omit<LeaveHandoversProps, 'handovers'>) {
+  preferredUserId,
+}: { readonly handover: LeaveHandover; readonly preferredUserId: string | null } & Omit<
+  LeaveHandoversProps,
+  'handovers' | 'coverChoice'
+>) {
   const status = HANDOVER_STATUS[handover.status];
   const isRecipient = handover.to?.id === viewerId;
   // Only a manager of the task's project may apply; the task detail says whether that is us.
@@ -83,7 +91,10 @@ function HandoverRow({
   const canApply = task.data?.viewerCanManage === true;
   const due = handover.task.dueDate ? describeDue(handover.task.dueDate, today) : null;
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-hairline bg-raised p-4">
+    <li
+      id={`handover-${handover.task.id}`}
+      className="flex scroll-mt-6 flex-col gap-3 rounded-lg border border-hairline bg-raised p-4"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           <Link
@@ -123,6 +134,8 @@ function HandoverRow({
         <p className="rounded-md bg-sunken/70 px-3 py-2 type-body-sm text-ink">{handover.note}</p>
       )}
       <HandoverActions
+        key={preferredUserId ?? 'none'}
+        preferredUserId={preferredUserId}
         handover={handover}
         isRecipient={isRecipient}
         canApply={canApply}

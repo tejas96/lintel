@@ -57,7 +57,6 @@ export function UpcomingDeadlines({
   );
 }
 
-/** Health reasons and milestones at risk, in the server's words. */
 export function OverviewRisks({
   project,
   today,

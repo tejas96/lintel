@@ -41,3 +41,12 @@ export function useProjectActivity(projectId: string, page: number) {
     placeholderData: keepPreviousData,
   });
 }
+
+/** Risk cards for the project: what is happening, the slip, the next action, who and when. */
+export function useProjectRisks(projectId: string) {
+  return useQuery({
+    queryKey: queryKeys.projectRisks(projectId),
+    queryFn: () => expectStatus(api.insights.projectRisks({ params: { id: projectId } }), 200),
+    refetchInterval: 2 * 60_000,
+  });
+}

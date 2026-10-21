@@ -16,6 +16,8 @@ interface HandoverActionsProps {
   readonly canApply: boolean;
   readonly excludeIds: readonly string[];
   readonly mutation: HandoverMutation;
+  /** Chosen from the cover suggestions: opens the choice with this person picked. */
+  readonly preferredUserId?: string | null;
 }
 
 /**
@@ -28,9 +30,11 @@ export function HandoverActions({
   canApply,
   excludeIds,
   mutation,
+  preferredUserId = null,
 }: HandoverActionsProps) {
-  const [choosing, setChoosing] = useState(false);
-  const [someoneElse, setSomeoneElse] = useState<string | null>(null);
+  const preferred = preferredUserId !== null && preferredUserId !== handover.to?.id;
+  const [choosing, setChoosing] = useState(preferred);
+  const [someoneElse, setSomeoneElse] = useState<string | null>(preferred ? preferredUserId : null);
   const busy = mutation.isPending && mutation.variables?.handoverId === handover.id;
   const answering = isRecipient && handover.status === 'proposed';
   const applicable = canApply && handover.status !== 'applied';

@@ -73,7 +73,7 @@ export function ownerInterventions(
       title: task.title,
       projectId: task.projectId,
       escalatedAt: ownerStep.at,
-      summary: `"${task.title}" was due ${task.dueDate}; escalated to the owner on ${calendarDateInTimeZone(ownerStep.at, zone)}.`,
+      summary: `Due ${task.dueDate}; escalated to the owner on ${calendarDateInTimeZone(ownerStep.at, zone)}.`,
     });
   }
   for (const blocker of blockers) {
@@ -88,7 +88,7 @@ export function ownerInterventions(
       title: blocker.title,
       projectId: blocker.projectId,
       escalatedAt: ownerStep.at,
-      summary: `"${blocker.title}" has been blocked since ${calendarDateInTimeZone(blocker.raisedAt, zone)}: ${blocker.reason}`,
+      summary: `Blocked since ${calendarDateInTimeZone(blocker.raisedAt, zone)}: ${blocker.reason}`,
     });
   }
   return items.sort((left, right) => left.escalatedAt.getTime() - right.escalatedAt.getTime());

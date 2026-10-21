@@ -188,6 +188,7 @@ describe('follow-up, leave and daily workflows on the Temporal dev server', () =
           sessions: 1,
           idempotencyRecords: 0,
         }),
+        recordBusinessHealth: async () => ({ recorded: 3 }),
       },
       async (taskQueue) =>
         env.client.workflow.execute(dailyOperationsWorkflow, {
@@ -201,6 +202,7 @@ describe('follow-up, leave and daily workflows on the Temporal dev server', () =
       milestoneChanges: 2,
       deadlineWorkflowsStarted: 4,
       securityRecordsPurged: 8,
+      healthScopesRecorded: 3,
     });
   });
 });

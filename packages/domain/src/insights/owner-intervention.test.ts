@@ -26,7 +26,7 @@ describe('owner intervention needed', () => {
       kind: 'overdue_escalated',
       taskId: 't1',
       escalatedAt: new Date('2026-10-20T04:00:00.000Z'),
-      summary: '"Kitchen layout" was due 2026-10-15; escalated to the owner on 2026-10-20.',
+      summary: 'Due 2026-10-15; escalated to the owner on 2026-10-20.',
     });
   });
 
@@ -72,7 +72,7 @@ describe('owner intervention needed', () => {
     );
     expect(items.map((item) => item.subjectId)).toEqual(['b1', 't1']);
     expect(items[0]?.summary).toBe(
-      '"Tile order" has been blocked since 2026-10-14: Supplier out of stock',
+      'Blocked since 2026-10-14: Supplier out of stock',
     );
   });
 });
