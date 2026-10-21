@@ -34,6 +34,22 @@ describe('hrefForLinkPath', () => {
     });
   });
 
+  it('keeps why a task link was sent: the late-start nudge or a new-date request', () => {
+    const REQUEST = '4b7c0a52-61f3-4a8e-9a55-0e2f3f1d8c10';
+    expect(hrefForLinkPath(`/tasks/${ID}?nudge=late-start`)).toEqual({
+      pathname: '/tasks/[id]',
+      params: { id: ID, nudge: 'late-start' },
+    });
+    expect(hrefForLinkPath(`/tasks/${ID}?dateRequest=${REQUEST.toUpperCase()}`)).toEqual({
+      pathname: '/tasks/[id]',
+      params: { id: ID, dateRequest: REQUEST },
+    });
+    expect(hrefForLinkPath(`/tasks/${ID}?nudge=other&dateRequest=nope&tab=files`)).toEqual({
+      pathname: '/tasks/[id]',
+      params: { id: ID },
+    });
+  });
+
   it('maps section links and refuses what the app has no screen for', () => {
     expect(hrefForLinkPath('/approvals')).toBe('/approvals');
     expect(hrefForLinkPath('/notifications')).toBe('/inbox');

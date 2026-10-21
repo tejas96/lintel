@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueLabel, formatDateRange, relativeDayLabel } from './dates';
+import { dueLabel, formatDateRange, relativeDayLabel, withReadableDates } from './dates';
 import { formatElapsed, formatHalfDayNumber, formatHalfDays, formatMinutes } from './quantities';
 
 describe('dates', () => {
@@ -15,6 +15,13 @@ describe('dates', () => {
   it('keeps calendar dates on their day in any phone timezone', () => {
     expect(formatDateRange('2026-10-26', '2026-10-28')).toBe('26 – 28 Oct');
     expect(formatDateRange('2026-10-30', '2026-11-02')).toBe('30 Oct – 2 Nov');
+  });
+
+  it('makes server sentences with ISO dates readable', () => {
+    expect(withReadableDates('#1: due 2026-10-26 → 2026-10-30')).toBe('#1: due 26 Oct → 30 Oct');
+    expect(withReadableDates('No dates here, version 2026-1')).toBe(
+      'No dates here, version 2026-1',
+    );
   });
 });
 

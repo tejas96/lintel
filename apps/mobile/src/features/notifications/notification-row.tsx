@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { Icon, type IconName } from '@/components/icon';
 import { PressableScale } from '@/components/pressable-scale';
-import { formatRelativeInstant } from '@/formatting/dates';
+import { formatRelativeInstant, withReadableDates } from '@/formatting/dates';
 import { useAppTheme } from '@/theme/app-theme';
 import { HAIRLINE, RADIUS, SPACE } from '@/theme/layout';
 
@@ -48,7 +48,7 @@ export function NotificationRow({ notification, opensScreen, onPress }: Notifica
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`${unread ? 'Unread. ' : ''}${notification.title}. ${notification.body}`}
+      accessibilityLabel={`${unread ? 'Unread. ' : ''}${notification.title}. ${withReadableDates(notification.body)}`}
       {...(opensScreen ? { accessibilityHint: 'Opens the related item' } : {})}
       onPress={() => onPress(notification)}
       pressedScale={0.985}
@@ -71,7 +71,7 @@ export function NotificationRow({ notification, opensScreen, onPress }: Notifica
           {unread ? <View style={[styles.dot, { backgroundColor: colors.accent }]} /> : null}
         </View>
         <AppText variant="bodySm" tone="secondary" numberOfLines={3}>
-          {notification.body}
+          {withReadableDates(notification.body)}
         </AppText>
         <AppText variant="mono" tone="tertiary">
           {formatRelativeInstant(notification.createdAt)}

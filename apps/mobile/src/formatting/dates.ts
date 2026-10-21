@@ -53,6 +53,13 @@ export function formatDateRange(start: string, end: string): string {
   return `${startLabel} – ${formatDayMonth(end)}`;
 }
 
+/** Server sentences carry ISO dates ("due 2026-10-26"); people read "due 26 Oct". */
+export function withReadableDates(text: string): string {
+  return text.replace(/\b\d{4}-\d{2}-\d{2}\b/g, (date) =>
+    isCalendarDate(date) ? formatDayMonth(date) : date,
+  );
+}
+
 function asCalendarDate(value: string): CalendarDate | null {
   return isCalendarDate(value) ? value : null;
 }

@@ -39,6 +39,7 @@ export default function SignedInLayout() {
       <Stack.Screen name="tasks/[id]/actions" options={sheet('fitToContents', colors.surface)} />
       <Stack.Screen name="tasks/[id]/blocker" options={sheet([0.7, 0.95], colors.surface)} />
       <Stack.Screen name="tasks/[id]/transition" options={sheet([0.55, 0.9], colors.surface)} />
+      <Stack.Screen name="tasks/[id]/new-date" options={sheet([0.8, 0.98], colors.surface)} />
       <Stack.Screen name="blockers/[id]/resolve" options={sheet([0.6, 0.9], colors.surface)} />
       <Stack.Screen name="projects/[id]" options={{ title: '' }} />
       <Stack.Screen name="deliverables/[id]" options={{ title: 'Deliverable' }} />

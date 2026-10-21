@@ -7,7 +7,7 @@ import { Avatar } from '@/components/avatar';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
 import { StatusPill } from '@/components/status-pill';
-import { formatRelativeInstant } from '@/formatting/dates';
+import { formatRelativeInstant, withReadableDates } from '@/formatting/dates';
 import { hrefForLinkPath } from '@/push/link-routing';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
@@ -17,6 +17,7 @@ const DECIDED_IN_APP: ReadonlySet<ApprovalItem['type']> = new Set([
   'deliverable_review',
   'task_review',
   'leave_request',
+  'date_change_request',
 ]);
 
 /** The in-app screen for an item: its server link first, then its type and id. */
@@ -53,7 +54,7 @@ export function ApprovalRow({ item }: { readonly item: ApprovalItem }) {
       </View>
       <AppText variant="titleMd">{item.title}</AppText>
       <AppText variant="bodySm" tone="secondary">
-        {item.subtitle}
+        {withReadableDates(item.subtitle)}
       </AppText>
       <View style={styles.bottom}>
         {item.requestedBy ? <Avatar user={item.requestedBy} size={22} /> : null}
@@ -77,7 +78,7 @@ export function ApprovalRow({ item }: { readonly item: ApprovalItem }) {
     <Card
       style={styles.card}
       onPress={() => router.push(href)}
-      accessibilityLabel={`${item.title}. ${item.subtitle}`}
+      accessibilityLabel={`${item.title}. ${withReadableDates(item.subtitle)}`}
       accessibilityHint={decidedHere ? 'Opens it to decide' : 'Opens the project'}
     >
       {body}

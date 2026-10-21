@@ -10,6 +10,7 @@ type SymbolName = Extract<SymbolViewProps['name'], { ios?: unknown }>;
 const ICONS = {
   add: { ios: 'plus', android: 'add' },
   approvals: { ios: 'checkmark.seal', android: 'approval' },
+  arrowRight: { ios: 'arrow.right', android: 'arrow_forward' },
   attachment: { ios: 'paperclip', android: 'attach_file' },
   back: { ios: 'chevron.left', android: 'arrow_back' },
   blocked: { ios: 'hand.raised', android: 'block' },
