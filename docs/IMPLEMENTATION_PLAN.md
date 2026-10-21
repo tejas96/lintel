@@ -106,6 +106,8 @@ The system now explains problems and drives the next action (`PRODUCT_REQUIREMEN
   withdraw) with schedule history, approvals queue and task page.
 - ✅ Cover suggestions for leave and urgent absences; a choice opens the handover or the new
   Change owner sheet with the person picked.
+- ✅ Screens checked in a browser at 1440 and 390 px, light and dark (screenshots 111–127 in
+  `docs/screenshots/web/`).
 - 🟡 The phone app lists new-date requests in Approvals and shows the new notification kinds,
   but has no screen yet to ask for a new date or to decide one (the web does both).
 

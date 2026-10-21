@@ -1,6 +1,7 @@
 import {
   buildProjectRiskCards,
   compareRiskCards,
+  forecastDelivery,
   type ResponsibleRole,
   type RiskCard,
   type RiskContext,
@@ -75,6 +76,31 @@ export async function loadRiskCards(
   context: RiskContext,
 ): Promise<RiskCardView[]> {
   const { projects, facts } = await loadRiskFacts(db, projectIds, context.today);
+  return toRiskCardViews(db, projects, facts, context);
+}
+
+/** One project's cards and its delivery forecast (the control room). */
+export async function loadProjectRisks(
+  db: DatabaseExecutor,
+  projectId: string,
+  context: RiskContext,
+) {
+  const { projects, facts } = await loadRiskFacts(db, [projectId], context.today);
+  const project = facts[0];
+  const delivery = project ? forecastDelivery(project, context) : null;
+  const commitment = project?.commitments.find((item) => item.kind === 'delivery');
+  return {
+    cards: await toRiskCardViews(db, projects, facts, context),
+    delivery: delivery && commitment ? { dueDate: commitment.dueDate, ...delivery } : null,
+  };
+}
+
+async function toRiskCardViews(
+  db: DatabaseExecutor,
+  projects: Awaited<ReturnType<typeof loadRiskFacts>>['projects'],
+  facts: Awaited<ReturnType<typeof loadRiskFacts>>['facts'],
+  context: RiskContext,
+): Promise<RiskCardView[]> {
   const cards = facts
     .flatMap((project) => buildProjectRiskCards(project, context))
     .sort(compareRiskCards);

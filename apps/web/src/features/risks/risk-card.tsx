@@ -7,41 +7,48 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { ProjectChip } from '@/features/tasks/task-presentation';
 import { formatCalendarDate, withReadableDates } from '@/lib/format/dates';
-import { ROLE_LABELS, RULE_LABELS, severityOf } from './risk-presentation';
+import { NO_ESCALATION, ROLE_LABELS, RULE_LABELS, severityOf } from './risk-presentation';
 
+function alsoDelays(card: RiskCardItem): string {
+  return card.alsoAffects
+    .map(
+      (item) =>
+        `${item.kind === 'delivery' ? 'the planned delivery' : item.name}${item.slipWorkingDays > 0 ? ` (+${item.slipWorkingDays})` : ''}`,
+    )
+    .join(' · ');
+}
+
+/** The slip as a display number beside the forecast, or why nothing slips yet. */
 function Impact({ card, today }: { readonly card: RiskCardItem; readonly today: string }) {
   const slip = card.impact.slipWorkingDays;
   return (
-    <div className="flex flex-col gap-1.5 rounded-md bg-sunken/70 px-3.5 py-3">
-      <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+    <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-x-3 rounded-md bg-sunken/70 px-3.5 py-3">
+      <p className="flex flex-col">
         <span
           className={cn(
-            'font-display text-[1.5rem] leading-none tabular-nums',
+            'font-display text-[1.75rem] leading-none tabular-nums',
             slip > 0 ? 'text-overdue' : 'text-ink',
           )}
         >
           {slip > 0 ? `+${slip}` : '0'}
         </span>
-        <span className="type-body-sm text-ink-muted">
-          {slip > 0
-            ? `${slip === 1 ? 'working day' : 'working days'} late: forecast ${card.impact.forecastDate ? formatCalendarDate(card.impact.forecastDate, today) : '–'} instead of ${formatCalendarDate(card.commitment.dueDate, today)}`
-            : 'days slip so far'}
+        <span className="mt-1 type-label text-ink-faint">
+          {slip === 1 ? 'working day' : 'working days'}
         </span>
       </p>
-      {slip === 0 && (
-        <p className="type-body-sm text-ink-muted">{withReadableDates(card.impact.summary)}</p>
-      )}
-      {card.alsoAffects.length > 0 && (
-        <p className="type-body-sm text-ink-muted">
-          <span className="text-ink-faint">Also delays </span>
-          {card.alsoAffects
-            .map(
-              (item) =>
-                `${item.kind === 'delivery' ? 'the planned delivery' : item.name}${item.slipWorkingDays > 0 ? ` (+${item.slipWorkingDays})` : ''}`,
-            )
-            .join(' · ')}
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="type-body-sm text-ink">
+          {slip > 0 && card.impact.forecastDate
+            ? `Forecast ${formatCalendarDate(card.impact.forecastDate, today)} instead of ${formatCalendarDate(card.commitment.dueDate, today)}`
+            : withReadableDates(card.impact.summary)}
         </p>
-      )}
+        {card.alsoAffects.length > 0 && (
+          <p className="type-body-sm text-ink-muted">
+            <span className="text-ink-faint">Also delays </span>
+            {alsoDelays(card)}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -130,9 +137,7 @@ export function RiskCard({
             <Clock3 aria-hidden className="mt-0.5 size-4 shrink-0 text-ink-faint" />
           )}
           <span>
-            {escalation
-              ? withReadableDates(escalation.summary)
-              : 'No automatic alert for this one: it stays here until someone acts.'}
+            {escalation ? withReadableDates(escalation.summary) : NO_ESCALATION[card.rule]}
           </span>
         </p>
       </footer>

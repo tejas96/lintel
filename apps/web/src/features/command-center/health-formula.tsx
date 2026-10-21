@@ -25,7 +25,7 @@ export function HealthFormula({ health }: { readonly health: CommandCenterBriefi
         </button>
       }
     >
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex max-h-[min(40rem,70vh)] flex-col gap-4 overflow-y-auto p-4">
         <div>
           <p className="type-title-md text-ink">100 minus five penalties</p>
           <p className="mt-1 type-body-sm text-ink-muted">
@@ -33,7 +33,7 @@ export function HealthFormula({ health }: { readonly health: CommandCenterBriefi
             <span className="font-mono text-[0.75rem]">{health.formula}</span>.
           </p>
         </div>
-        <ul className="flex flex-col gap-3.5">
+        <ul className="flex flex-col gap-3">
           {health.components.map((part) => (
             <li key={part.key} className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between gap-3">

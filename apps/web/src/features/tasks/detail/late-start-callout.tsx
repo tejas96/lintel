@@ -19,12 +19,15 @@ export function LateStartCallout({
   task,
   today,
   canAskForDate,
+  askedFor,
   onReportBlocker,
   onAskForDate,
 }: {
   readonly task: TaskDetail;
   readonly today: string;
   readonly canAskForDate: boolean;
+  /** The proposed due date of a new-date request still waiting for a decision. */
+  readonly askedFor: string | null;
   readonly onReportBlocker: () => void;
   readonly onAskForDate: () => void;
 }) {
@@ -61,7 +64,9 @@ export function LateStartCallout({
             Planned to start {formatCalendarDate(task.plannedStartDate, today)}, not started yet
           </h2>
           <p className="mt-1 type-body-sm text-ink-muted">
-            Start it now, say what is in the way, or ask the project manager for a new date.
+            {askedFor
+              ? `You asked for a new due date (${formatCalendarDate(askedFor, today)}); the project manager has not decided yet. Start now if you can.`
+              : 'Start it now, say what is in the way, or ask the project manager for a new date.'}
           </p>
         </div>
       </div>

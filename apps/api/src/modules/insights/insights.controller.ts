@@ -8,7 +8,7 @@ import {
 import {
   type DatabaseConnection,
   loadCommandCenterBriefing,
-  loadRiskCards,
+  loadProjectRisks,
   managesAnyProject,
   riskContextFor,
   toCoverSuggestionsView,
@@ -63,8 +63,8 @@ export class InsightsController {
         await this.access.requireView(context.actor, params.id);
         const now = this.clock.now();
         const riskContext = await riskContextFor(db, await this.business.today(), now);
-        const cards = await loadRiskCards(db, [params.id], riskContext);
-        return { status: 200, body: { generatedAt: now.toISOString(), cards } };
+        const risks = await loadProjectRisks(db, params.id, riskContext);
+        return { status: 200, body: { generatedAt: now.toISOString(), ...risks } };
       },
       leaveCoverSuggestions: async ({ params }) => {
         const result = await this.cover.forLeaveRequest(context, params.id);

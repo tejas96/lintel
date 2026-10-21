@@ -125,6 +125,14 @@ export const briefingSchema: ResponseSchema<CommandCenterBriefing> = briefingObj
 export const projectRisksObject = z.object({
   generatedAt: instantSchema,
   cards: z.array(riskCardSchema),
+  /** The planned delivery against the cards' forecast; null without open dated work. */
+  delivery: z
+    .object({
+      dueDate: calendarDateSchema,
+      forecastDate: calendarDateSchema,
+      slipWorkingDays: z.number().int().min(0),
+    })
+    .nullable(),
 });
 export type ProjectRisks = z.infer<typeof projectRisksObject>;
 export const projectRisksSchema: ResponseSchema<ProjectRisks> = projectRisksObject;

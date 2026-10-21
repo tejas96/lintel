@@ -120,6 +120,21 @@ function cardFor(
   };
 }
 
+function forecastProject(project: RiskProjectFacts, context: RiskContext) {
+  return forecastSchedule(
+    project.tasks.map((task) => ({
+      id: task.id,
+      status: task.status,
+      plannedStartDate: task.plannedStartDate,
+      dueDate: task.dueDate,
+      hasOpenBlocker: task.openBlocker !== null,
+    })),
+    project.dependencies,
+    context.calendar,
+    context.today,
+  );
+}
+
 /** Most pressing first: critical before risk, larger slip, earlier commitment. */
 export function compareRiskCards(left: RiskCard, right: RiskCard): number {
   const severity = (card: RiskCard) => (card.severity === 'critical' ? 0 : 1);
@@ -170,20 +185,31 @@ function mergeByCause(candidates: readonly RiskCard[]): RiskCard[] {
  */
 export function buildProjectRiskCards(project: RiskProjectFacts, context: RiskContext): RiskCard[] {
   const tasks = new Map(project.tasks.map((task) => [task.id, task]));
-  const forecasts = forecastSchedule(
-    project.tasks.map((task) => ({
-      id: task.id,
-      status: task.status,
-      plannedStartDate: task.plannedStartDate,
-      dueDate: task.dueDate,
-      hasOpenBlocker: task.openBlocker !== null,
-    })),
-    project.dependencies,
-    context.calendar,
-    context.today,
-  );
+  const forecasts = forecastProject(project, context);
   const candidates = project.commitments
     .map((commitment) => cardFor(project, commitment, forecasts, tasks, context))
     .filter((card): card is RiskCard => card !== null);
   return mergeByCause(candidates);
+}
+
+/**
+ * The project's planned delivery against the same forecast the cards use:
+ * the latest forecast finish of its open tasks. Null without open dated work.
+ */
+export function forecastDelivery(
+  project: RiskProjectFacts,
+  context: RiskContext,
+): { forecastDate: RiskContext['today']; slipWorkingDays: number } | null {
+  const delivery = project.commitments.find((item) => item.kind === 'delivery');
+  if (!delivery) return null;
+  const forecasts = forecastProject(project, context);
+  const forecast = forecastCommitment(
+    delivery.dueDate,
+    delivery.taskIds,
+    forecasts,
+    context.calendar,
+  );
+  return forecast
+    ? { forecastDate: forecast.forecastDate, slipWorkingDays: forecast.slipWorkingDays }
+    : null;
 }

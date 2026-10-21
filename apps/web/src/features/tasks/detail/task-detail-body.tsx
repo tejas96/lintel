@@ -74,6 +74,10 @@ export function TaskDetailBody({
       task={task}
       today={today}
       canAskForDate={dateChanges.data?.viewerCanRequest ?? false}
+      askedFor={
+        dateChanges.data?.requests.find((request) => request.status === 'open')?.proposedDueDate ??
+        null
+      }
       onReportBlocker={report}
       onAskForDate={() => setAskingDate(true)}
     />
