@@ -6,7 +6,13 @@ import type {
   UnitOfWork,
 } from '@lintel/application';
 import { Notifier } from '@lintel/application';
-import { type CalendarDate, type Clock, calendarDateInTimeZone } from '@lintel/shared';
+import type { PriorityClock } from '@lintel/domain';
+import {
+  type CalendarDate,
+  type Clock,
+  calendarDateInTimeZone,
+  timeOfDayInTimeZone,
+} from '@lintel/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { CLOCK, FEATURE_FLAGS, UNIT_OF_WORK } from './tokens';
 
@@ -42,6 +48,25 @@ export class BusinessContextService {
   async today(): Promise<CalendarDate> {
     const settings = await this.settings();
     return calendarDateInTimeZone(this.clock.now(), settings.timeZone);
+  }
+
+  /**
+   * Now, in the studio's timezone, with the studio day's end: lets lists flag
+   * work as overdue once its due time (or the working day) has passed today.
+   */
+  async planningClock(): Promise<PriorityClock> {
+    const [settings, calendar] = await Promise.all([
+      this.settings(),
+      this.uow.stores.settings.defaultCalendar(),
+    ]);
+    const now = this.clock.now();
+    return {
+      now: {
+        date: calendarDateInTimeZone(now, settings.timeZone),
+        time: timeOfDayInTimeZone(now, settings.timeZone),
+      },
+      dayEndTime: calendar.dayEndTime,
+    };
   }
 
   async notifierDefaults(): Promise<NotifierDefaults> {

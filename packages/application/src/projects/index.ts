@@ -6,5 +6,7 @@ export * from './project.store';
 export * from './project-assignment.notices';
 export * from './project-members.rules';
 export * from './project-plan.factory';
+export * from './project-plan.preparation';
 export * from './project-plan.types';
+export * from './project-plan-preview.query';
 export * from './project-reference';

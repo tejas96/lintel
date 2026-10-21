@@ -8,6 +8,7 @@ import {
   longTextSchema,
   noteSchema,
   shortTextSchema,
+  timeOfDaySchema,
   versionSchema,
 } from '../common/primitives';
 import {
@@ -37,6 +38,8 @@ export const createTaskBodySchema = z.object({
   collaboratorUserIds: z.array(idSchema).max(20),
   plannedStartDate: calendarDateSchema.nullable(),
   dueDate: calendarDateSchema.nullable(),
+  /** Optional time of day it is due ("HH:mm", studio timezone); needs a due date. */
+  dueTime: timeOfDaySchema.nullable().default(null),
   estimateMinutes: z.number().int().min(0).max(100_000).nullable(),
   requiresReview: z.boolean(),
   completionCriteria: z.string().max(2000).nullable(),
@@ -87,6 +90,7 @@ export const tasksContract = c.router({
         reviewerUserId: idSchema.nullable(),
         plannedStartDate: calendarDateSchema.nullable(),
         dueDate: calendarDateSchema.nullable(),
+        dueTime: timeOfDaySchema.nullable(),
         estimateMinutes: z.number().int().min(0).max(100_000).nullable(),
         requiresReview: z.boolean(),
         completionCriteria: z.string().max(2000).nullable(),
@@ -98,7 +102,7 @@ export const tasksContract = c.router({
       .partial()
       .extend({
         version: versionSchema,
-        /** Required when a committed due date moves; kept in the schedule history. */
+        /** Required when a committed due date or time moves; kept in the schedule history. */
         scheduleChangeReason: z.string().trim().min(3).max(500).optional(),
       }),
     responses: { 200: taskDetailSchema },

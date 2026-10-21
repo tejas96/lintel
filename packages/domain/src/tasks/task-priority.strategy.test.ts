@@ -10,6 +10,7 @@ function task(overrides: Partial<PrioritizationInput> & { taskId: string }): Pri
     status: 'ready',
     priority: 'medium',
     dueDate: null,
+    dueTime: null,
     estimateMinutes: null,
     projectCriticality: 'normal',
     openDependentCount: 0,

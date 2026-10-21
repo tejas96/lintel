@@ -1,8 +1,9 @@
-import { domainEvent } from '@lintel/domain';
+import { domainEvent, scopeChangeApprovalBlocker } from '@lintel/domain';
 import {
   ForbiddenError,
   InvalidTransitionError,
   NotFoundError,
+  PreconditionFailedError,
   StaleVersionError,
 } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
@@ -12,6 +13,7 @@ import type { ApplicationStores } from '../common/unit-of-work';
 import type { ProjectCommandDependencies } from '../projects/command-dependencies';
 import { applyApprovedSchedule } from './apply-approved-schedule';
 import { type AppliedScopeAdditions, applyScopeAdditions } from './apply-scope-additions';
+import { type AppliedScopeMoney, applyScopeMoney, NO_MONEY_APPLIED } from './apply-scope-money';
 import type { ScopeChangeRecord } from './scope-change.store';
 import { sendScopeDecisionNotices } from './scope-change-notices';
 
@@ -51,6 +53,7 @@ export class DecideScopeChangeCommand {
       if (change.status !== 'proposed') {
         throw new InvalidTransitionError(`This scope change was already ${change.status}.`);
       }
+      if (input.decision === 'approved') await this.assertSignedOff(stores, change);
       const decidedAt = this.deps.clock.now();
       const decided = await stores.scopeChanges.decide(scopeChangeId, input.expectedVersion, {
         status: input.decision,
@@ -69,7 +72,14 @@ export class DecideScopeChangeCommand {
       };
       const moves = approved ? await applyApprovedSchedule(stores, approval) : [];
       const additions = approved ? await applyScopeAdditions(stores, approval) : NOTHING_ADDED;
-      await this.record(stores, context, change, input, { moved: moves.length, additions });
+      const money = approved
+        ? await applyScopeMoney(stores, change, { at: decidedAt, context })
+        : NO_MONEY_APPLIED;
+      await this.record(stores, context, change, input, {
+        moved: moves.length,
+        additions,
+        money,
+      });
       const project = await stores.projects.findById(change.projectId);
       await sendScopeDecisionNotices(await this.deps.notifierFor(stores), context, {
         change,
@@ -83,12 +93,24 @@ export class DecideScopeChangeCommand {
     });
   }
 
+  /** A change that needs the client's sign-off waits until it is recorded. */
+  private async assertSignedOff(stores: ApplicationStores, change: ScopeChangeRecord) {
+    const signOff = change.requiresClientSignOff
+      ? await stores.scopeChanges.latestSignOff(change.id)
+      : null;
+    const blocker = scopeChangeApprovalBlocker({
+      requiresClientSignOff: change.requiresClientSignOff,
+      clientSignedOff: signOff !== null,
+    });
+    if (blocker) throw new PreconditionFailedError(blocker);
+  }
+
   private async record(
     stores: ApplicationStores,
     context: RequestContext,
     change: ScopeChangeRecord,
     input: ScopeChangeDecisionInput,
-    applied: { moved: number; additions: AppliedScopeAdditions },
+    applied: { moved: number; additions: AppliedScopeAdditions; money: AppliedScopeMoney },
   ): Promise<void> {
     const counts = {
       movedCount: applied.moved,
@@ -119,6 +141,7 @@ export class DecideScopeChangeCommand {
         ...counts,
         createdTaskIds: applied.additions.created.map((task) => task.taskId),
         cancelledTaskIds: applied.additions.cancelled.map((task) => task.taskId),
+        ...applied.money,
       },
       requestId: context.requestId,
     });

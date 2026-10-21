@@ -1,9 +1,16 @@
-import { PROJECT_CRITICALITIES, PROJECT_STATUSES, PROJECT_TYPES } from '@lintel/domain';
+import {
+  CLIENT_SIGN_OFF_METHODS,
+  PROJECT_COST_CATEGORIES,
+  PROJECT_CRITICALITIES,
+  PROJECT_STATUSES,
+  PROJECT_TYPES,
+} from '@lintel/domain';
 import { z } from 'zod';
 import {
   calendarDateSchema,
   idSchema,
   instantSchema,
+  moneyMinorSchema,
   type ResponseSchema,
 } from '../common/primitives';
 import { projectRoleSchema, userSummarySchema } from './people.schema';
@@ -11,6 +18,8 @@ import { projectRoleSchema, userSummarySchema } from './people.schema';
 export const projectStatusSchema = z.enum(PROJECT_STATUSES);
 export const projectTypeSchema = z.enum(PROJECT_TYPES);
 export const projectCriticalitySchema = z.enum(PROJECT_CRITICALITIES);
+export const clientSignOffMethodSchema = z.enum(CLIENT_SIGN_OFF_METHODS);
+const costCategorySchema = z.enum(PROJECT_COST_CATEGORIES);
 export const healthStatusSchema = z.enum([
   'not_started',
   'on_track',
@@ -117,6 +126,8 @@ export const projectDetailObject = projectSummaryObject.extend({
   milestones: z.array(milestoneSchema),
   /** Present only for people allowed to see project finances. */
   budgetMinor: z.number().int().nullable(),
+  /** The viewer may see the budget, costs and the money side of scope changes. */
+  viewerCanSeeFinances: z.boolean(),
   currency: z.string(),
   template: z
     .object({ id: idSchema, name: z.string(), versionNumber: z.number().int() })
@@ -157,11 +168,39 @@ export const scopeChangeObject = z.object({
       taskTitle: z.string(),
       currentDueDate: calendarDateSchema.nullable(),
       proposedDueDate: calendarDateSchema.nullable(),
+      currentStartDate: calendarDateSchema.nullable(),
+      proposedStartDate: calendarDateSchema.nullable(),
       shiftWorkingDays: z.number().int(),
       isDownstream: z.boolean(),
+      /** Approval sets these exact dates (dragged on the timeline) instead of shifting. */
+      appliesExactDates: z.boolean(),
     }),
   ),
   projectEndImpactDays: z.number().int(),
+  /** Approval waits for the client's recorded sign-off. */
+  requiresClientSignOff: z.boolean(),
+  /** How the client confirmed it, newest first; the first one counts. */
+  clientSignOffs: z.array(
+    z.object({
+      id: idSchema,
+      confirmedByName: z.string(),
+      method: clientSignOffMethodSchema,
+      confirmedOn: calendarDateSchema,
+      note: z.string().nullable(),
+      recordedBy: userSummarySchema.nullable(),
+      recordedAt: instantSchema,
+    }),
+  ),
+  /** The money side; null when the viewer may not see the project budget. */
+  money: z
+    .object({
+      /** What the extra work costs the studio, in minor units; recorded on approval. */
+      costImpactMinor: moneyMinorSchema.nullable(),
+      costCategory: costCategorySchema.nullable(),
+      /** What the client pays more (negative: less); added to the budget on approval. */
+      feeImpactMinor: moneyMinorSchema.nullable(),
+    })
+    .nullable(),
   createdAt: instantSchema,
   version: z.number().int(),
 });

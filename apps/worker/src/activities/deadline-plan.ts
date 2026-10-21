@@ -20,8 +20,22 @@ export interface DeadlinePlanStep {
 
 export interface DeadlinePlan {
   readonly open: boolean;
+  /**
+   * The deadline the steps were planned for: the due date, plus "T" and the
+   * due time when one is set ("2026-11-12T11:00"). A change starts a fresh
+   * timeline. (Named dueDate because running workflows already carry it.)
+   */
   readonly dueDate: string | null;
   readonly steps: readonly DeadlinePlanStep[];
+}
+
+/** The deadline key of a task: "2026-11-12", or "2026-11-12T11:00" with a due time. */
+export function deadlineKey(task: {
+  readonly dueDate: string | null;
+  readonly dueTime: string | null;
+}): string | null {
+  if (task.dueDate === null) return null;
+  return task.dueTime ? `${task.dueDate}T${task.dueTime}` : task.dueDate;
 }
 
 export type DeadlineStepRef = Pick<DeadlinePlanStep, 'key' | 'audience' | 'kind'>;

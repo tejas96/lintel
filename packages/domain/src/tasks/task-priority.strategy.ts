@@ -1,5 +1,11 @@
 import { type CalendarDate, daysBetween } from '@lintel/shared';
 import type { ProjectCriticality } from '../projects/project-status';
+import {
+  deadlineSignal,
+  deadlineSortKey,
+  isOverdueAt,
+  type PriorityClock,
+} from './deadline-priority';
 import type { TaskPriority, TaskStatus } from './task-status';
 
 /** Everything the planner needs to rank one task for one person on one day. */
@@ -9,6 +15,8 @@ export interface PrioritizationInput {
   readonly status: TaskStatus;
   readonly priority: TaskPriority;
   readonly dueDate: CalendarDate | null;
+  /** "HH:mm" in the business timezone; null means the end of the working day. */
+  readonly dueTime: string | null;
   readonly estimateMinutes: number | null;
   readonly projectCriticality: ProjectCriticality;
   readonly openDependentCount: number;
@@ -46,7 +54,11 @@ export interface PrioritizedTask {
 /** A replaceable ranking policy (Strategy pattern). */
 export interface TaskPriorityStrategy {
   readonly name: string;
-  prioritize(input: PrioritizationInput, today: CalendarDate): PrioritizedTask;
+  prioritize(
+    input: PrioritizationInput,
+    today: CalendarDate,
+    clock?: PriorityClock,
+  ): PrioritizedTask;
 }
 
 const PRIORITY_POINTS: Readonly<Record<TaskPriority, number>> = {
@@ -63,26 +75,6 @@ const CRITICALITY_POINTS: Readonly<Record<ProjectCriticality, number>> = {
   low: 0,
 };
 
-function deadlineReason(dueDate: CalendarDate | null, today: CalendarDate): PriorityReason | null {
-  if (dueDate === null) return null;
-  const daysLeft = daysBetween(today, dueDate);
-  if (daysLeft < 0) {
-    const late = -daysLeft;
-    const points = 35 + Math.min(late * 2, 10);
-    return { code: 'OVERDUE', points, explanation: `It is ${late} day(s) overdue.` };
-  }
-  if (daysLeft === 0) return { code: 'DUE_TODAY', points: 30, explanation: 'It is due today.' };
-  if (daysLeft === 1)
-    return { code: 'DUE_TOMORROW', points: 22, explanation: 'It is due tomorrow.' };
-  if (daysLeft <= 3) {
-    return { code: 'DUE_SOON', points: 15, explanation: `It is due in ${daysLeft} days.` };
-  }
-  if (daysLeft <= 7) {
-    return { code: 'DUE_THIS_WEEK', points: 8, explanation: `It is due in ${daysLeft} days.` };
-  }
-  return null;
-}
-
 function milestoneReason(input: PrioritizationInput, today: CalendarDate): PriorityReason | null {
   if (input.milestoneDueDate === null || input.openDependentCount === 0) return null;
   const daysLeft = daysBetween(today, input.milestoneDueDate);
@@ -96,18 +88,26 @@ function milestoneReason(input: PrioritizationInput, today: CalendarDate): Prior
   };
 }
 
-function bucketFor(input: PrioritizationInput, today: CalendarDate): WorkQueueBucket {
+function bucketFor(
+  input: PrioritizationInput,
+  today: CalendarDate,
+  clock: PriorityClock | undefined,
+): WorkQueueBucket {
   if (input.isBlocked || input.status === 'blocked') return 'blocked';
   if (input.status === 'in_review') return 'in_review';
   if (input.hasUnmetPrerequisites) return 'waiting';
   if (input.dueDate === null) return 'later';
   const daysLeft = daysBetween(today, input.dueDate);
-  if (daysLeft < 0) return 'overdue';
+  if (isOverdueAt(input, today, clock)) return 'overdue';
   if (daysLeft === 0) return 'today';
   return daysLeft <= 7 ? 'upcoming' : 'later';
 }
 
-function collectReasons(input: PrioritizationInput, today: CalendarDate): PriorityReason[] {
+function collectReasons(
+  input: PrioritizationInput,
+  today: CalendarDate,
+  clock: PriorityClock | undefined,
+): PriorityReason[] {
   const reasons: PriorityReason[] = [];
   const priorityPoints = PRIORITY_POINTS[input.priority];
   if (priorityPoints > 0) {
@@ -117,7 +117,7 @@ function collectReasons(input: PrioritizationInput, today: CalendarDate): Priori
       explanation: `It is marked ${input.priority} priority.`,
     });
   }
-  const deadline = deadlineReason(input.dueDate, today);
+  const deadline = deadlineSignal(input, today, clock);
   if (deadline) reasons.push(deadline);
   const milestone = milestoneReason(input, today);
   if (milestone) reasons.push(milestone);
@@ -161,25 +161,29 @@ function headlineFor(bucket: WorkQueueBucket, reasons: readonly PriorityReason[]
  */
 export const deadlineAwarePriorityStrategy: TaskPriorityStrategy = {
   name: 'deadline-aware-v1',
-  prioritize(input, today) {
-    const bucket = bucketFor(input, today);
-    const reasons = collectReasons(input, today);
+  prioritize(input, today, clock) {
+    const bucket = bucketFor(input, today, clock);
+    const reasons = collectReasons(input, today, clock);
     const actionable = bucket !== 'blocked' && bucket !== 'waiting' && bucket !== 'in_review';
     const score = actionable ? reasons.reduce((total, reason) => total + reason.points, 0) : 0;
     return { taskId: input.taskId, score, bucket, reasons, headline: headlineFor(bucket, reasons) };
   },
 };
 
-/** Highest score first; ties go to the earlier due date, then to the title. */
+/**
+ * Highest score first; ties go to the earlier deadline (date, then due time,
+ * with no time meaning the end of the working day), then to the title.
+ */
 export function rankWorkQueue(
   inputs: readonly PrioritizationInput[],
   today: CalendarDate,
   strategy: TaskPriorityStrategy = deadlineAwarePriorityStrategy,
+  clock?: PriorityClock,
 ): PrioritizedTask[] {
-  const dueDates = new Map(inputs.map((input) => [input.taskId, input.dueDate ?? '9999-12-31']));
+  const dueDates = new Map(inputs.map((input) => [input.taskId, deadlineSortKey(input, clock)]));
   const titles = new Map(inputs.map((input) => [input.taskId, input.title]));
   return inputs
-    .map((input) => strategy.prioritize(input, today))
+    .map((input) => strategy.prioritize(input, today, clock))
     .sort(
       (left, right) =>
         right.score - left.score ||

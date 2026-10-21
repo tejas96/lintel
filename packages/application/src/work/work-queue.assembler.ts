@@ -7,6 +7,7 @@ import {
   isOpenTaskStatus,
   type LoadStatus,
   type PrioritizationInput,
+  type PriorityClock,
   type PriorityReason,
   rankWorkQueue,
   type TaskPriorityStrategy,
@@ -82,6 +83,7 @@ export function prioritizationInputs<T>(snapshot: WorkQueueSnapshot<T>): Priorit
       status: row.status,
       priority: row.priority,
       dueDate: row.dueDate,
+      dueTime: row.dueTime,
       estimateMinutes: row.estimateMinutes,
       projectCriticality: row.projectCriticality,
       openDependentCount: directDependentCount(row.taskId, openEdges),
@@ -98,10 +100,11 @@ export function assembleWorkQueue<T>(
   snapshot: WorkQueueSnapshot<T>,
   today: CalendarDate,
   strategy: TaskPriorityStrategy,
+  clock?: PriorityClock,
 ): { items: WorkQueueItem<T>[]; next: WorkQueueItem<T> | null; counts: WorkQueueCounts } {
   const summaries = new Map(snapshot.tasks.map((entry) => [entry.row.taskId, entry.summary]));
   const items: WorkQueueItem<T>[] = [];
-  for (const ranked of rankWorkQueue(prioritizationInputs(snapshot), today, strategy)) {
+  for (const ranked of rankWorkQueue(prioritizationInputs(snapshot), today, strategy, clock)) {
     const task = summaries.get(ranked.taskId);
     if (task === undefined) continue;
     const { score, bucket, headline, reasons } = ranked;

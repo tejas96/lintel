@@ -58,6 +58,31 @@ export function addWorkingDays(
   return current;
 }
 
+/** The given date if it is a working day, otherwise the working day before it. */
+export function previousWorkingDayOnOrBefore(
+  calendar: WorkingCalendar,
+  date: CalendarDate,
+): CalendarDate {
+  assertCalendarHasWorkingDays(calendar);
+  let current = date;
+  while (!isWorkingDay(calendar, current)) current = addDays(current, -1);
+  return current;
+}
+
+/** Moves a date by working days in either direction; 0 snaps to the next working day. */
+export function shiftByWorkingDays(
+  calendar: WorkingCalendar,
+  date: CalendarDate,
+  days: number,
+): CalendarDate {
+  if (days >= 0) return addWorkingDays(calendar, date, days);
+  let current = previousWorkingDayOnOrBefore(calendar, date);
+  for (let remaining = -days; remaining > 0; remaining -= 1) {
+    current = previousWorkingDayOnOrBefore(calendar, addDays(current, -1));
+  }
+  return current;
+}
+
 export function workingDaysInRange(
   calendar: WorkingCalendar,
   start: CalendarDate,

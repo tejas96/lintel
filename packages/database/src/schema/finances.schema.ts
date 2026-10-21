@@ -1,11 +1,10 @@
-import { PROJECT_COST_CATEGORIES } from '@lintel/domain';
 import { sql } from 'drizzle-orm';
-import { bigint, check, date, index, pgEnum, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { bigint, check, date, index, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { createdAt, instant, primaryId, updatedAt, version } from './columns';
+import { projectCostCategoryEnum } from './enums';
 import { users } from './identity.schema';
 import { projects } from './projects.schema';
-
-export const projectCostCategoryEnum = pgEnum('project_cost_category', PROJECT_COST_CATEGORIES);
+import { scopeChangeRequests } from './scope.schema';
 
 /**
  * The project cost ledger. Entries are never edited or deleted: a mistake is
@@ -30,6 +29,10 @@ export const projectCostEntries = pgTable(
     voidedAt: instant('voided_at'),
     voidedByUserId: uuid('voided_by_user_id').references(() => users.id),
     voidReason: text('void_reason'),
+    /** Set when the entry records the cost of an approved scope change (at most one per change). */
+    scopeChangeId: uuid('scope_change_id').references(() => scopeChangeRequests.id, {
+      onDelete: 'set null',
+    }),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -37,5 +40,8 @@ export const projectCostEntries = pgTable(
   (table) => [
     index('project_cost_entries_project_idx').on(table.projectId, table.entryDate),
     check('project_cost_entries_amount_positive', sql`${table.amountMinor} > 0`),
+    uniqueIndex('project_cost_entries_scope_change_unique')
+      .on(table.scopeChangeId)
+      .where(sql`${table.scopeChangeId} IS NOT NULL`),
   ],
 );

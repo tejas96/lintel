@@ -62,6 +62,7 @@ export class TasksController {
           ...query,
           visibleProjectIds: await this.access.visibleProjectIds(actor),
           today: await this.business.today(),
+          clock: await this.business.planningClock(),
         });
         return {
           status: 200,

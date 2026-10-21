@@ -21,8 +21,11 @@ export class TaskDetailPresenter {
 
   async detail(actor: Actor, taskId: string): Promise<TaskDetail> {
     const state = await this.viewer.execute(actor, taskId);
-    const today = await this.business.today();
-    const view = found(await loadTaskDetail(this.database.db, taskId, today, actor.userId), 'Task');
+    const clock = await this.business.planningClock();
+    const view = found(
+      await loadTaskDetail(this.database.db, taskId, clock.now.date, actor.userId, clock),
+      'Task',
+    );
     // Confidential and private attachments are left out for people who cannot open them,
     // so even their names stay private.
     const facts = await loadFileAccessFacts(

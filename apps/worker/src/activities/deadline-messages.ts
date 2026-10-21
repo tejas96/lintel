@@ -47,7 +47,8 @@ export function deadlineNotification(
   step: DeadlineStepRef,
   recipientUserId: string,
 ): NewNotification {
-  const { title, body } = textFor(task, step, formatCalendarDate(dueDate));
+  const when = formatCalendarDate(task.dueDate ?? dueDate.slice(0, 10));
+  const { title, body } = textFor(task, step, task.dueTime ? `${when} at ${task.dueTime}` : when);
   return {
     recipientUserId,
     kind: step.kind,

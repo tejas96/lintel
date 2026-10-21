@@ -1,4 +1,4 @@
-import { domainEvent, type TaskActorRelation, type TaskPriority } from '@lintel/domain';
+import type { TaskActorRelation, TaskPriority } from '@lintel/domain';
 import {
   definedOnly,
   ForbiddenError,
@@ -13,9 +13,11 @@ import type { TaskChanges, TaskRecord } from './task.store';
 import type { LoadedTask } from './task-loader';
 import { loadTaskForActor } from './task-loader';
 import { notifyAboutTask, quoted, recordTaskChange } from './task-records';
+import { deadlineText, enqueueDeadlineReload, recordScheduleChange } from './task-schedule-records';
 import {
   assertActivePeople,
   assertDateOrder,
+  assertDueTime,
   assertEscalationDelay,
   assertReferencesInProject,
   assertReviewerIsNotOwner,
@@ -28,6 +30,8 @@ export interface EditableTaskFields {
   readonly reviewerUserId: string | null;
   readonly plannedStartDate: string | null;
   readonly dueDate: string | null;
+  /** "HH:mm" in the business timezone; null = the end of the working day. */
+  readonly dueTime: string | null;
   readonly estimateMinutes: number | null;
   readonly requiresReview: boolean;
   readonly completionCriteria: string | null;
@@ -40,7 +44,7 @@ export interface EditableTaskFields {
 export interface UpdateTaskInput {
   readonly version: number;
   readonly changes: Patch<EditableTaskFields>;
-  /** Required when a committed due date moves; kept in the schedule history. */
+  /** Required when a committed due date or time moves; kept in the schedule history. */
   readonly scheduleChangeReason?: string | undefined;
 }
 
@@ -58,13 +62,21 @@ const MANAGER_FIELDS: readonly (keyof EditableTaskFields)[] = [
 const DEADLINE_PLAN_FIELDS: readonly (keyof EditableTaskFields)[] = [
   'priority',
   'escalateAfterOverdueDays',
+  'dueTime',
 ];
 
 function changedFields(task: TaskRecord, changes: Partial<EditableTaskFields>): TaskChanges {
-  const entries = Object.entries(changes).filter(
+  // Clearing the due date clears its time too.
+  const withTime = changes.dueDate === null ? { ...changes, dueTime: null } : changes;
+  const entries = Object.entries(withTime).filter(
     ([key, value]) => task[key as keyof EditableTaskFields] !== value,
   );
   return Object.fromEntries(entries) as TaskChanges;
+}
+
+/** The deadline (date or time) of a task that is no longer a draft moves. */
+function committedDeadlineMoves(task: TaskRecord, changes: TaskChanges): boolean {
+  return task.status !== 'draft' && ('dueDate' in changes || 'dueTime' in changes);
 }
 
 function assertEditRights(relation: TaskActorRelation, changes: TaskChanges): void {
@@ -75,35 +87,6 @@ function assertEditRights(relation: TaskActorRelation, changes: TaskChanges): vo
   if (managerOnly.length > 0 && !relation.canManage) {
     throw new ForbiddenError(`Only the project manager can change: ${managerOnly.join(', ')}.`);
   }
-}
-
-/** Asks the deadline workflow to reload its plan from the task as it is now. */
-async function enqueueDeadlineReload(stores: OperationsStores, after: TaskRecord): Promise<void> {
-  await stores.records.enqueueEvent(
-    domainEvent('TaskScheduleChanged', 'task', after.id, {
-      taskId: after.id,
-      projectId: after.projectId,
-      dueDate: after.dueDate,
-    }),
-  );
-}
-
-/** History row plus outbox event; the baseline due date never changes. */
-async function recordScheduleChange(
-  stores: OperationsStores,
-  context: RequestContext,
-  before: TaskRecord,
-  after: TaskRecord,
-  reason: string,
-): Promise<void> {
-  await stores.tasks.recordScheduleChange({
-    taskId: before.id,
-    previousDueDate: before.dueDate,
-    newDueDate: after.dueDate,
-    reason,
-    changedByUserId: context.actor.userId,
-  });
-  await enqueueDeadlineReload(stores, after);
 }
 
 /** Edits task details. Moving a committed due date needs a manager and a recorded reason. */
@@ -122,7 +105,7 @@ export class UpdateTaskCommand {
       const changes = changedFields(task, definedOnly(input.changes));
       assertEditRights(relation, changes);
       if (Object.keys(changes).length === 0) return task;
-      const dueDateMoves = 'dueDate' in changes && task.status !== 'draft';
+      const dueDateMoves = committedDeadlineMoves(task, changes);
       if (dueDateMoves) this.assertScheduleChange(loaded, changes, input.scheduleChangeReason);
       await this.validate(stores, task, changes);
       if (changes.reviewerUserId) {
@@ -154,11 +137,11 @@ export class UpdateTaskCommand {
     reason: string | undefined,
   ): void {
     if (!loaded.relation.canManage) {
-      throw new ForbiddenError('Only the project manager can move a committed due date.');
+      throw new ForbiddenError('Only the project manager can move a committed deadline.');
     }
     if (!reason) {
-      throw new ValidationFailedError('Explain why the committed due date moves.', [
-        { field: 'scheduleChangeReason', message: 'Add the reason for the new date.' },
+      throw new ValidationFailedError('Explain why the committed deadline moves.', [
+        { field: 'scheduleChangeReason', message: 'Add the reason for the new deadline.' },
       ]);
     }
     const isOpen = loaded.task.status !== 'done' && loaded.task.status !== 'cancelled';
@@ -187,10 +170,12 @@ export class UpdateTaskCommand {
     if (changes.escalateAfterOverdueDays !== undefined) {
       assertEscalationDelay(changes.escalateAfterOverdueDays);
     }
+    const dueDate = changes.dueDate !== undefined ? changes.dueDate : task.dueDate;
     assertDateOrder(
       changes.plannedStartDate !== undefined ? changes.plannedStartDate : task.plannedStartDate,
-      changes.dueDate !== undefined ? changes.dueDate : task.dueDate,
+      dueDate,
     );
+    assertDueTime(dueDate, changes.dueTime !== undefined ? changes.dueTime : task.dueTime);
   }
 
   private async notify(
@@ -203,9 +188,7 @@ export class UpdateTaskCommand {
   ): Promise<void> {
     const lines: string[] = [];
     if (dueDateMoved) {
-      lines.push(
-        `Due date moved from ${before.dueDate ?? 'none'} to ${after.dueDate ?? 'none'}: ${reason ?? ''}`,
-      );
+      lines.push(`Due ${deadlineText(before)} is now ${deadlineText(after)}: ${reason ?? ''}`);
     }
     if (before.priority !== after.priority) {
       lines.push(`Priority changed from ${before.priority} to ${after.priority}.`);

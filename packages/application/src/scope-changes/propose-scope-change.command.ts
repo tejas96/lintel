@@ -1,11 +1,14 @@
-import { notificationDedupeKey } from '@lintel/domain';
-import { ProjectAccessService } from '../access/project-access.service';
+import { notificationDedupeKey, scopeChangeMoneyIssues } from '@lintel/domain';
+import { ForbiddenError, ValidationFailedError } from '@lintel/shared';
+import { type ProjectAccess, ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import type { ProjectCommandDependencies } from '../projects/command-dependencies';
+import { canSeeProjectFinances } from '../projects/project-members.rules';
 import type {
   ProjectScheduleFacts,
   ScopeChangeImpact,
+  ScopeChangeMoneyTerms,
   ScopeChangeNewTask,
 } from './scope-change.store';
 import type { ScopeChangeRequest } from './scope-change-additions';
@@ -14,6 +17,37 @@ import { type AssessedScopeChange, assessScopeChangeRequest } from './scope-chan
 export interface ScopeChangeProposal extends ScopeChangeRequest {
   readonly title: string;
   readonly description: string;
+  /** Approval waits for the client's recorded sign-off. */
+  readonly requiresClientSignOff?: boolean;
+  /** Cost to the studio and fee to the client; only people who can see the budget may set them. */
+  readonly money?: Partial<ScopeChangeMoneyTerms>;
+}
+
+const NO_MONEY: ScopeChangeMoneyTerms = {
+  costImpactMinor: null,
+  costCategory: null,
+  feeImpactMinor: null,
+};
+
+/** Checks the money terms and who may set them; the category defaults to "other". */
+function moneyTerms(
+  context: RequestContext,
+  access: ProjectAccess,
+  money: Partial<ScopeChangeMoneyTerms> | undefined,
+): ScopeChangeMoneyTerms {
+  const costImpactMinor = money?.costImpactMinor ?? null;
+  const feeImpactMinor = money?.feeImpactMinor ?? null;
+  if (costImpactMinor === null && feeImpactMinor === null) return NO_MONEY;
+  if (!canSeeProjectFinances(context.actor, access)) {
+    throw new ForbiddenError('Only people who can see the project budget can add a cost or fee.');
+  }
+  const issues = scopeChangeMoneyIssues({ costImpactMinor, feeImpactMinor });
+  if (issues.length > 0) throw new ValidationFailedError('Check the amounts.', issues);
+  return {
+    costImpactMinor,
+    costCategory: costImpactMinor === null ? null : (money?.costCategory ?? 'other'),
+    feeImpactMinor,
+  };
 }
 
 export interface ScopeChangePreview {
@@ -63,7 +97,12 @@ export class ProposeScopeChangeCommand {
     proposal: ScopeChangeProposal,
   ): Promise<{ id: string }> {
     return this.deps.uow.transaction(async (stores) => {
-      await new ProjectAccessService(stores.access).requireView(context.actor, projectId);
+      const access = await new ProjectAccessService(stores.access).requireView(
+        context.actor,
+        projectId,
+      );
+      const money = moneyTerms(context, access, proposal.money);
+      const requiresClientSignOff = proposal.requiresClientSignOff ?? false;
       const assessed = await assessScopeChangeRequest(stores, projectId, proposal);
       const { result } = assessed;
       const { id } = await stores.scopeChanges.insert({
@@ -71,6 +110,8 @@ export class ProposeScopeChangeCommand {
         title: proposal.title,
         description: proposal.description,
         requestedByUserId: context.actor.userId,
+        requiresClientSignOff,
+        ...money,
         impacts: assessed.impacts,
         projectEndImpactDays: result.projectEndImpactDays,
         newTasks: assessed.newTasks,
@@ -84,8 +125,15 @@ export class ProposeScopeChangeCommand {
         taskId: null,
         actorUserId: context.actor.userId,
         type: 'scope_change.proposed',
-        summary: `Proposed scope change "${proposal.title}": ${describeScopeChange(assessed)}.`,
-        payload: { scopeChangeId: id, projectEndImpactDays: result.projectEndImpactDays },
+        summary: `Proposed scope change "${proposal.title}": ${describeScopeChange(assessed)}.${
+          requiresClientSignOff ? ' Needs the client’s sign-off.' : ''
+        }`,
+        // No money here: every project member can read the activity feed.
+        payload: {
+          scopeChangeId: id,
+          projectEndImpactDays: result.projectEndImpactDays,
+          requiresClientSignOff,
+        },
       });
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
@@ -99,6 +147,8 @@ export class ProposeScopeChangeCommand {
           newTaskCount: assessed.newTasks.length,
           cancelledTaskIds: proposal.cancelTaskIds,
           projectEndImpactDays: result.projectEndImpactDays,
+          requiresClientSignOff,
+          ...money,
         },
         requestId: context.requestId,
       });

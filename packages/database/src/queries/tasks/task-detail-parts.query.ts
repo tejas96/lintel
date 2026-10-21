@@ -24,6 +24,8 @@ export interface ScheduleChangeView {
   readonly id: string;
   readonly previousDueDate: string | null;
   readonly newDueDate: string | null;
+  readonly previousDueTime: string | null;
+  readonly newDueTime: string | null;
   readonly reason: string;
   readonly changedBy: UserSummaryView;
   readonly createdAt: string;
@@ -78,6 +80,8 @@ export async function loadScheduleChanges(
     id: row.id,
     previousDueDate: row.previousDueDate,
     newDueDate: row.newDueDate,
+    previousDueTime: row.previousDueTime,
+    newDueTime: row.newDueTime,
     reason: row.reason,
     changedBy: pickUser(people, row.changedByUserId) ?? FORMER_MEMBER,
     createdAt: row.createdAt.toISOString(),

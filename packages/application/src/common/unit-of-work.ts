@@ -4,6 +4,7 @@ import type { WorkingCalendarStore } from '../calendars/working-calendar.store';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
 import type { ProjectDocumentStore } from '../documents/project-document.store';
 import type { ProjectCostStore } from '../finances/project-cost.store';
+import type { GuidanceStore } from '../guidance/guidance.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { LeaveStore } from '../leave/leave.store';
 import type { LeaveTypeStore } from '../leave-policies/leave-type.store';
@@ -32,6 +33,7 @@ export interface ApplicationStores {
   /** Worker-only stores (outbox relay, reminders, push delivery). */
   readonly background: BackgroundStores;
   readonly capacity: CapacityReadStore;
+  readonly guidance: GuidanceStore;
   readonly identity: IdentityStore;
   readonly inbox: NotificationInboxStore;
   readonly leave: LeaveStore;

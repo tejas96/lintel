@@ -5,9 +5,12 @@ import {
   DecideScopeChangeCommand,
   ManageProjectCommands,
   Notifier,
+  PreviewProjectPlanQuery,
   ProjectAccessService,
   type ProjectCommandDependencies,
   ProposeScopeChangeCommand,
+  RecordClientSignOffCommand,
+  RescheduleTasksCommand,
   type UnitOfWork,
 } from '@lintel/application';
 import type { Clock } from '@lintel/shared';
@@ -68,5 +71,20 @@ export const projectProviders: Provider[] = [
     provide: DecideScopeChangeCommand,
     inject: [PROJECT_COMMAND_DEPENDENCIES],
     useFactory: (deps: Dependencies) => new DecideScopeChangeCommand(deps),
+  },
+  {
+    provide: RecordClientSignOffCommand,
+    inject: [PROJECT_COMMAND_DEPENDENCIES],
+    useFactory: (deps: Dependencies) => new RecordClientSignOffCommand(deps),
+  },
+  {
+    provide: RescheduleTasksCommand,
+    inject: [PROJECT_COMMAND_DEPENDENCIES],
+    useFactory: (deps: Dependencies) => new RescheduleTasksCommand(deps),
+  },
+  {
+    provide: PreviewProjectPlanQuery,
+    inject: [UNIT_OF_WORK],
+    useFactory: (uow: UnitOfWork<ApplicationStores>) => new PreviewProjectPlanQuery(uow),
   },
 ];

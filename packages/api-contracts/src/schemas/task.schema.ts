@@ -5,6 +5,7 @@ import {
   idSchema,
   instantSchema,
   type ResponseSchema,
+  timeOfDaySchema,
 } from '../common/primitives';
 import { userSummarySchema } from './people.schema';
 import { projectRefSchema } from './project.schema';
@@ -31,6 +32,8 @@ export type TaskRef = z.infer<typeof taskRefObject>;
 export const taskRefSchema: ResponseSchema<TaskRef> = taskRefObject;
 
 export const taskSummaryObject = taskRefObject.extend({
+  /** "HH:mm" in the studio's timezone; null means the end of the working day. */
+  dueTime: timeOfDaySchema.nullable(),
   priority: taskPrioritySchema,
   project: projectRefSchema,
   stage: z.object({ id: idSchema, name: z.string() }).nullable(),
@@ -109,6 +112,8 @@ export const scheduleChangeSchema = z.object({
   id: idSchema,
   previousDueDate: calendarDateSchema.nullable(),
   newDueDate: calendarDateSchema.nullable(),
+  previousDueTime: timeOfDaySchema.nullable(),
+  newDueTime: timeOfDaySchema.nullable(),
   reason: z.string(),
   changedBy: userSummarySchema,
   createdAt: instantSchema,

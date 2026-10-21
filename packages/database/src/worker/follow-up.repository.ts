@@ -47,6 +47,7 @@ export class FollowUpRepository implements FollowUpStore {
       status: task.status,
       priority: task.priority,
       dueDate: task.dueDate as CalendarDate | null,
+      dueTime: task.dueTime,
       escalateAfterOverdueDays: task.escalateAfterOverdueDays,
       ownerUserId: task.ownerUserId,
       ownerName: row.ownerName,

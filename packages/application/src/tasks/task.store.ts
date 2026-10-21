@@ -21,6 +21,8 @@ export interface TaskRecord {
   readonly reviewerUserId: string | null;
   readonly plannedStartDate: string | null;
   readonly dueDate: string | null;
+  /** "HH:mm" in the business timezone; null = the end of the working day. */
+  readonly dueTime: string | null;
   readonly baselineDueDate: string | null;
   readonly estimateMinutes: number | null;
   readonly actualMinutes: number;
@@ -56,6 +58,8 @@ export interface NewTask {
   readonly reviewerUserId: string | null;
   readonly plannedStartDate: string | null;
   readonly dueDate: string | null;
+  /** Optional; "HH:mm" in the business timezone. Needs a due date. */
+  readonly dueTime?: string | null;
   readonly baselineDueDate: string | null;
   readonly estimateMinutes: number | null;
   readonly requiresReview: boolean;
@@ -94,6 +98,8 @@ export interface ScheduleChangeInput {
   readonly taskId: string;
   readonly previousDueDate: string | null;
   readonly newDueDate: string | null;
+  readonly previousDueTime?: string | null;
+  readonly newDueTime?: string | null;
   readonly reason: string;
   readonly changedByUserId: string;
 }

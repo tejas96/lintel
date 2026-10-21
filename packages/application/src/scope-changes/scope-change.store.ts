@@ -1,6 +1,8 @@
 import type {
   Capability,
+  ClientSignOff,
   MilestoneStatus,
+  ProjectCostCategory,
   TaskDependencyEdge,
   TaskPriority,
   TaskStatus,
@@ -25,6 +27,7 @@ export interface ProjectScheduleFacts {
   readonly dependencies: readonly TaskDependencyEdge[];
   readonly milestones: readonly {
     readonly id: string;
+    readonly name: string;
     readonly dueDate: string;
     readonly status: MilestoneStatus;
   }[];
@@ -35,8 +38,12 @@ export interface ScopeChangeImpact {
   readonly taskTitle: string;
   readonly currentDueDate: string | null;
   readonly proposedDueDate: string | null;
+  readonly currentStartDate: string | null;
+  readonly proposedStartDate: string | null;
   readonly shiftWorkingDays: number;
   readonly isDownstream: boolean;
+  /** Approval sets the proposed dates (timeline drag) instead of shifting the current ones. */
+  readonly appliesExactDates: boolean;
 }
 
 export interface StoredScopeChangeImpact extends ScopeChangeImpact {
@@ -45,21 +52,38 @@ export interface StoredScopeChangeImpact extends ScopeChangeImpact {
 
 export type ScopeChangeStatus = 'proposed' | 'approved' | 'rejected' | 'withdrawn';
 
-export interface ScopeChangeRecord {
+/** What a scope change does to the money; visible only to people who can see the budget. */
+export interface ScopeChangeMoneyTerms {
+  readonly costImpactMinor: number | null;
+  readonly costCategory: ProjectCostCategory | null;
+  readonly feeImpactMinor: number | null;
+}
+
+export interface ScopeChangeRecord extends ScopeChangeMoneyTerms {
   readonly id: string;
   readonly projectId: string;
   readonly title: string;
   readonly description: string;
   readonly status: ScopeChangeStatus;
   readonly requestedByUserId: string;
+  readonly requiresClientSignOff: boolean;
+  readonly createdAt: Date;
   readonly version: number;
 }
 
-export interface NewScopeChange {
+export interface ClientSignOffRecord extends ClientSignOff {
+  readonly id: string;
+  readonly scopeChangeId: string;
+  readonly recordedByUserId: string;
+  readonly recordedAt: Date;
+}
+
+export interface NewScopeChange extends ScopeChangeMoneyTerms {
   readonly projectId: string;
   readonly title: string;
   readonly description: string;
   readonly requestedByUserId: string;
+  readonly requiresClientSignOff: boolean;
   readonly impacts: readonly ScopeChangeImpact[];
   readonly projectEndImpactDays: number;
   readonly newTasks: readonly ScopeChangeNewTask[];
@@ -150,4 +174,9 @@ export interface ScopeChangeStore {
     cancellationId: string,
     outcome: { readonly appliedAt: Date } | { readonly skipReason: string },
   ): Promise<void>;
+  /** The most recent client sign-off; earlier ones stay as history. */
+  latestSignOff(scopeChangeId: string): Promise<ClientSignOffRecord | null>;
+  recordSignOff(
+    signOff: ClientSignOff & { readonly scopeChangeId: string; readonly recordedByUserId: string },
+  ): Promise<ClientSignOffRecord>;
 }

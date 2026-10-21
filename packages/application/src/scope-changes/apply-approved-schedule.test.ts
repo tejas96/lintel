@@ -65,6 +65,12 @@ class RecordingScopeChangeStore implements ScopeChangeStore {
   settleCancellation(): never {
     throw new Error('not used');
   }
+  latestSignOff(): never {
+    throw new Error('not used');
+  }
+  recordSignOff(): never {
+    throw new Error('not used');
+  }
 }
 
 const facts: ProjectScheduleFacts = {
@@ -101,7 +107,7 @@ const facts: ProjectScheduleFacts = {
     },
   ],
   dependencies: [{ taskId: 'b', dependsOnTaskId: 'a' }],
-  milestones: [{ id: 'm1', dueDate: '2026-10-23', status: 'pending' }],
+  milestones: [{ id: 'm1', name: 'Counter agreed', dueDate: '2026-10-23', status: 'pending' }],
 };
 
 function impact(taskId: string, current: string, proposed: string): StoredScopeChangeImpact {
@@ -111,8 +117,11 @@ function impact(taskId: string, current: string, proposed: string): StoredScopeC
     taskTitle: taskId,
     currentDueDate: current,
     proposedDueDate: proposed,
+    currentStartDate: null,
+    proposedStartDate: null,
     shiftWorkingDays: 2,
     isDownstream: taskId !== 'a',
+    appliesExactDates: false,
   };
 }
 
@@ -136,6 +145,11 @@ async function approve(store: RecordingScopeChangeStore) {
         description: 'Client chose marble',
         status: 'proposed',
         requestedByUserId: 'u1',
+        requiresClientSignOff: false,
+        costImpactMinor: null,
+        costCategory: null,
+        feeImpactMinor: null,
+        createdAt: new Date('2026-10-20T06:00:00Z'),
         version: 1,
       },
       note: 'Approved with the client',
@@ -182,5 +196,19 @@ describe('applying an approved scope change', () => {
     const { moves } = await approve(store);
     expect(moves[0]?.dueDate).toBe('2026-10-31');
     expect(store.corrections).toEqual([['i-b', '2026-10-29', '2026-10-31']]);
+  });
+
+  it('sets exact dates dragged on the timeline, start included', async () => {
+    const exact: StoredScopeChangeImpact = {
+      ...impact('b', '2026-10-28', '2026-11-02'),
+      currentStartDate: '2026-10-26',
+      proposedStartDate: '2026-10-29',
+      appliesExactDates: true,
+    };
+    const store = new RecordingScopeChangeStore(facts, [exact]);
+    const { moves } = await approve(store);
+    expect(moves[0]?.dueDate).toBe('2026-11-02');
+    expect(store.reschedules[0]).toMatchObject({ plannedStartDate: '2026-10-29' });
+    expect(store.projectEnd).toBe('2026-11-02');
   });
 });

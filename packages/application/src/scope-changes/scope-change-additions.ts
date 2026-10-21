@@ -10,15 +10,27 @@ import type {
   ScopeChangeNewTask,
   ScopeStageFact,
 } from './scope-change.store';
+import { exactDateImpact } from './scope-change-exact-dates';
 import {
   calculateScopeChangeImpact,
   type ScopeChangeImpactResult,
   type TaskShiftRequest,
 } from './scope-change-impact';
 
-/** Everything one scope change asks for: date moves, new tasks and cancellations. */
+/** Exact new dates for a task, as dragged on the timeline. */
+export interface TaskDateRequest {
+  readonly taskId: string;
+  readonly plannedStartDate: string;
+  readonly dueDate: string;
+}
+
+/**
+ * Everything one scope change asks for: date moves (shifts by working days,
+ * or exact dates from the timeline), new tasks and cancellations.
+ */
 export interface ScopeChangeRequest {
   readonly taskShifts: readonly TaskShiftRequest[];
+  readonly taskDateChanges?: readonly TaskDateRequest[];
   readonly newTasks: readonly ScopeChangeNewTask[];
   readonly cancelTaskIds: readonly string[];
 }
@@ -26,6 +38,7 @@ export interface ScopeChangeRequest {
 export function isEmptyScopeChange(request: ScopeChangeRequest): boolean {
   return (
     request.taskShifts.length === 0 &&
+    (request.taskDateChanges ?? []).length === 0 &&
     request.newTasks.length === 0 &&
     request.cancelTaskIds.length === 0
   );
@@ -66,7 +79,10 @@ export function scopeChangeAdditionIssues(
     }
   });
   const tasks = new Map(facts.tasks.map((task) => [task.id, task]));
-  const shifted = new Set(request.taskShifts.map((shift) => shift.taskId));
+  const shifted = new Set([
+    ...request.taskShifts.map((shift) => shift.taskId),
+    ...(request.taskDateChanges ?? []).map((change) => change.taskId),
+  ]);
   const seen = new Set<string>();
   request.cancelTaskIds.forEach((taskId, index) => {
     const field = `cancelTaskIds.${index}`;
@@ -115,7 +131,11 @@ export function assessScopeChange(
       (edge) => !cancelled.has(edge.taskId) && !cancelled.has(edge.dependsOnTaskId),
     ),
   };
-  const base = calculateScopeChangeImpact(remaining, request.taskShifts, calendar);
+  const dated = request.taskDateChanges ?? [];
+  const base =
+    dated.length > 0
+      ? exactDateImpact(remaining, dated, calendar)
+      : calculateScopeChangeImpact(remaining, request.taskShifts, calendar);
   let forecast = base.forecastEndDate;
   for (const task of request.newTasks) {
     if (

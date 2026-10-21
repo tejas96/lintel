@@ -6,9 +6,11 @@ import type { OperationsDependencies, OperationsStores } from './operations-cont
 import { admitToProject } from './project-admission';
 import type { TaskRecord } from './task.store';
 import { notifyAboutTask, quoted, recordTaskChange } from './task-records';
+import { deadlineText } from './task-schedule-records';
 import {
   assertActivePeople,
   assertDateOrder,
+  assertDueTime,
   assertReferencesInProject,
   assertReviewerIsNotOwner,
 } from './task-validation';
@@ -26,6 +28,8 @@ export interface CreateTaskInput {
   readonly collaboratorUserIds: readonly string[];
   readonly plannedStartDate: string | null;
   readonly dueDate: string | null;
+  /** Optional "HH:mm" in the business timezone; needs a due date. */
+  readonly dueTime?: string | null;
   readonly estimateMinutes: number | null;
   readonly requiresReview: boolean;
   readonly completionCriteria: string | null;
@@ -66,6 +70,7 @@ export class CreateTaskCommand {
         reviewerUserId: input.reviewerUserId,
         plannedStartDate: input.plannedStartDate,
         dueDate: input.dueDate,
+        dueTime: input.dueTime ?? null,
         baselineDueDate: status === 'ready' ? input.dueDate : null,
         estimateMinutes: input.estimateMinutes,
         requiresReview: input.requiresReview,
@@ -114,7 +119,7 @@ export class CreateTaskCommand {
         kind: 'task_assigned',
         recipientUserId: task.ownerUserId,
         title: `New task: ${quoted(task.title)}`,
-        body: task.dueDate ? `Due ${task.dueDate}.` : 'A task was assigned to you.',
+        body: task.dueDate ? `Due ${deadlineText(task)}.` : 'A task was assigned to you.',
       },
       ...collaborators.map((userId) => ({
         kind: 'task_assigned' as const,
@@ -150,5 +155,6 @@ export class CreateTaskCommand {
     ]);
     assertReviewerIsNotOwner(input.ownerUserId, input.reviewerUserId);
     assertDateOrder(input.plannedStartDate, input.dueDate);
+    assertDueTime(input.dueDate, input.dueTime ?? null);
   }
 }

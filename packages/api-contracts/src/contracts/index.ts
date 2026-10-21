@@ -6,6 +6,7 @@ import { leaveContract } from './leave.contract';
 import { leavePoliciesContract } from './leave-policies.contract';
 import { operationsContract } from './operations.contract';
 import { peopleContract } from './people.contract';
+import { planningContract } from './planning.contract';
 import { platformContract } from './platform.contract';
 import { profileContract } from './profile.contract';
 import { projectCostsContract } from './project-costs.contract';
@@ -42,6 +43,7 @@ export type ApiRouterDefinition = {
   readonly documents: typeof documentsContract;
   readonly reassignments: typeof reassignmentsContract;
   readonly templateUpdates: typeof templateUpdatesContract;
+  readonly planning: typeof planningContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -63,6 +65,7 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   documents: documentsContract,
   reassignments: reassignmentsContract,
   templateUpdates: templateUpdatesContract,
+  planning: planningContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -79,6 +82,7 @@ export { leaveContract, leavePeriodSchema } from './leave.contract';
 export { leavePoliciesContract } from './leave-policies.contract';
 export { operationsContract } from './operations.contract';
 export { peopleContract } from './people.contract';
+export { planningContract } from './planning.contract';
 export { platformContract } from './platform.contract';
 export { profileContract } from './profile.contract';
 export { projectCostsContract } from './project-costs.contract';

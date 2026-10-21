@@ -102,4 +102,22 @@ describe('deadline escalation plan', () => {
     expect(steps[0]?.at.toISOString()).toBe('2026-11-07T04:30:00.000Z');
     expect(steps[1]?.at.toISOString()).toBe('2026-11-09T13:00:00.000Z');
   });
+  it('makes a task overdue at its due time when one is set', () => {
+    const steps = planDeadlineEscalation({
+      dueDate: toCalendarDate('2026-11-09'),
+      dueTime: '11:00',
+      priority: 'medium',
+      projectCriticality: 'normal',
+      escalateAfterOverdueDays: 1,
+      calendar: DEFAULT_WORKING_CALENDAR,
+      reminderTime: '10:00',
+    });
+    const overdue = steps.find((step) => step.kind === 'task_overdue');
+    // 11:00 in Asia/Kolkata is 05:30 UTC.
+    expect(overdue?.at.toISOString()).toBe('2026-11-09T05:30:00.000Z');
+    expect(overdue?.label).toBe('Overdue at 11:00 on the due day');
+    expect(steps.find((step) => step.audience === 'project_manager')?.at.toISOString()).toBe(
+      '2026-11-10T04:00:00.000Z',
+    );
+  });
 });

@@ -23,6 +23,8 @@ export interface TaskDeadlineFacts {
   readonly status: TaskStatus;
   readonly priority: TaskPriority;
   readonly dueDate: CalendarDate | null;
+  /** "HH:mm" in the business timezone; null = the end of the working day. */
+  readonly dueTime: string | null;
   readonly escalateAfterOverdueDays: number;
   readonly ownerUserId: string | null;
   readonly ownerName: string | null;

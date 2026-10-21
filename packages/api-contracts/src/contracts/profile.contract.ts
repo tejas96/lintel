@@ -1,6 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { versionSchema } from '../common/primitives';
+import { emptyBodySchema, versionSchema } from '../common/primitives';
+import { guidanceSchema, guidanceTipKeySchema } from '../schemas/planning.schema';
 import { ownProfileSchema } from '../schemas/profile.schema';
 
 const c = initContract();
@@ -31,5 +32,26 @@ export const profileContract = c.router({
     responses: { 200: ownProfileSchema },
     summary:
       'Change your own name, email or designation. Role, phone number and status stay with administrators.',
+  },
+  getMyGuidance: {
+    method: 'GET',
+    path: '/me/guidance',
+    responses: { 200: guidanceSchema },
+    summary: 'First-run tips for your role, and which ones you have already seen.',
+  },
+  markGuidanceSeen: {
+    method: 'POST',
+    path: '/me/guidance/:tip/seen',
+    pathParams: z.object({ tip: guidanceTipKeySchema }),
+    body: emptyBodySchema,
+    responses: { 200: guidanceSchema },
+    summary: 'Remember that you saw a tip, so it does not show again on any device.',
+  },
+  resetGuidance: {
+    method: 'POST',
+    path: '/me/guidance/reset',
+    body: emptyBodySchema,
+    responses: { 200: guidanceSchema },
+    summary: 'Show the first-run tips again.',
   },
 });

@@ -18,6 +18,7 @@ function row(taskId: string, overrides: Partial<WorkQueueTaskRow> = {}): WorkQue
     status: 'ready',
     priority: 'medium',
     dueDate: toCalendarDate('2026-10-28'),
+    dueTime: null,
     plannedStartDate: null,
     estimateMinutes: 240,
     actualMinutes: 0,

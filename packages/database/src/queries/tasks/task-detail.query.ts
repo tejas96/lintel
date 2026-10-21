@@ -1,3 +1,4 @@
+import type { PriorityClock } from '@lintel/domain';
 import { eq, inArray } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { taskDependencies, tasks } from '../../schema';
@@ -44,8 +45,9 @@ export async function loadTaskDetail(
   taskId: string,
   today: string,
   viewerUserId: string,
+  clock?: PriorityClock,
 ): Promise<TaskDetailView | null> {
-  const [summary] = await loadTaskSummaries(db, { where: eq(tasks.id, taskId), today });
+  const [summary] = await loadTaskSummaries(db, { where: eq(tasks.id, taskId), today, clock });
   if (!summary) return null;
   const [row] = await db.select().from(tasks).where(eq(tasks.id, taskId));
   if (!row) return null;

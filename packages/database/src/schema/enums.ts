@@ -1,4 +1,5 @@
 import {
+  CLIENT_SIGN_OFF_METHODS,
   DAY_PORTIONS,
   DELIVERABLE_STATUSES,
   DOCUMENT_FOLDERS,
@@ -6,6 +7,7 @@ import {
   MILESTONE_STATUSES,
   NOTIFICATION_CHANNELS,
   NOTIFICATION_KINDS,
+  PROJECT_COST_CATEGORIES,
   PROJECT_CRITICALITIES,
   PROJECT_ROLES,
   PROJECT_STATUSES,
@@ -110,3 +112,5 @@ export const sessionClientEnum = pgEnum('session_client', ['web', 'mobile']);
 export const priorityConflictStatusEnum = pgEnum('priority_conflict_status', ['open', 'resolved']);
 export const documentFolderEnum = pgEnum('document_folder', DOCUMENT_FOLDERS);
 export const reassignmentStatusEnum = pgEnum('reassignment_status', REASSIGNMENT_STATUSES);
+export const clientSignOffMethodEnum = pgEnum('client_sign_off_method', CLIENT_SIGN_OFF_METHODS);
+export const projectCostCategoryEnum = pgEnum('project_cost_category', PROJECT_COST_CATEGORIES);

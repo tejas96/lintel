@@ -26,6 +26,7 @@ export function deadlineTask(overrides: Patch<TaskDeadlineFacts> = {}): TaskDead
     status: 'in_progress',
     priority: 'medium',
     dueDate: toCalendarDate('2026-11-10'),
+    dueTime: null,
     escalateAfterOverdueDays: 1,
     ownerUserId: OWNER,
     ownerName: 'Ananya Joshi',

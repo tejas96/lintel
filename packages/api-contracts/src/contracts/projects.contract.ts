@@ -10,6 +10,7 @@ import {
   versionSchema,
 } from '../common/primitives';
 import { projectRoleSchema } from '../schemas/people.schema';
+import { planTailoringSchema } from '../schemas/planning.schema';
 import {
   activityItemSchema,
   healthStatusSchema,
@@ -23,6 +24,7 @@ import {
   scopeChangeDetailSchema,
   scopeChangePreviewSchema,
   scopeChangeRequestSchema,
+  scopeChangeTermsSchema,
 } from '../schemas/scope-change.schema';
 
 const c = initContract();
@@ -45,6 +47,8 @@ export const createProjectBodySchema = z.object({
   /** Who does the work for each project role; tasks are assigned from this. */
   members: z.array(z.object({ userId: idSchema, projectRole: projectRoleSchema })).max(50),
   budgetMinor: z.number().int().min(0).nullable(),
+  /** Changes to the template's plan before the project starts (stages, tasks, dates, people). */
+  tailoring: planTailoringSchema.optional(),
 });
 export type CreateProjectBody = z.infer<typeof createProjectBodySchema>;
 
@@ -151,11 +155,13 @@ export const projectsContract = c.router({
     method: 'POST',
     path: '/projects/:id/scope-changes',
     pathParams: idParams,
-    body: scopeChangeRequestSchema.extend({
+    body: scopeChangeRequestSchema.merge(scopeChangeTermsSchema).extend({
       title: shortTextSchema,
       description: noteSchema,
     }),
     responses: { 201: scopeChangeDetailSchema },
+    summary:
+      'Propose a scope change. A cost or fee may be added only by people who can see the budget; with client sign-off required, approval waits for it.',
   },
   decideScopeChange: {
     method: 'POST',
@@ -168,6 +174,6 @@ export const projectsContract = c.router({
     }),
     responses: { 200: scopeChangeDetailSchema },
     summary:
-      'Approve (applies the new dates, creates added tasks and cancels removed ones, keeping the history) or reject a scope change.',
+      'Approve (applies the new dates, creates added tasks, cancels removed ones, records the cost and fee, keeping the history) or reject a scope change. Approval needs the client sign-off when the change requires it.',
   },
 });

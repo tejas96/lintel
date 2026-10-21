@@ -89,6 +89,35 @@ describe('deadline activities', () => {
     expect((await managerStep())?.at).toBe('2026-11-12T04:00:00.000Z');
   });
 
+  it('plans the overdue step at the due time and restarts when the time changes', async () => {
+    const fake = world('2026-11-07T03:30:00.000Z');
+    const due = toCalendarDate('2026-11-09');
+    fake.stores.background.followUps.deadlines.set(
+      'task-1',
+      deadlineTask({ dueDate: due, dueTime: '11:00' }),
+    );
+    const plan = await fake.activities.loadDeadlinePlan('task-1');
+    expect(plan.dueDate).toBe('2026-11-09T11:00');
+    // 11:00 IST on Monday 9 Nov is 05:30 UTC.
+    expect(plan.steps.find((planned) => planned.kind === 'task_overdue')?.at).toBe(
+      '2026-11-09T05:30:00.000Z',
+    );
+    const step = {
+      key: 'task_overdue.task_owner',
+      audience: 'task_owner',
+      kind: 'task_overdue',
+    } as const;
+    fake.stores.background.followUps.deadlines.set(
+      'task-1',
+      deadlineTask({ dueDate: due, dueTime: '15:00' }),
+    );
+    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-09T11:00', step)).toBe(
+      'due_date_changed',
+    );
+    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-09T15:00', step)).toBe('sent');
+    expect(fake.stores.notifications.created[0]?.body).toContain('Mon 9 Nov at 15:00');
+  });
+
   it('reports a closed or archived task so the workflow can stop', async () => {
     const fake = world();
     fake.stores.background.followUps.deadlines.set('task-1', deadlineTask({ status: 'done' }));

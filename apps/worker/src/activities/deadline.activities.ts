@@ -8,7 +8,12 @@ import {
   withNotifier,
 } from './activity-dependencies';
 import { deadlineNotification } from './deadline-messages';
-import { type DeadlinePlan, type DeadlineStepRef, toDeadlinePlanSteps } from './deadline-plan';
+import {
+  type DeadlinePlan,
+  type DeadlineStepRef,
+  deadlineKey,
+  toDeadlinePlanSteps,
+} from './deadline-plan';
 
 export type DeadlineStepResult = 'sent' | 'no_recipient' | 'task_closed' | 'due_date_changed';
 
@@ -45,7 +50,7 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
       const stores = deps.uow.stores;
       const task = await stores.background.followUps.taskDeadline(taskId);
       if (!task) return { open: false, dueDate: null, steps: [] };
-      if (!isStillOpen(task)) return { open: false, dueDate: task.dueDate, steps: [] };
+      if (!isStillOpen(task)) return { open: false, dueDate: deadlineKey(task), steps: [] };
       if (task.dueDate === null) return { open: true, dueDate: null, steps: [] };
       const [settings, calendar] = await Promise.all([
         deps.organization.settings(),
@@ -53,6 +58,7 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
       ]);
       const steps = planDeadlineEscalation({
         dueDate: task.dueDate,
+        dueTime: task.dueTime,
         priority: task.priority,
         projectCriticality: task.project.criticality,
         escalateAfterOverdueDays: task.escalateAfterOverdueDays,
@@ -61,14 +67,14 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
       });
       return {
         open: true,
-        dueDate: task.dueDate,
+        dueDate: deadlineKey(task),
         steps: toDeadlinePlanSteps(steps, deps.clock.now()),
       };
     },
 
     /**
-     * Re-checks that the task is still open with the same due date, then
-     * notifies the step's audience in the same transaction.
+     * Re-checks that the task is still open with the same deadline (date and
+     * time), then notifies the step's audience in the same transaction.
      */
     async sendDeadlineStep(
       taskId: string,
@@ -79,7 +85,7 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
         const followUps = stores.background.followUps;
         const task = await followUps.taskDeadline(taskId);
         if (!task || !isStillOpen(task)) return 'task_closed';
-        if (task.dueDate !== dueDate) return 'due_date_changed';
+        if (deadlineKey(task) !== dueDate) return 'due_date_changed';
         const recipients = await recipientsFor(followUps, task, step);
         if (recipients.length === 0) return 'no_recipient';
         await notifyEach(
