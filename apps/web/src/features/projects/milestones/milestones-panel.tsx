@@ -18,11 +18,14 @@ interface Opened {
   readonly key: number;
 }
 
-const PLAN_WORDS: Readonly<Record<MilestoneRewardPlan['state'], string>> = {
-  planned: 'checked at completion',
-  checked: 'checked, with the reviewer',
-  withdrawn: 'withdrawn',
-};
+/** Where the reward stands, in words: planned, waiting for a reviewer, decided or withdrawn. */
+function planWords(plan: MilestoneRewardPlan): string {
+  if (plan.state === 'planned') return 'checked at completion';
+  if (plan.state === 'withdrawn') return 'withdrawn';
+  return plan.recipients.some((share) => share.status === 'pending_review')
+    ? 'waiting for review'
+    : 'decided';
+}
 
 function RewardChip({ plan }: { readonly plan: MilestoneRewardPlan }) {
   const who =
@@ -32,7 +35,7 @@ function RewardChip({ plan }: { readonly plan: MilestoneRewardPlan }) {
   return (
     <Badge className={cn(plan.state === 'withdrawn' && 'line-through opacity-70')}>
       <Award aria-hidden className="size-3" />
-      {formatAmount(plan.amountMinor, plan.currency)} · {who} · {PLAN_WORDS[plan.state]}
+      {formatAmount(plan.amountMinor, plan.currency)} · {who} · {planWords(plan)}
     </Badge>
   );
 }

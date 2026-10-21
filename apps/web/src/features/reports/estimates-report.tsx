@@ -30,7 +30,7 @@ function Kpis({ data }: { readonly data: EstimatesReport }) {
             <StatusPill
               tone={presentation.tone}
               glyph={presentation.glyph}
-              label={`${presentation.label} estimate overall`}
+              label={`${presentation.label} estimate`}
               size="sm"
             />
           ) : (
@@ -74,6 +74,7 @@ function Trend({ data, today }: { readonly data: EstimatesReport; readonly today
           label={`Measured tasks within and outside their estimate, by ${unit}`}
           goodLabel="Within"
           badLabel="Outside"
+          badTone="atRisk"
           height={120}
           data={data.byPeriod.map((period, index) => ({
             key: period.start,

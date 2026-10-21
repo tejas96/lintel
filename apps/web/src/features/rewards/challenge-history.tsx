@@ -56,7 +56,7 @@ export function ChallengeHistory({
                       <span className="text-ink">: “{challenge.resolutionNote}”</span>
                     )}
                   </p>
-                  {challenge.after && (
+                  {challenge.after && challenge.status === 'corrected' && (
                     <p className="flex flex-wrap items-center gap-2 type-body-sm text-ink-muted">
                       <span>{outcomeWords(challenge.before, currency)}</span>
                       <ArrowRight aria-label="became" className="size-3.5 shrink-0" />
