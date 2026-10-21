@@ -124,6 +124,10 @@ describe.skipIf(!url)('first-time studio setup against PostgreSQL', () => {
   it('refuses a seeded installation', async () => {
     const tx = connection.db;
     const before = await tx.execute(sql`select count(*)::int as n from users`);
+    // Outside a rolled-back transaction: on an empty database the setup would really run.
+    if (Number((before.rows[0] as { n: number } | undefined)?.n ?? 0) === 0) {
+      throw new Error('Seed the database before running integration tests (pnpm db:seed).');
+    }
     await expect(
       new SetUpStudioCommand({
         stores: { setup: new StudioSetupRepository(tx), records: new RecordRepository(tx) },

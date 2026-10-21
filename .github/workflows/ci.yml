@@ -50,6 +50,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @lintel/database db:migrate
+      # The database integration tests look up the seeded people (+91 90000 00001 …).
+      - run: pnpm --filter @lintel/database db:seed
       - name: Start a Temporal dev server for the worker's integration tests
         run: |
           curl -sSf https://temporal.download/cli.sh | sh

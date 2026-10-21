@@ -64,7 +64,7 @@ running apps against the demo data).
 
 ```bash
 pnpm check     # Biome lint + ≤250-line files + package boundaries + typecheck + unit tests
-pnpm test:integration
+pnpm test:integration   # needs a migrated and seeded DATABASE_URL (pnpm db:migrate && pnpm db:seed)
 ```
 
 ## Documentation
