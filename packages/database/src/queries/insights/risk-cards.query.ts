@@ -75,7 +75,7 @@ export async function loadRiskCards(
   projectIds: readonly string[],
   context: RiskContext,
 ): Promise<RiskCardView[]> {
-  const { projects, facts } = await loadRiskFacts(db, projectIds, context.today);
+  const { projects, facts } = await loadRiskFacts(db, projectIds, context.today, context.calendar);
   return toRiskCardViews(db, projects, facts, context);
 }
 
@@ -85,7 +85,7 @@ export async function loadProjectRisks(
   projectId: string,
   context: RiskContext,
 ) {
-  const { projects, facts } = await loadRiskFacts(db, [projectId], context.today);
+  const { projects, facts } = await loadRiskFacts(db, [projectId], context.today, context.calendar);
   const project = facts[0];
   const delivery = project ? forecastDelivery(project, context) : null;
   const commitment = project?.commitments.find((item) => item.kind === 'delivery');

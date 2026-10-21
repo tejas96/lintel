@@ -7,6 +7,7 @@ import {
   type TrackerStage,
 } from '@lintel/design-system/web';
 import type { ProjectStatus } from '@lintel/domain';
+import { withReadableDates } from '@/lib/format/dates';
 
 type HealthStatus = ProjectHealthView['status'];
 
@@ -52,7 +53,7 @@ export function HealthPill({
       content={
         <ul className="flex flex-col gap-1">
           {health.reasons.map((reason) => (
-            <li key={reason.message}>{reason.message}</li>
+            <li key={reason.message}>{withReadableDates(reason.message)}</li>
           ))}
         </ul>
       }
@@ -60,7 +61,7 @@ export function HealthPill({
       <button
         type="button"
         className="rounded-full"
-        aria-label={`${presentation.label}: ${health.reasons.map((reason) => reason.message).join(' ')}`}
+        aria-label={`${presentation.label}: ${health.reasons.map((reason) => withReadableDates(reason.message)).join(' ')}`}
       >
         {pill}
       </button>

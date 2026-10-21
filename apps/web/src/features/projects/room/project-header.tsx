@@ -6,9 +6,8 @@ import { PROJECT_TYPE_LABELS } from '@lintel/domain';
 import { CircleAlert, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { swatchClass } from '@/features/tasks/task-presentation';
-import { daysBetween, formatCalendarDate } from '@/lib/format/dates';
+import { daysBetween, formatCalendarDate, withReadableDates } from '@/lib/format/dates';
 import { HealthPill, PROJECT_STATUS_LABELS } from '../project-presentation';
-import { useProjectRisks } from './use-project-room';
 
 function Cell({
   label,
@@ -38,9 +37,8 @@ export function ProjectHeader({
   readonly project: ProjectDetail;
   readonly today: string;
 }) {
-  // The risk cards' forecast (plan, late starts, blockers, prerequisites) when loaded.
-  const risks = useProjectRisks(project.id);
-  const forecast = risks.data?.delivery?.forecastDate ?? project.health.forecastEndDate;
+  // The schedule forecast (plan, late starts, blockers, prerequisites): the risk cards' date.
+  const forecast = project.health.forecastEndDate;
   const slip = forecast ? daysBetween(project.baselineEndDate, forecast) : 0;
   const stages = [...project.stages]
     .sort((left, right) => left.position - right.position)
@@ -123,7 +121,7 @@ export function ProjectHeader({
                 <span className="sr-only">
                   {reason.severity === 'critical' ? 'Critical: ' : 'Risk: '}
                 </span>
-                {reason.message}
+                {withReadableDates(reason.message)}
               </span>
             </li>
           ))}

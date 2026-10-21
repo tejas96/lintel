@@ -6,7 +6,7 @@ import { PROJECT_TYPE_LABELS } from '@lintel/domain';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { swatchClass } from '@/features/tasks/task-presentation';
-import { daysBetween, formatCalendarDate } from '@/lib/format/dates';
+import { daysBetween, formatCalendarDate, withReadableDates } from '@/lib/format/dates';
 import { HealthPill, PROJECT_STATUS_LABELS, stagesFromSummary } from './project-presentation';
 
 function EndDate({ project, today }: { readonly project: ProjectSummary; readonly today: string }) {
@@ -75,7 +75,11 @@ export function ProjectCard({
             )}
           </div>
         </div>
-        {firstReason && <p className="-mt-2 type-body-sm text-ink-muted">{firstReason.message}</p>}
+        {firstReason && (
+          <p className="-mt-2 type-body-sm text-ink-muted">
+            {withReadableDates(firstReason.message)}
+          </p>
+        )}
         {project.currentStage ? (
           <StageTracker stages={stagesFromSummary(project)} />
         ) : (

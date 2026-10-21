@@ -1,6 +1,6 @@
-import { type CalendarDate, daysBetween } from '@lintel/shared';
+import type { CalendarDate } from '@lintel/shared';
 import { isOpenTaskStatus, type TaskStatus } from '../tasks/task-status';
-import type { MilestoneHealth } from './milestone-risk';
+import type { CommitmentForecast, MilestoneHealth } from './milestone-risk';
 import type { ProjectStatus } from './project-status';
 
 export type ProjectHealthStatus = 'not_started' | 'on_track' | 'at_risk' | 'off_track' | 'closed';
@@ -12,6 +12,11 @@ export interface ProjectHealthInput {
   readonly milestoneHealth: readonly MilestoneHealth[];
   /** Ages, in days, of blockers that are still open. */
   readonly openBlockerAgesInDays: readonly number[];
+  /**
+   * The schedule forecast (§15.2) of all open dated work against the planned
+   * delivery date; null without open dated work.
+   */
+  readonly deliveryForecast: CommitmentForecast | null;
 }
 
 export interface ProjectHealthReason {
@@ -26,7 +31,12 @@ export interface ProjectHealth {
   readonly overdueTaskCount: number;
   readonly blockedTaskCount: number;
   readonly completedTaskCount: number;
-  /** Latest due date among open tasks: a simple forecast of the finish date. */
+  /**
+   * When open work is forecast to finish: the schedule forecast of §15.2
+   * (durations kept, nothing in the past, blocked work not today,
+   * prerequisites first), the same date as the delivery risk card. Null
+   * without open dated work.
+   */
   readonly forecastEndDate: CalendarDate | null;
 }
 
@@ -40,15 +50,9 @@ const STALE_BLOCKER_DAYS = 2;
 const OVERDUE_COUNT_CRITICAL = 3;
 const OVERDUE_SHARE_CRITICAL = 0.2;
 
-function latestDate(dates: readonly (CalendarDate | null)[]): CalendarDate | null {
-  let latest: CalendarDate | null = null;
-  for (const date of dates) if (date !== null && (latest === null || date > latest)) latest = date;
-  return latest;
-}
-
 function collectReasons(
   input: ProjectHealthInput,
-  counts: { open: number; overdue: number; forecastEnd: CalendarDate | null },
+  counts: { open: number; overdue: number },
 ): ProjectHealthReason[] {
   const reasons: ProjectHealthReason[] = [];
   const missed = input.milestoneHealth.filter((health) => health === 'missed').length;
@@ -74,40 +78,43 @@ function collectReasons(
       message: `${staleBlockers} blocker(s) have been open for ${STALE_BLOCKER_DAYS}+ days.`,
     });
   }
-  if (input.plannedEndDate && counts.forecastEnd && counts.forecastEnd > input.plannedEndDate) {
-    const slip = daysBetween(input.plannedEndDate, counts.forecastEnd);
+  const forecast = input.deliveryForecast;
+  if (input.plannedEndDate && forecast && forecast.slipWorkingDays > 0) {
+    const days = `${forecast.slipWorkingDays} working day${forecast.slipWorkingDays === 1 ? '' : 's'}`;
     reasons.push({
       severity: 'critical',
-      message: `Open work is scheduled ${slip} day(s) past the planned delivery date.`,
+      message: `Open work is forecast to finish ${days} past the planned delivery date, on ${forecast.forecastDate}.`,
     });
   }
   return reasons;
 }
 
 /**
- * Default rules, documented in docs/PRODUCT_REQUIREMENTS.md:
+ * Default rules, documented in docs/PRODUCT_REQUIREMENTS.md §6:
  * off track when any reason is critical; at risk when any reason exists.
  */
 export const defaultProjectHealthCalculator: ProjectHealthCalculator = {
-  name: 'rules-v1',
+  name: 'rules-v2',
   calculate(input, today) {
     const openTasks = input.tasks.filter((task) => isOpenTaskStatus(task.status));
     const overdue = openTasks.filter(
       (task) => task.dueDate !== null && task.dueDate < today,
     ).length;
-    const forecastEnd = latestDate(openTasks.map((task) => task.dueDate));
     const base = {
       openTaskCount: openTasks.length,
       overdueTaskCount: overdue,
       blockedTaskCount: openTasks.filter((task) => task.status === 'blocked').length,
       completedTaskCount: input.tasks.filter((task) => task.status === 'done').length,
-      forecastEndDate: forecastEnd,
+      forecastEndDate: input.deliveryForecast?.forecastDate ?? null,
     };
     if (['completed', 'cancelled', 'archived'].includes(input.status)) {
       return { ...base, status: 'closed', reasons: [] };
     }
     if (input.status === 'draft') return { ...base, status: 'not_started', reasons: [] };
-    const reasons = collectReasons(input, { open: openTasks.length, overdue, forecastEnd });
+    // Critical reasons first: the first line explains an off-track status.
+    const reasons = collectReasons(input, { open: openTasks.length, overdue }).sort(
+      (left, right) => Number(right.severity === 'critical') - Number(left.severity === 'critical'),
+    );
     const status: ProjectHealthStatus = reasons.some((reason) => reason.severity === 'critical')
       ? 'off_track'
       : reasons.length > 0

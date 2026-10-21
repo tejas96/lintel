@@ -50,6 +50,9 @@ formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
   report a blocker, or ask for a new date, which the project manager accepts or declines.
 - **Cover for absences**: the leave page suggests who could take each affected task; one
   click opens the handover or the new "Change owner" sheet. Nothing moves on its own.
+- **One forecast for health and risk cards**: a milestone a risk card says is late now shows
+  *At risk* with "Forecast N working days late"; a delivery slip makes the project *Off track*;
+  the header's Forecast is the same date (§6, screenshots 128–130).
 
 ## Running right now
 

@@ -110,6 +110,10 @@ The system now explains problems and drives the next action (`PRODUCT_REQUIREMEN
   `docs/screenshots/web/`).
 - 🟡 The phone app lists new-date requests in Approvals and shows the new notification kinds,
   but has no screen yet to ask for a new date or to decide one (the web does both).
+- ✅ Milestone and project health use the risk cards' schedule forecast (`assessProjectSchedule`,
+  §6): a milestone forecast late is at risk with its slip in working days, the delivery slip makes
+  a project off track, and `forecastEndDate` is the delivery card's date. Screenshots 128 (before),
+  129 and 130 (after).
 
 ## Known external blockers
 

@@ -168,14 +168,42 @@ strategy is replaceable.
 
 ## 6. Project health and milestone risk (FR-HLT)
 
-- Milestone **missed**: past due and not complete. **At risk**: a linked open task
-  is scheduled after the milestone, or — within 7 days of it — any linked task is
-  blocked or overdue.
+Health is judged on the same **schedule forecast** as the risk cards (§15.2), computed once
+per project (`assessProjectSchedule`, policy `rules-v2`). So a milestone or a delivery date
+that a card says is late never shows as on track.
+
+- Milestone **missed**: past due and not complete. **At risk** when either:
+  - its **forecast passes its due date**: the latest forecast finish of its linked open
+    tasks is after the milestone. The first reason gives the slip in working days (studio
+    calendar) and the forecast date: "Forecast 1 working day late, on 2026-11-03 instead of
+    2026-11-02." Linked work planned after the milestone always slips it (nothing is forecast
+    to finish before its due date) and is named as the next reason; or
+  - within 7 days of it, a linked open task is blocked (status or an open blocker) or
+    overdue, even while the forecast still keeps the date.
+
+  Otherwise **on track**. Completed or cancelled milestones show as completed.
 - Project **off track** when any reason is critical: a missed milestone; ≥3 overdue
-  tasks or ≥20 % of open tasks overdue; open work scheduled past the planned
-  delivery date. **At risk** for any other reason: milestones at risk, any overdue
-  task, blockers open ≥2 days. Otherwise **on track**. Draft = not started;
-  completed/cancelled/archived = closed. Every status lists its reasons.
+  tasks or ≥20 % of open tasks overdue; open work **forecast** to finish past the planned
+  delivery date (the slip in working days). **At risk** for any other reason: milestones at
+  risk, any overdue task, blockers open ≥2 days. Otherwise **on track**. Draft = not started;
+  completed/cancelled/archived = closed. Every status lists its reasons, critical ones first.
+- **Forecast end** (`forecastEndDate`: project header, project cards, timeline, phone app):
+  the latest forecast finish of all open dated work, the same date as the planned delivery's
+  risk card. It is never in the past (overdue work finishes today at the earliest). Null
+  without open dated work.
+- Example (today Wednesday 21 October): "Order counter stone" is blocked and due today, so it
+  finishes Thursday at the earliest. "Install counter" waits on it, is planned from Thursday
+  22 October to Monday 2 November and belongs to "Installation complete", due 2 November. It
+  starts a working day later, on Friday, keeps its span and is forecast Tuesday 3 November.
+  The milestone is **at risk**, 1 working day late, although it is 12 days away and none of
+  its own tasks is blocked or overdue. If 2 November is also the planned delivery date, the
+  project is **off track**. The risk card on the blocked task lists the milestone as also
+  delayed by 1 working day.
+- For unchanged work the forecast only moves later as days pass, so health does not flip
+  back and forth: it goes on track → at risk → missed, or back when the work changes. The
+  daily risk run (08:30) records each change and tells the project manager about milestones
+  newly at risk or missed: one notification per project per day at most (sent every day while
+  the project is off track).
 
 ## 7. Capacity (FR-CAP)
 
@@ -433,9 +461,9 @@ prerequisite's forecast finish, and keeps its duration. Done and cancelled tasks
 anything. A commitment's forecast is the latest forecast finish of its open tasks; its
 **slip** is the working days from its due date to that forecast.
 
-**Which commitments get a card**: every pending milestone that is at risk or missed (§6) or
-whose forecast passes its date, and the planned delivery date when the forecast passes it or
-the project is at risk or off track. Cards with the same cause (the same rule on the same
+**Which commitments get a card**: every pending milestone that is at risk or missed (§6: a
+forecast past its date makes it at risk), and the planned delivery date when the forecast
+passes it or the project is at risk or off track. Cards with the same cause (the same rule on the same
 task) are merged: the earliest commitment keeps the card and lists the others it **also
 delays** with their slip.
 

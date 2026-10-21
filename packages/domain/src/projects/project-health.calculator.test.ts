@@ -1,6 +1,5 @@
 import { toCalendarDate } from '@lintel/shared';
 import { describe, expect, it } from 'vitest';
-import { assessMilestoneRisk } from './milestone-risk';
 import {
   defaultProjectHealthCalculator,
   type ProjectHealthInput,
@@ -15,6 +14,7 @@ function input(overrides: Partial<ProjectHealthInput>): ProjectHealthInput {
     tasks: [],
     milestoneHealth: [],
     openBlockerAgesInDays: [],
+    deliveryForecast: null,
     ...overrides,
   };
 }
@@ -42,45 +42,25 @@ describe('project health', () => {
     expect(health.overdueTaskCount).toBe(1);
   });
 
-  it('reports off track when work runs past the planned delivery date', () => {
+  it('reports off track when the forecast passes the planned delivery date', () => {
     const health = defaultProjectHealthCalculator.calculate(
       input({
-        plannedEndDate: toCalendarDate('2026-11-01'),
+        plannedEndDate: toCalendarDate('2026-11-02'),
         tasks: [{ status: 'ready', dueDate: toCalendarDate('2026-11-10') }],
+        deliveryForecast: { forecastDate: toCalendarDate('2026-11-10'), slipWorkingDays: 6 },
       }),
       today,
     );
     expect(health.status).toBe('off_track');
-    expect(health.reasons[0]?.message).toContain('9 day(s) past');
+    expect(health.forecastEndDate).toBe('2026-11-10');
+    expect(health.reasons[0]?.message).toBe(
+      'Open work is forecast to finish 6 working days past the planned delivery date, on 2026-11-10.',
+    );
   });
 
   it('closes completed projects', () => {
     expect(
       defaultProjectHealthCalculator.calculate(input({ status: 'completed' }), today).status,
     ).toBe('closed');
-  });
-});
-
-describe('milestone risk', () => {
-  const milestone = { name: 'Concept sign-off', status: 'pending' as const };
-
-  it('flags blocked work close to the milestone', () => {
-    const result = assessMilestoneRisk(
-      {
-        ...milestone,
-        dueDate: toCalendarDate('2026-10-24'),
-        tasks: [{ title: 'Mood board', status: 'blocked', dueDate: toCalendarDate('2026-10-23') }],
-      },
-      today,
-    );
-    expect(result.health).toBe('at_risk');
-  });
-
-  it('marks a past-due incomplete milestone as missed', () => {
-    const result = assessMilestoneRisk(
-      { ...milestone, dueDate: toCalendarDate('2026-10-18'), tasks: [] },
-      today,
-    );
-    expect(result.health).toBe('missed');
   });
 });

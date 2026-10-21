@@ -40,6 +40,11 @@ export function formatLongDate(date: string): string {
   return LONG_DATE.format(calendarDateToUtc(date)).replace(',', '');
 }
 
+/** Server sentences with ISO dates in them ("on 2026-11-04") made readable. */
+export function withReadableDates(text: string): string {
+  return text.replace(/\b(\d{4}-\d{2}-\d{2})\b/g, (date) => formatLongDate(date));
+}
+
 /** "23 – 25 Oct" or "30 Oct – 2 Nov" */
 export function formatDateRange(start: string, end: string): string {
   if (start === end) return formatDayMonth(start);

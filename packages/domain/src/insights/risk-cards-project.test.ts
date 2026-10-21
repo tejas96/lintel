@@ -74,12 +74,15 @@ describe('risk cards for the delivery date, merging and order', () => {
       plannedStartDate: date('2026-10-22'),
       dueDate: date('2026-10-23'),
     });
-    const first = { ...milestone('2026-10-21', [blocked, next], ['b']), id: 'm1' };
+    const dependencies = [{ taskId: 'n', dependsOnTaskId: 'b' }];
+    const first = { ...milestone('2026-10-21', [blocked, next], ['b'], dependencies), id: 'm1' };
     const second = {
-      ...milestone('2026-10-23', [blocked, next], ['n']),
+      ...milestone('2026-10-23', [blocked, next], ['n'], dependencies),
       id: 'm2',
       name: 'Handover',
     };
+    // Milestone health uses the same forecast: the delayed milestone is not "on track".
+    expect(second.health).toBe('at_risk');
     const delivery: RiskCommitment = {
       kind: 'delivery',
       id: 'p1',
@@ -89,9 +92,7 @@ describe('risk cards for the delivery date, merging and order', () => {
       taskIds: ['b', 'n'],
     };
     const cards = buildProjectRiskCards(
-      project([blocked, next], [first, second, delivery], {
-        dependencies: [{ taskId: 'n', dependsOnTaskId: 'b' }],
-      }),
+      project([blocked, next], [first, second, delivery], { dependencies }),
       RISK_CONTEXT,
     );
     expect(cards).toHaveLength(1);
