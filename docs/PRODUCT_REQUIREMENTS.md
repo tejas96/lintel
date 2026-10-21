@@ -91,6 +91,55 @@ records both answer **404** so IDs cannot be probed.
   and audit (one audit row per cancelled task, running timers stopped), and points
   the project at the new version.
 
+### Tailoring a plan before the project starts (FR-PRJ-TL)
+
+- After choosing a template, the wizard's **Plan** step (needs a start date and the team)
+  lets the person creating the project leave out stages or tasks, add stages (placed after
+  a stage) and tasks (title, working days, what they start after), change a task's start
+  date or length, and choose a person per task (or nobody yet). Whoever is chosen joins the
+  team as a member but holds no role, so the roles' other tasks stay with the team as
+  entered. A task given to its own reviewer has no reviewer yet (nobody reviews their own
+  work).
+- The plan builder (`packages/domain/src/workflows`) dates the result: removed work is no
+  longer waited on, a chosen start wins over the one worked out from prerequisites (a start
+  before a prerequisite ends is flagged, not refused), and an empty stage sits where the
+  previous one ends. `POST /v1/projects/plan-preview` runs the same checks and builder as
+  creating the project, so the live preview, its end date and the comparison with the
+  template's own plan are exactly what is created. Tailoring problems name their field
+  (`tailoring.adjustments.2.startDate`). Added stages and tasks carry no template key; the
+  activity feed and audit say what was tailored.
+
+### Scope change money and client sign-off (FR-PRJ-SC)
+
+- A proposal may carry a **cost** (what the extra work costs the studio, > 0, with a cost
+  category) and a **fee** (what the client pays more, or less as a negative amount), in
+  minor units. Only people who can see the project budget may set them (others: 403) and
+  only they see them; the activity feed never shows money.
+- A proposal may **require the client's sign-off**. The project manager or an approver
+  records who at the client confirmed it, the day and how (meeting, email, call, message)
+  with an optional note; every record is kept and the latest counts. Approval is refused
+  (422) until a required sign-off exists; rejecting needs none.
+- Approval records the cost on the project's cost ledger (dated the approval day, linked to
+  the change, at most one entry per change) and adds the fee to the budget (never below
+  zero; a project without a budget keeps none). Both are audited.
+
+### Rescheduling on the timeline (FR-PRJ-RS)
+
+- Project managers drag a task bar to move it or drag an end to change one date; with the
+  keyboard, a focused bar moves with ← →, Shift + ← → changes its end, Alt + ← → its start,
+  Enter reviews and Escape cancels. Touch screens change dates from the task instead.
+- Before anything is saved the server previews the knock-on (`planTaskReschedule`):
+  finish-to-start, waiting work moves just far enough, slack absorbs a delay, pulling
+  earlier never pulls what follows, and closed tasks never move. Dates dropped on a day off
+  snap to working days; a bar moved whole keeps its length in working days. The preview
+  lists the tasks that follow, milestones that would slip and the agreed end.
+- Applying moves the tasks in one transaction. A committed deadline (not a draft) needs a
+  reason and is kept in each task's schedule history; owners are told. A change that would
+  move the **agreed end** is refused here and becomes a scope change with exact dates
+  (approval applies those dates). When open work already runs past the agreed end, moves
+  that end no later than it already does are allowed. A task that changed after the
+  preview was worked out (dates or status) refuses the whole move with a stale-version error.
+
 ### Project documents (FR-DOC)
 
 - A library per project for files not tied to a task: drawings, contracts, mood
@@ -137,6 +186,12 @@ requested and Cancelled. Legal moves are in `task-status.ts`; each move is guard
 The API returns every possible move with `allowed` and the reasons, so the apps
 can disable actions and explain why.
 
+**Due time.** A task may have a due time ("HH:mm", the studio's timezone). Without one it is
+due by the end of the working day. A task due today becomes overdue once its time (or the
+working day) has passed — in Today, in task lists and in the reminders. A due time needs a
+due date; moving the time of a committed task follows the due-date rule (manager, reason,
+history with both times).
+
 Work sessions (start, pause) exist only while the studio tracks working time
 (Settings, Studio). When it is switched off, running sessions end (their minutes are
 kept), start and pause answer 422 with an explanation, and the apps show Start as a
@@ -154,6 +209,8 @@ Deterministic strategy `deadline-aware-v1` (`task-priority.strategy.ts`). Points
 | Priority urgent / high / medium / low | 40 / 25 / 12 / 0 |
 | Overdue | 35 + 2 per day late (max +10) |
 | Due today / tomorrow / ≤3 days / ≤7 days | 30 / 22 / 15 / 8 |
+| Due today at a time less than two hours away | 34 (instead of 30) |
+| Due today and its time (or the working day) has passed | 35 (overdue) |
 | Blocks work for a milestone due within 7 days | 10 |
 | Other tasks waiting on it | 4 each (max 12) |
 | Project criticality critical / high | 10 / 6 |
@@ -161,7 +218,8 @@ Deterministic strategy `deadline-aware-v1` (`task-priority.strategy.ts`). Points
 | Already in progress | 5 |
 
 Blocked tasks, tasks waiting on prerequisites and tasks in review score 0 and sit
-in their own sections. Ties: earlier due date, then title. The headline uses the
+in their own sections. Ties: earlier due date, then earlier due time (no time = the end of
+the working day), then title. The headline uses the
 strongest reason ("Recommended because it blocks work for 'Concept approved', due
 tomorrow."). The score is a policy, not a truth: weights are documented and the
 strategy is replaceable.
@@ -268,7 +326,7 @@ defer non-urgent push. Every notification has a dedupe key, so retries never spa
 Sensitive kinds (rewards, leave decisions) use a generic lock-screen preview.
 Deadline timeline per task: a late-start nudge the working day after the planned
 start while the task is still Ready (§15.4), reminder on the working day before
-(10:00), overdue at the end of the due day, project manager after N working days overdue (template
+(10:00), overdue at the due time (or the end of the due day without one), project manager after N working days overdue (template
 setting, default 1; the project manager can change it per task, 1–30, and the
 deadline workflow re-plans at once), business owner two working days later for urgent work or
 critical projects. Durable timers run in Temporal; the database stays the source of truth.
@@ -555,6 +613,18 @@ picked: the leave handover when one is proposed for the task (a project manager 
 over), otherwise the task's Change owner sheet (`POST /v1/tasks/:id/assign`, audited).
 `GET /v1/leave/requests/:id/cover-suggestions` answers 404 to people who cannot see the
 request and lists no tasks to people who manage none of them.
+
+## 16. First-run tips (FR-TIP)
+
+- The first time someone opens Today, a task, a project's control room, leave or the
+  command center, a short tip for their role appears in the page (never a modal, never
+  blocking). Audience follows capabilities: owner (`dashboard.view_business`), manager
+  (`projects.create`, `tasks.assign` or `leave.approve_team`), otherwise member; the
+  command center tip is for managers and owners only. The words live in the domain
+  (`guidance-tips.ts`).
+- A tip is marked seen on the server as soon as it shows (`POST /v1/me/guidance/:tip/seen`),
+  so it appears once across devices; it stays for that visit until dismissed. Account →
+  Tips shows how many were seen and "Show tips again" (`POST /v1/me/guidance/reset`).
 
 ## Non-functional requirements
 

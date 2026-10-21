@@ -19,7 +19,8 @@ import { useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
 import { TaskNumber, TaskStatusPill } from '@/features/tasks/task-presentation';
 import { describeError } from '@/lib/api/describe-error';
-import { describeDue, todayIn } from '@/lib/format/dates';
+import { todayIn } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 import { useProjectTasks } from './use-project-room';
 
 type Scope = 'open' | 'all' | 'done';
@@ -102,8 +103,8 @@ export function ListTab({ projectId }: { readonly projectId: string }) {
       header: 'Due',
       align: 'end',
       cell: (task) => {
-        if (!task.dueDate) return <span className="text-ink-faint">No date</span>;
-        const due = describeDue(task.dueDate, today);
+        const due = describeTaskDue(task, today);
+        if (!due) return <span className="text-ink-faint">No date</span>;
         return (
           <span
             className={

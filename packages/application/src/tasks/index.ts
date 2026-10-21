@@ -8,6 +8,7 @@ export * from './task-decision';
 export * from './task-item.store';
 export * from './task-loader';
 export * from './task-records';
+export * from './task-schedule-records';
 export * from './task-structure.commands';
 export * from './task-transition.effects';
 export * from './task-transition.service';

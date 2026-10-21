@@ -1,6 +1,6 @@
 import type { CalendarDate } from './calendar-date';
 
-interface ZonedParts {
+export interface ZonedParts {
   year: number;
   month: number;
   day: number;
@@ -28,7 +28,8 @@ function formatterFor(timeZone: string): Intl.DateTimeFormat {
   return formatter;
 }
 
-function zonedParts(instant: Date, timeZone: string): ZonedParts {
+/** Wall-clock parts of an instant in a timezone. */
+export function zonedParts(instant: Date, timeZone: string): ZonedParts {
   const values: Record<string, number> = {};
   for (const part of formatterFor(timeZone).formatToParts(instant)) {
     if (part.type !== 'literal') values[part.type] = Number(part.value);

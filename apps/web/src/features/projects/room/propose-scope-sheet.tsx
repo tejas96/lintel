@@ -9,6 +9,7 @@ import { ScopeCancelPicker } from './scope-cancel-picker';
 import { ScopeImpacts } from './scope-impacts';
 import { ScopeMovesEditor } from './scope-moves-editor';
 import { type DraftNewTask, ScopeNewTasksEditor } from './scope-new-tasks-editor';
+import { ScopeTermsFields, useScopeTerms } from './scope-terms-fields';
 import { type ScopeRequest, useScopeChangeMutations } from './use-scope-changes';
 
 type Part = 'moves' | 'additions' | 'cancellations';
@@ -40,6 +41,7 @@ export function ProposeScopeSheet({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const terms = useScopeTerms();
   const impactRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (preview.data) impactRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -81,6 +83,7 @@ export function ProposeScopeSheet({
     setTitle('');
     setDescription('');
     setPart('moves');
+    terms.reset();
     preview.reset();
   };
   const submit = () => {
@@ -88,9 +91,10 @@ export function ProposeScopeSheet({
       setError('Give the change a title and say why it is needed.');
       return;
     }
+    if (Object.keys(terms.errors).length > 0) return;
     setError(null);
     propose.mutate(
-      { ...request, title: title.trim(), description: description.trim() },
+      { ...request, ...terms.request, title: title.trim(), description: description.trim() },
       {
         onSuccess: () => {
           reset();
@@ -218,6 +222,13 @@ export function ProposeScopeSheet({
                 maxLength={2000}
               />
             </Field>
+            <ScopeTermsFields
+              values={terms.values}
+              onChange={terms.set}
+              errors={terms.errors}
+              showMoney={project.viewerCanSeeFinances}
+              clientName={project.clientName}
+            />
           </div>
         )}
       </div>

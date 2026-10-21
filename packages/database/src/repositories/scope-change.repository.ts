@@ -5,8 +5,8 @@ import type {
   ScopeChangeStore,
   TaskReschedule,
 } from '@lintel/application';
-import type { Capability } from '@lintel/domain';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { Capability, ClientSignOff } from '@lintel/domain';
+import { and, eq, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import {
   milestones,
@@ -14,7 +14,6 @@ import {
   roleCapabilities,
   scopeChangeRequests,
   scopeChangeTaskImpacts,
-  taskDependencies,
   taskScheduleChanges,
   tasks,
   users,
@@ -27,53 +26,14 @@ import {
   loadScopeStages,
   settleScopeCancellation,
 } from './scope-change-additions.writer';
+import { insertScopeSignOff, latestScopeSignOff } from './scope-change-sign-off.writer';
+import { loadProjectScheduleFacts } from './scope-schedule-facts.loader';
 
 export class ScopeChangeRepository implements ScopeChangeStore {
   constructor(private readonly db: DatabaseExecutor) {}
 
-  async scheduleFacts(projectId: string): Promise<ProjectScheduleFacts | null> {
-    const [project] = await this.db
-      .select({ id: projects.id, name: projects.name, plannedEndDate: projects.plannedEndDate })
-      .from(projects)
-      .where(eq(projects.id, projectId));
-    if (!project) return null;
-    const projectTaskIds = this.db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(eq(tasks.projectId, projectId));
-    // Sequential on purpose: inside a transaction every query shares one connection.
-    const taskRows = await this.db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        status: tasks.status,
-        plannedStartDate: tasks.plannedStartDate,
-        dueDate: tasks.dueDate,
-        ownerUserId: tasks.ownerUserId,
-        milestoneId: tasks.milestoneId,
-      })
-      .from(tasks)
-      .where(and(eq(tasks.projectId, projectId), isNull(tasks.archivedAt)))
-      .orderBy(tasks.number);
-    const dependencies = await this.db
-      .select({
-        taskId: taskDependencies.taskId,
-        dependsOnTaskId: taskDependencies.dependsOnTaskId,
-      })
-      .from(taskDependencies)
-      .where(inArray(taskDependencies.taskId, projectTaskIds));
-    const milestoneRows = await this.db
-      .select({ id: milestones.id, dueDate: milestones.dueDate, status: milestones.status })
-      .from(milestones)
-      .where(eq(milestones.projectId, projectId));
-    return {
-      projectId: project.id,
-      name: project.name,
-      plannedEndDate: project.plannedEndDate,
-      tasks: taskRows,
-      dependencies,
-      milestones: milestoneRows,
-    };
+  scheduleFacts(projectId: string): Promise<ProjectScheduleFacts | null> {
+    return loadProjectScheduleFacts(this.db, projectId);
   }
 
   async insert(change: NewScopeChange) {
@@ -85,6 +45,10 @@ export class ScopeChangeRepository implements ScopeChangeStore {
         description: change.description,
         requestedByUserId: change.requestedByUserId,
         projectEndImpactDays: change.projectEndImpactDays,
+        requiresClientSignOff: change.requiresClientSignOff,
+        costImpactMinor: change.costImpactMinor,
+        costCategory: change.costCategory,
+        feeImpactMinor: change.feeImpactMinor,
       })
       .returning({ id: scopeChangeRequests.id });
     if (!row) throw new Error('Saving the scope change returned no row.');
@@ -95,8 +59,11 @@ export class ScopeChangeRepository implements ScopeChangeStore {
           taskId: impact.taskId,
           currentDueDate: impact.currentDueDate,
           proposedDueDate: impact.proposedDueDate,
+          currentStartDate: impact.currentStartDate,
+          proposedStartDate: impact.proposedStartDate,
           shiftWorkingDays: impact.shiftWorkingDays,
           isDownstream: impact.isDownstream,
+          appliesExactDates: impact.appliesExactDates,
         })),
       );
     }
@@ -117,6 +84,11 @@ export class ScopeChangeRepository implements ScopeChangeStore {
           description: row.description,
           status: row.status,
           requestedByUserId: row.requestedByUserId,
+          requiresClientSignOff: row.requiresClientSignOff,
+          costImpactMinor: row.costImpactMinor,
+          costCategory: row.costCategory,
+          feeImpactMinor: row.feeImpactMinor,
+          createdAt: row.createdAt,
           version: row.version,
         }
       : null;
@@ -130,8 +102,11 @@ export class ScopeChangeRepository implements ScopeChangeStore {
         taskTitle: tasks.title,
         currentDueDate: scopeChangeTaskImpacts.currentDueDate,
         proposedDueDate: scopeChangeTaskImpacts.proposedDueDate,
+        currentStartDate: scopeChangeTaskImpacts.currentStartDate,
+        proposedStartDate: scopeChangeTaskImpacts.proposedStartDate,
         shiftWorkingDays: scopeChangeTaskImpacts.shiftWorkingDays,
         isDownstream: scopeChangeTaskImpacts.isDownstream,
+        appliesExactDates: scopeChangeTaskImpacts.appliesExactDates,
       })
       .from(scopeChangeTaskImpacts)
       .innerJoin(tasks, eq(tasks.id, scopeChangeTaskImpacts.taskId))
@@ -173,7 +148,7 @@ export class ScopeChangeRepository implements ScopeChangeStore {
   }
 
   async rescheduleTask(change: TaskReschedule) {
-    await this.db
+    const [moved] = await this.db
       .update(tasks)
       .set({
         plannedStartDate: change.plannedStartDate,
@@ -181,11 +156,16 @@ export class ScopeChangeRepository implements ScopeChangeStore {
         version: sql`${tasks.version} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, change.taskId));
+      .where(eq(tasks.id, change.taskId))
+      .returning({ dueTime: tasks.dueTime });
+    // Scope changes move dates only: the due time stays, so the history shows it on both sides.
+    const dueTime = moved?.dueTime ?? null;
     await this.db.insert(taskScheduleChanges).values({
       taskId: change.taskId,
       previousDueDate: change.previousDueDate,
       newDueDate: change.dueDate,
+      previousDueTime: dueTime,
+      newDueTime: dueTime,
       reason: change.reason,
       isApproved: true,
       scopeChangeId: change.scopeChangeId,
@@ -237,5 +217,15 @@ export class ScopeChangeRepository implements ScopeChangeStore {
     outcome: { readonly appliedAt: Date } | { readonly skipReason: string },
   ) {
     return settleScopeCancellation(this.db, cancellationId, outcome);
+  }
+
+  latestSignOff(scopeChangeId: string) {
+    return latestScopeSignOff(this.db, scopeChangeId);
+  }
+
+  recordSignOff(
+    signOff: ClientSignOff & { readonly scopeChangeId: string; readonly recordedByUserId: string },
+  ) {
+    return insertScopeSignOff(this.db, signOff);
   }
 }

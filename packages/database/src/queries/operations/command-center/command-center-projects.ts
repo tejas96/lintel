@@ -9,6 +9,7 @@ import {
   scopeChangeTaskImpacts,
   tasks,
 } from '../../../schema';
+import { loadClientSignOffViews } from '../../projects/scope-change-sign-offs.query';
 import { loadProjectHealth } from '../../shared/project-health.loader';
 import { loadProjectSummaries } from '../../shared/project-summary.query';
 import { loadUserSummaries, pickUser } from '../../shared/user-summary.query';
@@ -114,7 +115,7 @@ export async function scopeChangesAwaitingDecision(
     .orderBy(asc(scopeChangeRequests.createdAt))
     .limit(SECTION_LIMIT);
   if (changes.length === 0) return [];
-  const [impacts, people] = await Promise.all([
+  const [impacts, people, signOffs] = await Promise.all([
     db
       .select({ impact: scopeChangeTaskImpacts, taskTitle: tasks.title })
       .from(scopeChangeTaskImpacts)
@@ -128,6 +129,10 @@ export async function scopeChangesAwaitingDecision(
     loadUserSummaries(
       db,
       changes.flatMap((change) => [change.requestedByUserId, change.decidedByUserId]),
+    ),
+    loadClientSignOffViews(
+      db,
+      changes.map((change) => change.id),
     ),
   ]);
   return changes.flatMap((change) => {
@@ -150,10 +155,17 @@ export async function scopeChangesAwaitingDecision(
           taskTitle,
           currentDueDate: impact.currentDueDate,
           proposedDueDate: impact.proposedDueDate,
+          currentStartDate: impact.currentStartDate,
+          proposedStartDate: impact.proposedStartDate,
           shiftWorkingDays: impact.shiftWorkingDays,
           isDownstream: impact.isDownstream,
+          appliesExactDates: impact.appliesExactDates,
         })),
         projectEndImpactDays: Math.max(0, ...own.map(({ impact }) => impact.shiftWorkingDays)),
+        requiresClientSignOff: change.requiresClientSignOff,
+        clientSignOffs: signOffs.get(change.id) ?? [],
+        // The command center lists decisions waiting; money stays on the project's scope tab.
+        money: null,
         createdAt: change.createdAt.toISOString(),
         version: change.version,
       },

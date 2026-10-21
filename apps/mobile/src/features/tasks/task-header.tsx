@@ -7,7 +7,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { StatusPill } from '@/components/status-pill';
 import { useToast } from '@/feedback/toast';
-import { formatShortDate, relativeDayLabel } from '@/formatting/dates';
+import { dueDateLine, formatShortDate } from '@/formatting/dates';
 import { useAcknowledgeTask } from '@/queries/task-queries';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
@@ -111,11 +111,7 @@ export function TaskHeader({ task, today }: { readonly task: TaskDetail; readonl
       <View style={styles.facts}>
         <Fact
           label="Due"
-          value={
-            task.dueDate
-              ? `${formatShortDate(task.dueDate)} · ${relativeDayLabel(task.dueDate, today)}`
-              : 'No due date'
-          }
+          value={dueDateLine(task, today)}
           {...(task.isOverdue ? { color: status.overdue.fg } : {})}
         />
         {moved && task.baselineDueDate ? (
@@ -144,6 +140,6 @@ const styles = StyleSheet.create({
   people: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.lg },
   person: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.xl },
-  fact: { gap: 2 },
+  fact: { gap: 2, flexShrink: 1 },
   criteria: { gap: SPACE.xs },
 });

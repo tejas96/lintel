@@ -45,6 +45,8 @@ export const tasks = pgTable(
     reviewerUserId: uuid('reviewer_user_id').references(() => users.id),
     plannedStartDate: date('planned_start_date', { mode: 'string' }),
     dueDate: date('due_date', { mode: 'string' }),
+    /** Optional time of day the task is due ("HH:mm", business timezone); null = end of the working day. */
+    dueTime: text('due_time'),
     /** The first committed due date. Changes are recorded in task_schedule_changes. */
     baselineDueDate: date('baseline_due_date', { mode: 'string' }),
     estimateMinutes: integer('estimate_minutes'),
@@ -76,6 +78,10 @@ export const tasks = pgTable(
     check(
       'tasks_estimate_not_negative',
       sql`${table.estimateMinutes} IS NULL OR ${table.estimateMinutes} >= 0`,
+    ),
+    check(
+      'tasks_due_time_format',
+      sql`${table.dueTime} IS NULL OR (${table.dueDate} IS NOT NULL AND ${table.dueTime} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$')`,
     ),
   ],
 );
@@ -182,6 +188,9 @@ export const taskScheduleChanges = pgTable(
       .references(() => tasks.id, { onDelete: 'cascade' }),
     previousDueDate: date('previous_due_date', { mode: 'string' }),
     newDueDate: date('new_due_date', { mode: 'string' }),
+    /** The due times around the change ("HH:mm"); null = end of the working day. */
+    previousDueTime: text('previous_due_time'),
+    newDueTime: text('new_due_time'),
     reason: text('reason').notNull(),
     isApproved: boolean('is_approved').notNull().default(true),
     scopeChangeId: uuid('scope_change_id'),

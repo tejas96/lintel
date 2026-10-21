@@ -1,12 +1,11 @@
 import {
-  addWorkingDays,
   downstreamTasks,
   isOpenTaskStatus,
-  isWorkingDay,
+  shiftByWorkingDays,
   type WorkingCalendar,
   workingDaysBetween,
 } from '@lintel/domain';
-import { addDays, type CalendarDate, type ErrorDetail, isCalendarDate } from '@lintel/shared';
+import { type CalendarDate, type ErrorDetail, isCalendarDate } from '@lintel/shared';
 import type {
   ProjectScheduleFacts,
   ScheduleTaskFact,
@@ -18,10 +17,8 @@ export interface TaskShiftRequest {
   readonly shiftWorkingDays: number;
 }
 
-export interface PlannedTaskMove extends ScopeChangeImpact {
-  readonly currentStartDate: string | null;
-  readonly proposedStartDate: string | null;
-}
+/** One task's proposed move. Kept as its own name for readers of the impact code. */
+export type PlannedTaskMove = ScopeChangeImpact;
 
 export interface ScopeChangeImpactResult {
   readonly impacts: readonly PlannedTaskMove[];
@@ -30,28 +27,7 @@ export interface ScopeChangeImpactResult {
   readonly forecastEndDate: CalendarDate | null;
 }
 
-function previousWorkingDayOnOrBefore(calendar: WorkingCalendar, date: CalendarDate) {
-  let current = date;
-  while (!isWorkingDay(calendar, current)) current = addDays(current, -1);
-  return current;
-}
-
-/** Moves a date by working days in either direction; 0 snaps to the next working day. */
-export function shiftByWorkingDays(
-  calendar: WorkingCalendar,
-  date: CalendarDate,
-  days: number,
-): CalendarDate {
-  if (days >= 0) return addWorkingDays(calendar, date, days);
-  if (calendar.workingWeekdays.length === 0) {
-    throw new RangeError('A working calendar needs at least one working weekday.');
-  }
-  let current = previousWorkingDayOnOrBefore(calendar, date);
-  for (let remaining = -days; remaining > 0; remaining -= 1) {
-    current = previousWorkingDayOnOrBefore(calendar, addDays(current, -1));
-  }
-  return current;
-}
+export { shiftByWorkingDays };
 
 /** Shifts a date that may be missing; tasks without dates keep none. */
 export function shiftOptionalDate(
@@ -116,6 +92,7 @@ function move(
     proposedStartDate: shiftOptionalDate(calendar, task.plannedStartDate, shift),
     shiftWorkingDays: shift,
     isDownstream,
+    appliesExactDates: false,
   };
 }
 

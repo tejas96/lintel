@@ -30,6 +30,8 @@ export interface TaskRefView {
 }
 
 export interface TaskSummaryView extends TaskRefView {
+  /** "HH:mm" in the business timezone; null = the end of the working day. */
+  readonly dueTime: string | null;
   readonly priority: TaskPriority;
   readonly project: ProjectRefView;
   readonly projectCriticality: ProjectCriticality;

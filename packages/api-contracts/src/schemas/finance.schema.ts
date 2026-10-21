@@ -34,6 +34,8 @@ export const projectCostEntryObject = z.object({
   voidedAt: instantSchema.nullable(),
   voidedBy: userSummarySchema.nullable(),
   voidReason: z.string().nullable(),
+  /** The approved scope change whose cost this entry records, if any. */
+  scopeChangeId: idSchema.nullable(),
   version: z.number().int(),
 });
 export type ProjectCostEntry = z.infer<typeof projectCostEntryObject>;

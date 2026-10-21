@@ -1,11 +1,16 @@
 import {
+  NO_TAILORING,
   type PlannedTask,
+  type PlanTailoring,
   type ProjectWorkflowPlan,
   ProjectWorkflowPlanBuilder,
+  tailorDefinition,
+  tailoredPins,
+  validatePlanTailoring,
   type WorkflowTemplateDefinition,
   type WorkingCalendar,
 } from '@lintel/domain';
-import type { CalendarDate } from '@lintel/shared';
+import { type CalendarDate, ValidationFailedError } from '@lintel/shared';
 import type { ProjectMemberInput } from './project.store';
 import type {
   NewProjectPlan,
@@ -20,12 +25,34 @@ export interface WorkflowPlanRequest {
   readonly options: readonly string[];
   /** Members with their project roles; the manager is already among them. */
   readonly members: readonly ProjectMemberInput[];
+  /** The project manager's changes to the template for this project. */
+  readonly tailoring?: PlanTailoring;
 }
 
-/** Dates the template on the working calendar and assigns each role to the first member holding it. */
+/** Refuses a tailoring that does not fit the template, naming each field under `tailoring.`. */
+export function assertValidTailoring(
+  definition: WorkflowTemplateDefinition,
+  tailoring: PlanTailoring,
+  startDate: CalendarDate,
+): void {
+  const issues = validatePlanTailoring(definition, tailoring, startDate);
+  if (issues.length === 0) return;
+  throw new ValidationFailedError(
+    'Some changes to the plan need attention.',
+    issues.map((issue) => ({ field: `tailoring.${issue.path}`, message: issue.message })),
+  );
+}
+
+/**
+ * Dates the (tailored) template on the working calendar: each role goes to
+ * the first member holding it, a task given to someone by hand goes to them,
+ * and a chosen start date wins over the one worked out from prerequisites.
+ * Call `assertValidTailoring` first.
+ */
 export function buildWorkflowPlan(request: WorkflowPlanRequest): ProjectWorkflowPlan {
+  const tailoring = request.tailoring ?? NO_TAILORING;
   const builder = new ProjectWorkflowPlanBuilder(
-    request.definition,
+    tailorDefinition(request.definition, tailoring),
     request.calendar,
     request.startDate,
   );
@@ -36,7 +63,19 @@ export function buildWorkflowPlan(request: WorkflowPlanRequest): ProjectWorkflow
     assigned.add(member.projectRole);
     builder.assignRole(member.projectRole, member.userId);
   }
+  const pins = tailoredPins(tailoring);
+  for (const [taskKey, date] of pins.startDates) builder.pinStart(taskKey, date);
+  for (const [taskKey, userId] of pins.owners) builder.assignTask(taskKey, userId);
   return builder.build();
+}
+
+/** Keys the project manager added (they come from no template, so carry no template key). */
+export function addedPlanKeys(tailoring: PlanTailoring | undefined): ReadonlySet<string> {
+  if (!tailoring) return new Set();
+  return new Set([
+    ...tailoring.addedStages.map((stage) => stage.key),
+    ...tailoring.addedTasks.map((task) => task.key),
+  ]);
 }
 
 function readiness(ownerUserId: string | null, dueDate: string | null): 'ready' | 'draft' {
@@ -47,7 +86,11 @@ function toTask(
   planned: PlannedTask,
   number: number,
   position: number,
-  scope: { tasks: ReadonlySet<string>; milestones: ReadonlySet<string> },
+  scope: {
+    tasks: ReadonlySet<string>;
+    milestones: ReadonlySet<string>;
+    added: ReadonlySet<string>;
+  },
 ): PlannedProjectTask {
   const template = planned.template;
   const milestoneKey =
@@ -59,7 +102,7 @@ function toTask(
     parentKey: null,
     stageKey: planned.stageKey,
     milestoneKey,
-    templateKey: template.key,
+    templateKey: scope.added.has(template.key) ? null : template.key,
     number,
     title: template.title,
     description: template.description ?? null,
@@ -109,10 +152,15 @@ function subtasksOf(
  * by stage in template order, each followed by its subtasks. A task is
  * "ready" once it has an owner and a due date, otherwise it stays a draft.
  */
-export function planFromTemplate(plan: ProjectWorkflowPlan, managerUserId: string): NewProjectPlan {
+export function planFromTemplate(
+  plan: ProjectWorkflowPlan,
+  managerUserId: string,
+  added: ReadonlySet<string> = new Set(),
+): NewProjectPlan {
   const scope = {
     tasks: new Set(plan.tasks.map((task) => task.template.key)),
     milestones: new Set(plan.milestones.map((milestone) => milestone.template.key)),
+    added,
   };
   const tasks: PlannedProjectTask[] = [];
   const deliverables: PlannedProjectDeliverable[] = [];
@@ -141,7 +189,7 @@ export function planFromTemplate(plan: ProjectWorkflowPlan, managerUserId: strin
   return {
     stages: plan.stages.map((stage, index) => ({
       key: stage.template.key,
-      templateKey: stage.template.key,
+      templateKey: added.has(stage.template.key) ? null : stage.template.key,
       name: stage.template.name,
       description: stage.template.description ?? null,
       position: index,

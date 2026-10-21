@@ -5,8 +5,10 @@ import { PROJECT_ROLE_LABELS, PROJECT_ROLES, PROJECT_TYPE_LABELS } from '@lintel
 import type { ReactNode } from 'react';
 import { usePeopleOptions } from '@/features/people/use-people-options';
 import { formatLongDate } from '@/lib/format/dates';
+import { describeDraft } from './plan-draft';
+import { usePlanPreview } from './use-plan-preview';
 import { usePublishedTemplate } from './use-templates';
-import type { WizardState } from './wizard-state';
+import { PLAN_STEP, type WizardState } from './wizard-state';
 
 function Row({
   label,
@@ -42,6 +44,7 @@ export function StepReview({
 }) {
   const { people } = usePeopleOptions();
   const template = usePublishedTemplate(state.templateId);
+  const { preview } = usePlanPreview(state);
   const person = (id: string | null | undefined) => people.find((candidate) => candidate.id === id);
   const manager = person(state.managerUserId);
   const assignments = PROJECT_ROLES.flatMap((role) => {
@@ -72,6 +75,20 @@ export function StepReview({
           'No template'
         )}
       </Row>
+      {state.templateVersionId && (
+        <Row label="Plan" onEdit={() => goTo(PLAN_STEP)}>
+          {preview.data ? (
+            <>
+              {preview.data.tasks.length} tasks, ends {formatLongDate(preview.data.plannedEndDate)}
+              <span className="block type-body-sm text-ink-muted">
+                {describeDraft(state.plan) ?? 'As the template plans it.'}
+              </span>
+            </>
+          ) : (
+            <span className="text-ink-muted">Dating the plan…</span>
+          )}
+        </Row>
+      )}
       <Row label="Starts" onEdit={() => goTo(2)}>
         {state.plannedStartDate ? (
           formatLongDate(state.plannedStartDate)

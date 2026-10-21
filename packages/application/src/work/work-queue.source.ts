@@ -1,4 +1,5 @@
 import type {
+  PriorityClock,
   ProjectCriticality,
   TaskDependencyEdge,
   TaskPriority,
@@ -13,6 +14,7 @@ export interface WorkQueueTaskRow {
   readonly status: TaskStatus;
   readonly priority: TaskPriority;
   readonly dueDate: CalendarDate | null;
+  readonly dueTime: string | null;
   readonly plannedStartDate: CalendarDate | null;
   readonly estimateMinutes: number | null;
   readonly actualMinutes: number;
@@ -43,10 +45,15 @@ export interface WorkQueueSnapshot<TSummary> {
 
 /**
  * Read port for the work queue. `TSummary` is the read model's task summary
- * view; `today` (business timezone) lets summaries flag overdue work.
+ * view; `today` (business timezone) lets summaries flag overdue work, and the
+ * clock flags work whose due time (or working day) has already ended today.
  */
 export interface WorkQueueSource<TSummary> {
-  snapshotFor(userId: string, today: CalendarDate): Promise<WorkQueueSnapshot<TSummary>>;
+  snapshotFor(
+    userId: string,
+    today: CalendarDate,
+    clock?: PriorityClock,
+  ): Promise<WorkQueueSnapshot<TSummary>>;
   reviewsWaitingFor(userId: string, today: CalendarDate): Promise<TSummary[]>;
   recentlyCompletedBy(
     userId: string,

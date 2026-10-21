@@ -22,6 +22,8 @@ export interface ProjectCostEntryView {
   readonly voidedAt: string | null;
   readonly voidedBy: UserSummaryView | null;
   readonly voidReason: string | null;
+  /** Set when the entry records the cost of an approved scope change. */
+  readonly scopeChangeId: string | null;
   readonly version: number;
 }
 
@@ -87,6 +89,7 @@ export async function toCostEntryViews(
         voidedAt: row.voidedAt?.toISOString() ?? null,
         voidedBy: pickUser(people, row.voidedByUserId),
         voidReason: row.voidReason,
+        scopeChangeId: row.scopeChangeId,
         version: row.version,
       },
     ];

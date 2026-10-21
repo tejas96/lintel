@@ -35,6 +35,7 @@ export interface ProjectDetailView extends ProjectListItemView {
   readonly stages: StageView[];
   readonly milestones: MilestoneView[];
   readonly budgetMinor: number | null;
+  readonly viewerCanSeeFinances: boolean;
   readonly currency: string;
   readonly template: { id: string; name: string; versionNumber: number } | null;
   readonly templateOptions: string[];
@@ -84,6 +85,7 @@ export async function loadProjectDetail(
     stages,
     milestones: milestoneViews,
     budgetMinor: options.canSeeBudget ? row.budgetMinor : null,
+    viewerCanSeeFinances: options.canSeeBudget,
     currency: options.currency,
     template,
     templateOptions: row.templateOptions,

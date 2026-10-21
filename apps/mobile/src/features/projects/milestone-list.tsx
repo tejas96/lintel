@@ -4,7 +4,7 @@ import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { Divider, Section } from '@/components/section';
 import { StatusPill } from '@/components/status-pill';
-import { formatShortDate, withReadableDates } from '@/formatting/dates';
+import { formatShortDate, withLongDates } from '@/formatting/dates';
 import { pluralize } from '@/formatting/quantities';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
@@ -42,7 +42,7 @@ function MilestoneRow({
       ) : null}
       {milestone.riskReasons.map((reason) => (
         <AppText key={reason} variant="bodySm" color={status.atRisk.fg}>
-          {withReadableDates(reason)}
+          {withLongDates(reason)}
         </AppText>
       ))}
     </View>

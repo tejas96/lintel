@@ -1,4 +1,4 @@
-import { isCalendarDate } from '@lintel/shared';
+import { isCalendarDate, isTimeOfDay } from '@lintel/shared';
 import { z } from 'zod';
 
 export const idSchema = z.string().uuid();
@@ -9,6 +9,10 @@ export const calendarDateSchema = z
     'Use a real date in YYYY-MM-DD format.',
   );
 export const instantSchema = z.string().datetime({ offset: true });
+/** A wall-clock time in the business timezone, 24-hour "HH:mm". */
+export const timeOfDaySchema = z
+  .string()
+  .refine((value: string): boolean => isTimeOfDay(value), 'Use a 24-hour time such as 11:00.');
 export const versionSchema = z.number().int().positive();
 export const moneyMinorSchema = z.number().int();
 export const shortTextSchema = z.string().trim().min(1).max(200);

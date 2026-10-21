@@ -5,6 +5,7 @@ import { Check } from 'lucide-react';
 import { RadioGroup } from 'radix-ui';
 import { useEffect } from 'react';
 import { describeError } from '@/lib/api/describe-error';
+import { EMPTY_PLAN_DRAFT } from './plan-draft';
 import { usePublishedTemplate, useTemplates } from './use-templates';
 import type { WizardState } from './wizard-state';
 
@@ -51,6 +52,7 @@ export function StepWorkflow({
             templateVersionId: template?.publishedVersion?.id ?? null,
             templateOptions: [],
             roleAssignments: {},
+            plan: EMPTY_PLAN_DRAFT,
           });
         }}
         className="grid gap-3 sm:grid-cols-2"
@@ -118,6 +120,7 @@ export function StepWorkflow({
                       templateOptions: checked
                         ? [...state.templateOptions, option.key]
                         : state.templateOptions.filter((key) => key !== option.key),
+                      plan: EMPTY_PLAN_DRAFT,
                     })
                   }
                 />

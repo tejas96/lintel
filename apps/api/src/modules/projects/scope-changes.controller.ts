@@ -1,16 +1,13 @@
 import {
   DecideScopeChangeCommand,
-  ProjectAccessService,
   ProposeScopeChangeCommand,
   type RequestContext,
 } from '@lintel/application';
-import { type DatabaseConnection, findScopeChange, listScopeChanges } from '@lintel/database';
-import { Controller, Inject } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
 import { Ctx } from '../../common/auth/auth.decorators';
-import { found } from '../../common/http/access';
-import { DATABASE_CONNECTION } from '../../infrastructure/tokens';
 import { scopeChangeRoutes as scopeRoutes } from './project-routes';
+import { ScopeChangeReader } from './scope-change.reader';
 
 /** Scope change requests: preview, propose, list and decide. */
 @Controller()
@@ -18,28 +15,27 @@ export class ScopeChangesController {
   constructor(
     private readonly propose: ProposeScopeChangeCommand,
     private readonly decide: DecideScopeChangeCommand,
-    private readonly access: ProjectAccessService,
-    @Inject(DATABASE_CONNECTION) private readonly database: DatabaseConnection,
+    private readonly reader: ScopeChangeReader,
   ) {}
-
-  private async view(scopeChangeId: string) {
-    return found(await findScopeChange(this.database.db, scopeChangeId), 'Scope change');
-  }
 
   @TsRestHandler(scopeRoutes)
   handlers(@Ctx() context: RequestContext) {
     return tsRestHandler(scopeRoutes, {
-      listScopeChanges: async ({ params }) => {
-        await this.access.requireView(context.actor, params.id);
-        return { status: 200, body: await listScopeChanges(this.database.db, params.id) };
-      },
+      listScopeChanges: async ({ params }) => ({
+        status: 200,
+        body: await this.reader.list(context, params.id),
+      }),
       previewScopeChange: async ({ params, body }) => ({
         status: 200,
         body: await this.propose.preview(context, params.id, body),
       }),
       proposeScopeChange: async ({ params, body }) => {
-        const { id } = await this.propose.propose(context, params.id, body);
-        return { status: 201, body: await this.view(id) };
+        const { costImpactMinor, costCategory, feeImpactMinor, ...proposal } = body;
+        const { id } = await this.propose.propose(context, params.id, {
+          ...proposal,
+          money: { costImpactMinor, costCategory, feeImpactMinor },
+        });
+        return { status: 201, body: await this.reader.one(context, id) };
       },
       decideScopeChange: async ({ params, body }) => {
         await this.decide.execute(context, params.id, {
@@ -47,7 +43,7 @@ export class ScopeChangesController {
           note: body.note,
           expectedVersion: body.version,
         });
-        return { status: 200, body: await this.view(params.id) };
+        return { status: 200, body: await this.reader.one(context, params.id) };
       },
     });
   }

@@ -8,12 +8,15 @@ import {
 import { requireCapability } from '../common/capability-guard';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
-import type { TemplateRecord, TemplateVersionRecord } from '../templates/template.store';
 import type { ProjectCommandDependencies } from './command-dependencies';
 import type { ProjectMemberInput } from './project.store';
 import { announceNewAssignments } from './project-assignment.notices';
-import { normalizeMembers, requireActiveUsers } from './project-members.rules';
-import { buildWorkflowPlan, planFromTemplate, singleStagePlan } from './project-plan.factory';
+import {
+  type ChosenTemplate,
+  describeTailoring,
+  type PlanTailoringInput,
+  prepareProjectPlan,
+} from './project-plan.preparation';
 import type { NewProjectPlan } from './project-plan.types';
 import { nextProjectReference } from './project-reference';
 
@@ -32,17 +35,14 @@ export interface CreateProjectInput {
   readonly templateOptions: readonly string[];
   readonly members: readonly ProjectMemberInput[];
   readonly budgetMinor: number | null;
-}
-
-interface ChosenTemplate {
-  readonly template: TemplateRecord;
-  readonly version: TemplateVersionRecord;
+  /** Changes to the template's plan made before the project starts. */
+  readonly tailoring?: PlanTailoringInput | undefined;
 }
 
 /** Number of project colours in the design system palette (PROJECT_SWATCHES). */
 const PROJECT_COLOR_COUNT = 6;
 
-function startDateOf(value: string): CalendarDate {
+export function startDateOf(value: string): CalendarDate {
   if (isCalendarDate(value)) return value;
   throw new ValidationFailedError('Use a real start date.', [
     { field: 'plannedStartDate', message: 'Use a real date in YYYY-MM-DD format.' },
@@ -72,26 +72,8 @@ export class CreateProjectCommand {
     requireCapability(context, 'projects.create');
     const startDate = startDateOf(input.plannedStartDate);
     return this.deps.uow.transaction(async (stores) => {
-      const members = normalizeMembers(input.managerUserId, input.members);
-      await requireActiveUsers(
-        stores.projects,
-        members.map((member) => member.userId),
-      );
-      const chosen = input.templateVersionId
-        ? await this.publishedTemplate(stores, input.templateVersionId, input.templateOptions)
-        : null;
-      const plan = chosen
-        ? planFromTemplate(
-            buildWorkflowPlan({
-              definition: chosen.version.definition,
-              calendar: await stores.settings.defaultCalendar(),
-              startDate,
-              options: input.templateOptions,
-              members,
-            }),
-            input.managerUserId,
-          )
-        : singleStagePlan(startDate);
+      const prepared = await prepareProjectPlan(stores, input, startDate);
+      const { chosen, plan, members } = prepared;
       const reference = await this.allocateReference(stores);
       const plannedEndDate = plannedEndOf(plan, startDate);
       const { id } = await stores.projects.insertProject({
@@ -116,7 +98,10 @@ export class CreateProjectCommand {
       });
       await stores.projects.replaceMembers(id, members);
       const taskIds = await stores.projects.insertPlan(id, context.actor.userId, plan);
-      await this.record(stores, context, { id, reference, name: input.name }, chosen, plan);
+      await this.record(stores, context, { id, reference, name: input.name }, chosen, {
+        plan,
+        tailored: describeTailoring(prepared.tailoring),
+      });
       const assigned = plan.tasks.flatMap((task) => {
         const taskId = taskIds.get(task.key);
         return task.ownerUserId && taskId ? [{ taskId, ownerUserId: task.ownerUserId }] : [];
@@ -128,38 +113,6 @@ export class CreateProjectCommand {
       });
       return { id, reference };
     });
-  }
-
-  private async publishedTemplate(
-    stores: ApplicationStores,
-    versionId: string,
-    options: readonly string[],
-  ): Promise<ChosenTemplate> {
-    const field = 'templateVersionId';
-    const version = await stores.templates.findVersion(versionId);
-    const template = version ? await stores.templates.findTemplate(version.templateId) : null;
-    if (!version || !template || version.status !== 'published') {
-      throw new ValidationFailedError('Choose a published template version.', [
-        { field, message: 'This template version is not published.' },
-      ]);
-    }
-    if (template.archivedAt) {
-      throw new ValidationFailedError('This template is archived.', [
-        { field, message: 'Archived templates cannot start new projects.' },
-      ]);
-    }
-    const known = new Set(version.definition.options.map((option) => option.key));
-    const unknown = options.filter((option) => !known.has(option));
-    if (unknown.length > 0) {
-      throw new ValidationFailedError(
-        'Some template options do not exist.',
-        unknown.map((option) => ({
-          field: 'templateOptions',
-          message: `"${option}" is not an option of this template.`,
-        })),
-      );
-    }
-    return { template, version };
   }
 
   private async allocateReference(stores: ApplicationStores): Promise<string> {
@@ -176,18 +129,24 @@ export class CreateProjectCommand {
     context: RequestContext,
     project: { id: string; reference: string; name: string },
     chosen: ChosenTemplate | null,
-    plan: NewProjectPlan,
+    built: { plan: NewProjectPlan; tailored: string | null },
   ): Promise<void> {
+    const { plan, tailored } = built;
     const source = chosen
       ? ` from "${chosen.template.name}" v${chosen.version.versionNumber}`
       : ' without a template';
+    const changes = tailored ? ` Tailored before the start: ${tailored}.` : '';
     await stores.records.appendActivity({
       projectId: project.id,
       taskId: null,
       actorUserId: context.actor.userId,
       type: 'project.created',
-      summary: `Created ${project.reference}${source} with ${plan.tasks.length} task(s).`,
-      payload: { templateVersionId: chosen?.version.id ?? null, taskCount: plan.tasks.length },
+      summary: `Created ${project.reference}${source} with ${plan.tasks.length} task(s).${changes}`,
+      payload: {
+        templateVersionId: chosen?.version.id ?? null,
+        taskCount: plan.tasks.length,
+        tailored,
+      },
     });
     await stores.records.appendAudit({
       actorUserId: context.actor.userId,
@@ -200,6 +159,7 @@ export class CreateProjectCommand {
         templateVersionId: chosen?.version.id ?? null,
         stageCount: plan.stages.length,
         taskCount: plan.tasks.length,
+        tailored,
       },
       requestId: context.requestId,
     });

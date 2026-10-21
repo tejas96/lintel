@@ -1,7 +1,8 @@
-import { type CalendarDate, zonedTimeToInstant } from '@lintel/shared';
+import { type CalendarDate, spokenTimeOfDay, zonedTimeToInstant } from '@lintel/shared';
 import { addWorkingDays, type WorkingCalendar } from '../calendar/working-calendar';
 import { previousWorkingDay } from '../calendar/working-moments';
 import type { ProjectCriticality } from '../projects/project-status';
+import { deadlineTimeOf } from '../tasks/task-deadline';
 import type { TaskPriority } from '../tasks/task-status';
 import type { NotificationKind } from './notification-kinds';
 
@@ -26,6 +27,8 @@ export interface EscalationStep {
 
 export interface DeadlineEscalationInput {
   readonly dueDate: CalendarDate;
+  /** "HH:mm" in the business timezone; null means the end of the working day. */
+  readonly dueTime?: string | null;
   readonly priority: TaskPriority;
   readonly projectCriticality: ProjectCriticality;
   /** From the template; how many working days overdue before the manager hears. */
@@ -36,11 +39,14 @@ export interface DeadlineEscalationInput {
 }
 
 /**
- * The reminder and escalation timeline for a task deadline. The Temporal
+ * The reminder and escalation timeline for a task deadline. The task is
+ * overdue at its due time when one is set, otherwise at the end of the
+ * working day; the manager and owner steps follow on later days. The Temporal
  * workflow sleeps until each step and checks the task again before sending.
  */
 export function planDeadlineEscalation(input: DeadlineEscalationInput): EscalationStep[] {
   const { calendar } = input;
+  const dueTime = input.dueTime ?? null;
   const zone = calendar.timeZone;
   const dayBefore = previousWorkingDay(calendar, input.dueDate);
   const steps: EscalationStep[] = [
@@ -51,10 +57,12 @@ export function planDeadlineEscalation(input: DeadlineEscalationInput): Escalati
       label: 'Reminder on the working day before the deadline',
     },
     {
-      at: zonedTimeToInstant(input.dueDate, calendar.dayEndTime, zone),
+      at: zonedTimeToInstant(input.dueDate, deadlineTimeOf(dueTime, calendar.dayEndTime), zone),
       audience: 'task_owner',
       kind: 'task_overdue',
-      label: 'Overdue at the end of the due day',
+      label: dueTime
+        ? `Overdue at ${spokenTimeOfDay(dueTime)} on the due day`
+        : 'Overdue at the end of the due day',
     },
   ];
   const managerDay = addWorkingDays(

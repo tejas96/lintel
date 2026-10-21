@@ -20,6 +20,10 @@ export interface PlannedTask {
   readonly dueDate: CalendarDate;
   readonly ownerUserId: string | null;
   readonly reviewerUserId: string | null;
+  /** The start date was chosen by hand rather than worked out from prerequisites. */
+  readonly startPinned: boolean;
+  /** A chosen start falls before a prerequisite is due (the work overlaps). */
+  readonly overlapsPrerequisite: boolean;
 }
 
 export interface PlannedMilestone {
@@ -50,6 +54,8 @@ export interface ProjectWorkflowPlan {
 export class ProjectWorkflowPlanBuilder {
   private readonly options = new Set<string>();
   private readonly assignees = new Map<ProjectRole, string>();
+  private readonly pinnedStarts = new Map<string, CalendarDate>();
+  private readonly taskOwners = new Map<string, string | null>();
 
   constructor(
     private readonly definition: WorkflowTemplateDefinition,
@@ -67,19 +73,34 @@ export class ProjectWorkflowPlanBuilder {
     return this;
   }
 
+  /** Starts the task on this date (the next working day if it is not one). */
+  pinStart(taskKey: string, date: CalendarDate): this {
+    this.pinnedStarts.set(taskKey, date);
+    return this;
+  }
+
+  /** Gives one task to a person (or to nobody), whatever its role maps to. */
+  assignTask(taskKey: string, userId: string | null): this {
+    this.taskOwners.set(taskKey, userId);
+    return this;
+  }
+
   build(): ProjectWorkflowPlan {
     const stages = this.definition.stages.filter((stage) =>
       (stage.requiresOptions ?? []).every((option) => this.options.has(option)),
     );
     const tasks = this.scheduleTasks(stages);
     const start = nextWorkingDayOnOrAfter(this.calendar, this.projectStartDate);
+    let previousEnd = start;
     const plannedStages = stages.map((stage, position) => {
       const own = tasks.filter((task) => task.stageKey === stage.key);
+      // A stage without tasks sits where the previous stage ends.
       const stageStart = own.reduce(
         (min, t) => (t.plannedStartDate < min ? t.plannedStartDate : min),
-        own[0]?.plannedStartDate ?? start,
+        own[0]?.plannedStartDate ?? previousEnd,
       );
       const stageEnd = own.reduce((max, t) => maxCalendarDate(max, t.dueDate), stageStart);
+      previousEnd = maxCalendarDate(previousEnd, stageEnd);
       return { template: stage, position, plannedStartDate: stageStart, plannedEndDate: stageEnd };
     });
     const milestones = stages.flatMap((stage) =>
@@ -114,19 +135,35 @@ export class ProjectWorkflowPlanBuilder {
       const entry = byKey.get(key);
       if (!entry) continue;
       const { task, stageKey } = entry;
-      const start = this.startDateFor(task, dueByKey);
+      const earliest = this.startDateFor(task, dueByKey);
+      const pinned = this.pinnedStarts.get(key);
+      const start = pinned ? nextWorkingDayOnOrAfter(this.calendar, pinned) : earliest;
       const dueDate = addWorkingDays(this.calendar, start, task.durationDays - 1);
       dueByKey.set(key, dueDate);
+      const ownerUserId = this.ownerFor(task);
       planned.push({
         template: task,
         stageKey,
         plannedStartDate: start,
         dueDate,
-        ownerUserId: this.assignees.get(task.responsibleRole) ?? null,
-        reviewerUserId: task.reviewerRole ? (this.assignees.get(task.reviewerRole) ?? null) : null,
+        ownerUserId,
+        reviewerUserId: this.reviewerFor(task, ownerUserId),
+        startPinned: pinned !== undefined,
+        overlapsPrerequisite: start < earliest && task.dependsOn.some((dep) => dueByKey.has(dep)),
       });
     }
     return planned;
+  }
+
+  private ownerFor(task: TemplateTask): string | null {
+    if (this.taskOwners.has(task.key)) return this.taskOwners.get(task.key) ?? null;
+    return this.assignees.get(task.responsibleRole) ?? null;
+  }
+
+  /** Nobody reviews their own work: a task given by hand to its reviewer has no reviewer yet. */
+  private reviewerFor(task: TemplateTask, ownerUserId: string | null): string | null {
+    const reviewer = task.reviewerRole ? (this.assignees.get(task.reviewerRole) ?? null) : null;
+    return reviewer !== null && reviewer === ownerUserId ? null : reviewer;
   }
 
   private startDateFor(task: TemplateTask, dueByKey: Map<string, CalendarDate>): CalendarDate {

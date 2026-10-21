@@ -1,5 +1,6 @@
 import type { NewNotification, TaskDeadlineFacts } from '@lintel/application';
 import { notificationDedupeKey, TASK_STATUS_LABELS } from '@lintel/domain';
+import { spokenTimeOfDay } from '@lintel/shared';
 import type { DeadlineStepRef } from './deadline-plan';
 import { formatCalendarDate } from './working-time';
 
@@ -54,7 +55,12 @@ export function deadlineNotification(
   step: DeadlineStepRef,
   recipientUserId: string,
 ): NewNotification {
-  const { title, body } = textFor(task, step, formatCalendarDate(dueDate));
+  const when = formatCalendarDate(task.dueDate ?? dueDate.slice(0, 10));
+  const { title, body } = textFor(
+    task,
+    step,
+    task.dueTime ? `${when} at ${spokenTimeOfDay(task.dueTime)}` : when,
+  );
   return {
     recipientUserId,
     kind: step.kind,

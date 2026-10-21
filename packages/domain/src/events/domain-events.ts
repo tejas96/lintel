@@ -6,7 +6,12 @@
 export interface DomainEventMap {
   ProjectCreated: { projectId: string; createdBy: string };
   TaskAssigned: { taskId: string; projectId: string; ownerId: string; assignedBy: string };
-  TaskScheduleChanged: { taskId: string; projectId: string; dueDate: string | null };
+  TaskScheduleChanged: {
+    taskId: string;
+    projectId: string;
+    dueDate: string | null;
+    dueTime?: string | null;
+  };
   TaskBlocked: { taskId: string; projectId: string; blockerId: string };
   TaskUnblocked: { taskId: string; projectId: string; blockerId: string };
   TaskCompleted: { taskId: string; projectId: string; completedBy: string };

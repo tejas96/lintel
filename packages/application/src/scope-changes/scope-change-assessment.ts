@@ -13,6 +13,7 @@ import {
   type ScopeChangeRequest,
   scopeChangeAdditionIssues,
 } from './scope-change-additions';
+import { taskDateChangeIssues } from './scope-change-exact-dates';
 import { type ScopeChangeImpactResult, scopeChangeShiftIssues } from './scope-change-impact';
 
 export interface AssessedScopeChange {
@@ -72,6 +73,7 @@ export async function assessScopeChangeRequest(
   }
   const issues = [
     ...scopeChangeShiftIssues(facts, request.taskShifts),
+    ...taskDateChangeIssues(facts, request.taskDateChanges ?? [], request.taskShifts.length),
     ...scopeChangeAdditionIssues(facts, await stores.scopeChanges.stagesOf(projectId), request),
     ...(await ownerIssues(stores, projectId, request.newTasks)),
   ];
@@ -85,14 +87,7 @@ export async function assessScopeChangeRequest(
   return {
     facts,
     result,
-    impacts: result.impacts.map((impact) => ({
-      taskId: impact.taskId,
-      taskTitle: impact.taskTitle,
-      currentDueDate: impact.currentDueDate,
-      proposedDueDate: impact.proposedDueDate,
-      shiftWorkingDays: impact.shiftWorkingDays,
-      isDownstream: impact.isDownstream,
-    })),
+    impacts: [...result.impacts],
     newTasks: request.newTasks.map((task) => ({ ...task, title: task.title.trim() })),
     cancellations: request.cancelTaskIds.map((taskId) => ({
       taskId,

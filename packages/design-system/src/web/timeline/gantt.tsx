@@ -2,16 +2,18 @@
 
 import { motion } from 'motion/react';
 import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
-import type { PillTone } from '../data/status-pill';
-import { daysFrom, shortDate } from '../lib/calendar-math';
 import { cn } from '../lib/cn';
-import { easing, layoutSpring, seconds } from '../motion/presets';
 import type { TimelineScale } from './timeline-scale';
 
 export const GANTT_ROW_HEIGHT = 44;
 export const GANTT_HEADER_HEIGHT = 40;
 
-const LABEL_COLUMN = 'w-[9.5rem] sm:w-[16rem]';
+/** The name column's width comes from `--gantt-label`, set on the chart (regular or compact). */
+const LABEL_COLUMN = 'w-(--gantt-label)';
+const LABEL_WIDTHS = {
+  regular: '[--gantt-label:9.5rem] sm:[--gantt-label:16rem]',
+  compact: '[--gantt-label:8rem] sm:[--gantt-label:9.5rem]',
+} as const;
 
 interface GanttChartProps {
   readonly scale: TimelineScale;
@@ -21,17 +23,31 @@ interface GanttChartProps {
   /** Overlays drawn over the track area (dependency lines). */
   readonly overlay?: ReactNode;
   readonly className?: string;
+  /** The date scrolled into view when the chart opens (default: today). */
+  readonly focusDate?: string;
+  /** A narrower name column, for charts in a side column. */
+  readonly labelWidth?: keyof typeof LABEL_WIDTHS;
 }
 
 /** Scrollable chart frame: sticky name column, date header, grid, weekends and a today line. */
-export function GanttChart({ scale, today, label, children, overlay, className }: GanttChartProps) {
+export function GanttChart({
+  scale,
+  today,
+  label,
+  children,
+  overlay,
+  className,
+  focusDate,
+  labelWidth = 'regular',
+}: GanttChartProps) {
   const scroller = useRef<HTMLElement>(null);
   const todayX = scale.x(today);
+  const focusX = scale.x(focusDate ?? today);
   useEffect(() => {
     const element = scroller.current;
     if (!element) return;
-    element.scrollLeft = Math.max(0, todayX - element.clientWidth / 3);
-  }, [todayX]);
+    element.scrollLeft = Math.max(0, focusX - element.clientWidth / 3);
+  }, [focusX]);
   const trackStyle: CSSProperties = { width: scale.width };
   return (
     <section
@@ -41,6 +57,7 @@ export function GanttChart({ scale, today, label, children, overlay, className }
       tabIndex={0}
       className={cn(
         'relative overflow-x-auto overscroll-x-contain rounded-lg border border-hairline bg-surface',
+        LABEL_WIDTHS[labelWidth],
         className,
       )}
     >
@@ -73,7 +90,10 @@ export function GanttChart({ scale, today, label, children, overlay, className }
         </div>
         <div className="relative">
           <GanttGrid scale={scale} todayX={todayX} />
-          <div className="relative">{children}</div>
+          {/* Bars animate relative to the chart, not the page: content added above never jolts them. */}
+          <motion.div layoutRoot className="relative">
+            {children}
+          </motion.div>
           {overlay}
         </div>
       </div>
@@ -85,7 +105,7 @@ function GanttGrid({ scale, todayX }: { scale: TimelineScale; todayX: number }) 
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-y-0 right-0 left-[9.5rem] sm:left-[16rem]"
+      className="pointer-events-none absolute inset-y-0 right-0 left-(--gantt-label)"
     >
       {scale.dayWidth >= 24 &&
         scale.ticks
@@ -145,97 +165,5 @@ export function GanttRow({ label, children, depth = 1, className }: GanttRowProp
       </div>
       <div className="relative min-w-0 flex-1">{children}</div>
     </div>
-  );
-}
-
-const BAR_TONES: Readonly<Record<PillTone, string>> = {
-  neutral: 'border-rule bg-raised text-ink',
-  onTrack: 'border-on-track-solid/60 bg-on-track-tint text-on-track',
-  atRisk: 'border-at-risk-solid/70 bg-at-risk-tint text-at-risk',
-  blocked: 'border-blocked-solid/70 bg-blocked-tint text-blocked',
-  overdue: 'border-overdue-solid/70 bg-overdue-tint text-overdue',
-  review: 'border-review-solid/60 bg-review-tint text-review',
-  done: 'border-done-solid/50 bg-done-tint text-done',
-};
-
-interface GanttBarProps {
-  readonly scale: TimelineScale;
-  readonly start: string;
-  readonly end: string;
-  readonly tone: PillTone;
-  readonly title: string;
-  /** Status word for the accessible name, e.g. "Blocked". */
-  readonly statusLabel: string;
-  readonly progress?: number | undefined;
-  readonly index?: number;
-  readonly onSelect?: (() => void) | undefined;
-}
-
-export function GanttBar({
-  scale,
-  start,
-  end,
-  tone,
-  title,
-  statusLabel,
-  progress,
-  index = 0,
-  onSelect,
-}: GanttBarProps) {
-  const left = scale.x(start);
-  const width = Math.max(scale.dayWidth, scale.x(end) + scale.dayWidth - left);
-  const days = daysFrom(start, end) + 1;
-  return (
-    <motion.button
-      type="button"
-      layout
-      onClick={onSelect}
-      aria-label={`${title}, ${statusLabel}, ${shortDate(start)} to ${shortDate(end)}, ${days} days`}
-      className={cn(
-        'absolute top-2.5 flex h-6 origin-left items-center overflow-hidden rounded-md border text-left shadow-e1',
-        'transition-shadow hover:shadow-e2',
-        BAR_TONES[tone],
-      )}
-      style={{ left, width }}
-      initial={{ opacity: 0, scaleX: 0.2 }}
-      animate={{ opacity: 1, scaleX: 1 }}
-      transition={{
-        layout: layoutSpring,
-        default: {
-          duration: seconds('slow'),
-          ease: easing('outQuint'),
-          delay: Math.min(index, 8) * 0.03,
-        },
-      }}
-    >
-      {progress !== undefined && progress > 0 && (
-        <span
-          aria-hidden
-          className="absolute inset-y-0 left-0 bg-current opacity-15"
-          style={{ width: `${Math.min(1, progress) * 100}%` }}
-        />
-      )}
-      <span className="relative truncate px-2 type-label">{width > 72 ? title : ''}</span>
-    </motion.button>
-  );
-}
-
-export function GanttMilestoneMark({
-  scale,
-  date,
-  label,
-}: {
-  scale: TimelineScale;
-  date: string;
-  label: string;
-}) {
-  return (
-    <span
-      role="img"
-      aria-label={`Milestone ${label}, ${shortDate(date)}`}
-      title={`${label}, ${shortDate(date)}`}
-      className="absolute top-[0.9375rem] size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-ink bg-raised"
-      style={{ left: scale.x(date) + scale.dayWidth / 2 }}
-    />
   );
 }

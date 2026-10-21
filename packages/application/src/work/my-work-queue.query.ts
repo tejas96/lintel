@@ -2,9 +2,10 @@ import {
   type Actor,
   DEFAULT_WORKING_CALENDAR,
   deadlineAwarePriorityStrategy,
+  type PriorityClock,
   type TaskPriorityStrategy,
 } from '@lintel/domain';
-import type { CalendarDate, Clock } from '@lintel/shared';
+import { type CalendarDate, type Clock, timeOfDayInTimeZone } from '@lintel/shared';
 import type { SettingsStore } from '../settings/settings.store';
 import type { OperationsContext } from '../tasks/operations-context';
 import {
@@ -42,23 +43,32 @@ export class MyWorkQueueQuery<TSummary> {
 
   async execute(actor: Actor): Promise<WorkQueueResult<TSummary>> {
     const userId = actor.userId;
-    const today = await this.context.today();
-    const since = new Date(this.clock.now().getTime() - RECENT_DAYS * 86_400_000);
-    const [snapshot, reviews, recent, person, leave, calendars] = await Promise.all([
-      this.source.snapshotFor(userId, today),
+    const [today, calendars] = await Promise.all([
+      this.context.today(),
+      this.settings.calendarsForUsers([userId]),
+    ]);
+    const calendar = calendars.get(userId) ?? DEFAULT_WORKING_CALENDAR;
+    const now = this.clock.now();
+    // Due times are wall-clock times in the person's (the studio's) timezone.
+    const clock: PriorityClock = {
+      now: { date: today, time: timeOfDayInTimeZone(now, calendar.timeZone) },
+      dayEndTime: calendar.dayEndTime,
+    };
+    const since = new Date(now.getTime() - RECENT_DAYS * 86_400_000);
+    const [snapshot, reviews, recent, person, leave] = await Promise.all([
+      this.source.snapshotFor(userId, today, clock),
       this.source.reviewsWaitingFor(userId, today),
       this.source.recentlyCompletedBy(userId, since, RECENT_LIMIT, today),
       this.source.person(userId),
       this.source.approvedLeaveOn(userId, today),
-      this.settings.calendarsForUsers([userId]),
     ]);
-    const queue = assembleWorkQueue(snapshot, today, this.strategy);
+    const queue = assembleWorkQueue(snapshot, today, this.strategy, clock);
     const workload = workloadToday(
       {
         userId,
         fullName: person?.fullName ?? '',
         capacityPercent: person?.capacityPercent ?? 100,
-        calendar: calendars.get(userId) ?? DEFAULT_WORKING_CALENDAR,
+        calendar,
       },
       snapshot.tasks.map((entry) => entry.row),
       leave,

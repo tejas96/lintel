@@ -12,6 +12,7 @@ import {
 } from '@lintel/design-system/web';
 import { TASK_PRIORITIES } from '@lintel/domain';
 import { BellRing } from 'lucide-react';
+import { DueTimeSelect } from './due-time-select';
 import { dueDateMoves, type TaskEditValues } from './task-edit-values';
 
 const PRIORITY_NAMES = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' } as const;
@@ -63,32 +64,38 @@ export function TaskEditFields({ task, values, onChange, errors, today }: TaskEd
         </Field>
       </section>
       <section aria-label="Schedule" className="grid gap-4 sm:grid-cols-2">
-        <Field label="Planned start" error={errors.plannedStartDate}>
-          <DatePicker
-            value={values.plannedStartDate}
-            onValueChange={(date) => set('plannedStartDate', date)}
-            today={today}
-          />
-        </Field>
         <Field
           label="Due"
           hint={
             committed && !manages
-              ? 'Only the project manager can move a committed date.'
-              : undefined
+              ? 'Only the project manager can move a committed deadline.'
+              : 'Add a time when it is due at a set hour (studio time).'
           }
-          error={errors.dueDate}
+          error={errors.dueDate ?? errors.dueTime}
+          className="sm:col-span-2"
         >
-          <DatePicker
-            value={values.dueDate}
-            onValueChange={(date) => set('dueDate', date)}
-            today={today}
-            disabled={committed && !manages}
-          />
+          <div className="flex flex-wrap gap-2">
+            <div className="min-w-0 flex-[2_1_11rem]">
+              <DatePicker
+                value={values.dueDate}
+                onValueChange={(date) =>
+                  onChange({ ...values, dueDate: date, ...(date ? {} : { dueTime: null }) })
+                }
+                today={today}
+                disabled={committed && !manages}
+              />
+            </div>
+            <DueTimeSelect
+              value={values.dueDate ? values.dueTime : null}
+              onValueChange={(time) => set('dueTime', time)}
+              disabled={!values.dueDate || (committed && !manages)}
+              className="min-w-0 flex-[1_1_9rem]"
+            />
+          </div>
         </Field>
         {dueDateMoves(task, values) && (
           <Field
-            label="Why does the date move?"
+            label="Why does the deadline move?"
             hint="Kept in the schedule history. The owner is told."
             error={errors.scheduleChangeReason}
             required
@@ -102,6 +109,13 @@ export function TaskEditFields({ task, values, onChange, errors, today }: TaskEd
             />
           </Field>
         )}
+        <Field label="Planned start" error={errors.plannedStartDate}>
+          <DatePicker
+            value={values.plannedStartDate}
+            onValueChange={(date) => set('plannedStartDate', date)}
+            today={today}
+          />
+        </Field>
         <Field label="Estimate" hint="Hours of work, e.g. 1.5." error={errors.estimateMinutes}>
           <Input
             inputMode="decimal"

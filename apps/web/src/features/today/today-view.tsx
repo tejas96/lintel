@@ -4,6 +4,7 @@ import type { TaskSummary } from '@lintel/api-contracts';
 import { ErrorState, pageEnter } from '@lintel/design-system/web';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import { FirstRunTip } from '@/features/guidance/first-run-tip';
 import { WebPushPromptCard } from '@/features/push/web-push-prompt-card';
 import { useSession } from '@/features/session/session-provider';
 import { ReportBlockerSheet } from '@/features/tasks/report-blocker-sheet';
@@ -52,6 +53,7 @@ export function TodayView() {
         </h1>
         {view && <p className="type-body text-ink-muted">{summarise(view.queue.counts)}</p>}
       </motion.header>
+      <FirstRunTip tip="today" />
 
       {query.isPending && <TodaySkeleton />}
       {query.isError && !view && (

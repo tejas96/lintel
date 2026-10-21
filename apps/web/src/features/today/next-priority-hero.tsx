@@ -6,6 +6,7 @@ import { CalendarClock, Flag, Hourglass } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { formatCalendarDate, formatMinutes } from '@/lib/format/dates';
+import { DueHoursRuler } from './due-hours-ruler';
 import { DueRuler } from './due-ruler';
 import { HeroActions } from './hero-actions';
 import { PriorityReasons } from './priority-reasons';
@@ -108,7 +109,11 @@ export function NextPriorityHero({
               </li>
             )}
           </ul>
-          {task.dueDate && <DueRuler today={today} dueDate={task.dueDate} />}
+          {task.dueDate === today && task.dueTime ? (
+            <DueHoursRuler dueTime={task.dueTime} />
+          ) : (
+            task.dueDate && <DueRuler today={today} dueDate={task.dueDate} />
+          )}
           <HeroActions
             task={task}
             onBeforeChange={onBeforeChange}

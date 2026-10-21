@@ -3,8 +3,10 @@ import type { RecordStore } from '../common/record.store';
 import type { SettingsStore } from '../settings/settings.store';
 import type {
   ProjectScheduleFacts,
+  ScheduleTaskFact,
   ScopeChangeRecord,
   ScopeChangeStore,
+  StoredScopeChangeImpact,
 } from './scope-change.store';
 import { shiftOptionalDate } from './scope-change-impact';
 
@@ -35,10 +37,34 @@ function latest(dates: readonly (string | null)[]): string | null {
   );
 }
 
+type Calendar = Awaited<ReturnType<ScheduleStores['settings']['defaultCalendar']>>;
+
 /**
- * Applies each approved shift to the task's *current* dates (it may have
- * moved since the proposal), records the history, then extends milestones
- * and the project's planned end when the new dates run past them.
+ * The dates approval gives a task: exact dates dragged on the timeline as
+ * proposed, otherwise the approved shift applied to the task's current dates.
+ */
+function approvedDates(
+  calendar: Calendar,
+  task: ScheduleTaskFact,
+  impact: StoredScopeChangeImpact,
+): { startDate: string | null; dueDate: string | null } {
+  if (impact.appliesExactDates) {
+    return {
+      startDate: impact.proposedStartDate ?? task.plannedStartDate,
+      dueDate: impact.proposedDueDate,
+    };
+  }
+  return {
+    startDate: shiftOptionalDate(calendar, task.plannedStartDate, impact.shiftWorkingDays),
+    dueDate: shiftOptionalDate(calendar, task.dueDate, impact.shiftWorkingDays),
+  };
+}
+
+/**
+ * Applies each approved move — a shift to the task's *current* dates (it may
+ * have moved since the proposal), or the exact dates proposed — records the
+ * history, then extends milestones and the project's planned end when the
+ * new dates run past them.
  */
 export async function applyApprovedSchedule(
   stores: ScheduleStores,
@@ -53,8 +79,7 @@ export async function applyApprovedSchedule(
   for (const impact of await stores.scopeChanges.impactsOf(scopeChange.id)) {
     const task = tasks.get(impact.taskId);
     if (!task || !isOpenTaskStatus(task.status)) continue;
-    const dueDate = shiftOptionalDate(calendar, task.dueDate, impact.shiftWorkingDays);
-    const startDate = shiftOptionalDate(calendar, task.plannedStartDate, impact.shiftWorkingDays);
+    const { startDate, dueDate } = approvedDates(calendar, task, impact);
     if (task.dueDate !== impact.currentDueDate || dueDate !== impact.proposedDueDate) {
       await stores.scopeChanges.correctImpact(impact.id, task.dueDate, dueDate);
     }

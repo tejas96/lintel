@@ -86,6 +86,7 @@ export class InMemoryOperationsWorld {
       reviewerUserId: null,
       plannedStartDate: null,
       dueDate: '2026-10-25',
+      dueTime: null,
       baselineDueDate: '2026-10-25',
       estimateMinutes: null,
       actualMinutes: 0,

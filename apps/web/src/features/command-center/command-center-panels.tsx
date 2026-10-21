@@ -12,7 +12,8 @@ import {
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { ProjectChip } from '@/features/tasks/task-presentation';
-import { describeDue, formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
+import { formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 
 const MILESTONE_HEALTH = {
   completed: { tone: 'done', glyph: 'done', label: 'Completed' },
@@ -167,7 +168,7 @@ export function StuckWork({
               </Link>
               {task.dueDate && (
                 <span className="type-body-sm text-overdue">
-                  {describeDue(task.dueDate, today).text}
+                  {describeTaskDue(task, today)?.text}
                 </span>
               )}
             </li>

@@ -53,12 +53,18 @@ export { Sheet } from './overlays/sheet';
 export {
   GANTT_HEADER_HEIGHT,
   GANTT_ROW_HEIGHT,
-  GanttBar,
   GanttChart,
-  GanttMilestoneMark,
   GanttRow,
 } from './timeline/gantt';
+export { GanttBar, GanttMilestoneMark } from './timeline/gantt-bar';
 export { GanttDependencies, type GanttLink } from './timeline/gantt-dependencies';
+export {
+  type GanttDateLine,
+  GanttDateLines,
+  type GanttDragPart,
+  GanttEditableBar,
+  type GanttEditState,
+} from './timeline/gantt-editing';
 export {
   type MilestoneHealth,
   MilestoneTimeline,

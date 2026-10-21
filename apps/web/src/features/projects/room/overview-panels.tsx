@@ -7,7 +7,8 @@ import { CircleAlert, TriangleAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { TaskNumber, TaskStatusPill } from '@/features/tasks/task-presentation';
-import { describeDue, formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
+import { formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 import { useOpenBlockers } from './use-project-room';
 
 export function UpcomingDeadlines({
@@ -24,7 +25,7 @@ export function UpcomingDeadlines({
   return (
     <ul className="flex flex-col">
       {tasks.slice(0, 10).map((task) => {
-        const due = task.dueDate ? describeDue(task.dueDate, today) : null;
+        const due = describeTaskDue(task, today);
         return (
           <li
             key={task.id}

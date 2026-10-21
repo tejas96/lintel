@@ -3,6 +3,7 @@ export * from './calendar';
 export * from './capacity';
 export * from './documents';
 export * from './events';
+export * from './guidance';
 export * from './identity';
 export * from './insights';
 export * from './leave';

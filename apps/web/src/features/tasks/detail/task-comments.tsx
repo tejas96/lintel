@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { type FormEvent, type KeyboardEvent, useState } from 'react';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
+import { formatTimeOfDay } from '@/lib/format/task-due';
 import { queryKeys } from '@/lib/query/query-keys';
 import { DetailSection } from './detail-section';
 import { useTaskDetailMutations } from './use-task-detail-mutations';
@@ -93,7 +94,7 @@ export function TaskComments({ taskId }: { readonly taskId: string }) {
   );
 }
 
-/** Every move of the due date, with who moved it and why. */
+/** Every move of the deadline (date or time), with who moved it and why. */
 export function ScheduleHistory({
   task,
   today,
@@ -102,7 +103,11 @@ export function ScheduleHistory({
   readonly today: string;
 }) {
   if (task.scheduleChanges.length === 0) return null;
-  const dated = (date: string | null) => (date ? formatCalendarDate(date, today) : 'no date');
+  const dated = (date: string | null, time: string | null) => {
+    if (!date) return 'no date';
+    const day = formatCalendarDate(date, today);
+    return time ? `${day}, ${formatTimeOfDay(time)}` : day;
+  };
   return (
     <DetailSection title="Schedule history">
       <ol className="flex flex-col gap-3 border-l border-hairline pl-4">
@@ -113,7 +118,9 @@ export function ScheduleHistory({
               className="absolute top-1.5 -left-[1.3rem] size-2 rounded-full border border-rule bg-raised"
             />
             <p className="type-body-sm text-ink">
-              Due date moved from {dated(change.previousDueDate)} to {dated(change.newDueDate)}
+              {change.previousDueDate === change.newDueDate ? 'Due time' : 'Due date'} moved from{' '}
+              {dated(change.previousDueDate, change.previousDueTime)} to{' '}
+              {dated(change.newDueDate, change.newDueTime)}
             </p>
             <p className="type-body-sm text-ink-muted">{change.reason}</p>
             <p className="type-body-sm text-ink-faint">

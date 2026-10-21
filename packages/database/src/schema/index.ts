@@ -4,6 +4,7 @@ export * from './deliverables.schema';
 export * from './documents.schema';
 export * from './enums';
 export * from './finances.schema';
+export * from './guidance.schema';
 export * from './identity.schema';
 export * from './insights.schema';
 export * from './leave.schema';

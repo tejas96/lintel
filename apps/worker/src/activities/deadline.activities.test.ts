@@ -1,22 +1,9 @@
 import type { EscalationStep } from '@lintel/domain';
 import { toCalendarDate } from '@lintel/shared';
 import { describe, expect, it } from 'vitest';
-import { createFakeWorld } from '../testing/fake-world';
+import { deadlineWorld as world } from '../testing/deadline-world';
 import { ADMIN, BUSINESS_OWNER, deadlineTask, MANAGER, OWNER } from '../testing/fixtures';
-import { createDeadlineActivities } from './deadline.activities';
 import { toDeadlinePlanSteps } from './deadline-plan';
-
-function world(now?: string) {
-  const fake = createFakeWorld(now);
-  for (const user of [OWNER, MANAGER, BUSINESS_OWNER, ADMIN]) {
-    fake.stores.notifications.activeUsers.add(user);
-  }
-  fake.stores.background.followUps.capabilityHolders.set('dashboard.view_business', [
-    BUSINESS_OWNER,
-    ADMIN,
-  ]);
-  return { ...fake, activities: createDeadlineActivities(fake.deps) };
-}
 
 describe('deadline plan steps', () => {
   const step = (at: string, audience: EscalationStep['audience']): EscalationStep => ({
@@ -87,6 +74,35 @@ describe('deadline activities', () => {
       deadlineTask({ dueDate: due, escalateAfterOverdueDays: 3 }),
     );
     expect((await managerStep())?.at).toBe('2026-11-12T04:00:00.000Z');
+  });
+
+  it('plans the overdue step at the due time and restarts when the time changes', async () => {
+    const fake = world('2026-11-07T03:30:00.000Z');
+    const due = toCalendarDate('2026-11-09');
+    fake.stores.background.followUps.deadlines.set(
+      'task-1',
+      deadlineTask({ dueDate: due, dueTime: '11:00' }),
+    );
+    const plan = await fake.activities.loadDeadlinePlan('task-1');
+    expect(plan.dueDate).toBe('2026-11-09T11:00');
+    // 11:00 IST on Monday 9 Nov is 05:30 UTC.
+    expect(plan.steps.find((planned) => planned.kind === 'task_overdue')?.at).toBe(
+      '2026-11-09T05:30:00.000Z',
+    );
+    const step = {
+      key: 'task_overdue.task_owner',
+      audience: 'task_owner',
+      kind: 'task_overdue',
+    } as const;
+    fake.stores.background.followUps.deadlines.set(
+      'task-1',
+      deadlineTask({ dueDate: due, dueTime: '15:00' }),
+    );
+    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-09T11:00', step)).toBe(
+      'due_date_changed',
+    );
+    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-09T15:00', step)).toBe('sent');
+    expect(fake.stores.notifications.created[0]?.body).toContain('Mon 9 Nov at 3:00 pm');
   });
 
   it('reports a closed or archived task so the workflow can stop', async () => {
@@ -164,76 +180,5 @@ describe('deadline activities', () => {
     expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-10', step)).toBe(
       'no_recipient',
     );
-  });
-});
-
-describe('late-start nudge step', () => {
-  const lateStart = (key = 'task_late_start.task_owner@2026-11-06') =>
-    ({ key, audience: 'task_owner', kind: 'task_late_start' }) as const;
-  const readyTask = (overrides: Parameters<typeof deadlineTask>[0] = {}) =>
-    deadlineTask({
-      status: 'ready',
-      plannedStartDate: toCalendarDate('2026-11-06'),
-      dueDate: toCalendarDate('2026-11-12'),
-      ...overrides,
-    });
-
-  it('plans the nudge the working day after the planned start, keyed by that start', async () => {
-    // Monday 9 Nov, 09:00 IST; the start was Friday 6 Nov, so the nudge was due Saturday 10:00.
-    const fake = world('2026-11-09T03:30:00.000Z');
-    fake.stores.background.followUps.deadlines.set('task-1', readyTask());
-    const plan = await fake.activities.loadDeadlinePlan('task-1');
-    expect(plan.steps[0]).toMatchObject({
-      key: 'task_late_start.task_owner@2026-11-06',
-      kind: 'task_late_start',
-      at: '2026-11-07T04:30:00.000Z',
-      delayMs: 0,
-      superseded: false,
-    });
-  });
-
-  it('plans no nudge once work has started or while a prerequisite is open', async () => {
-    const fake = world('2026-11-09T03:30:00.000Z');
-    const kinds = async () =>
-      (await fake.activities.loadDeadlinePlan('task-1')).steps.map((step) => step.kind);
-    fake.stores.background.followUps.deadlines.set('task-1', readyTask({ status: 'in_progress' }));
-    expect(await kinds()).not.toContain('task_late_start');
-    fake.stores.background.followUps.deadlines.set(
-      'task-1',
-      readyTask({ prerequisitesDone: false }),
-    );
-    expect(await kinds()).not.toContain('task_late_start');
-  });
-
-  it('asks the owner to start, report a blocker or ask for a new date', async () => {
-    const fake = world();
-    fake.stores.background.followUps.deadlines.set('task-1', readyTask());
-    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-12', lateStart())).toBe(
-      'sent',
-    );
-    expect(fake.stores.notifications.created[0]).toMatchObject({
-      recipientUserId: OWNER,
-      kind: 'task_late_start',
-      title: 'Not started yet: Working drawings',
-      body: '"Working drawings" (Saska residence) was planned to start on Fri 6 Nov. Start it, report a blocker, or ask for a new date.',
-      linkPath: '/tasks/task-1?nudge=late-start',
-      dedupeKey: `task_late_start:${OWNER}:task-1:2026-11-12:task_late_start.task_owner@2026-11-06`,
-    });
-  });
-
-  it('re-checks before sending: started work needs no nudge, a moved start re-plans', async () => {
-    const fake = world();
-    fake.stores.background.followUps.deadlines.set('task-1', readyTask({ status: 'in_progress' }));
-    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-12', lateStart())).toBe(
-      'not_needed',
-    );
-    fake.stores.background.followUps.deadlines.set(
-      'task-1',
-      readyTask({ plannedStartDate: toCalendarDate('2026-11-10') }),
-    );
-    expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-12', lateStart())).toBe(
-      'due_date_changed',
-    );
-    expect(fake.stores.notifications.created).toEqual([]);
   });
 });

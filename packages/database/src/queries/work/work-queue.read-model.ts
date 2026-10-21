@@ -1,5 +1,5 @@
 import type { WorkQueueSnapshot, WorkQueueSource } from '@lintel/application';
-import { OPEN_TASK_STATUSES } from '@lintel/domain';
+import { OPEN_TASK_STATUSES, type PriorityClock } from '@lintel/domain';
 import type { CalendarDate } from '@lintel/shared';
 import { and, desc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
@@ -23,6 +23,7 @@ export class WorkQueueReadModel implements WorkQueueSource<TaskSummaryView> {
   async snapshotFor(
     userId: string,
     today: CalendarDate,
+    clock?: PriorityClock,
   ): Promise<WorkQueueSnapshot<TaskSummaryView>> {
     const collaborating = this.db
       .select({ id: taskCollaborators.taskId })
@@ -35,6 +36,7 @@ export class WorkQueueReadModel implements WorkQueueSource<TaskSummaryView> {
       ),
       limit: QUEUE_LIMIT,
       today,
+      clock,
     });
     if (summaries.length === 0) {
       return { tasks: [], edges: [], nodes: new Map(), milestones: new Map() };
@@ -86,6 +88,7 @@ export class WorkQueueReadModel implements WorkQueueSource<TaskSummaryView> {
           status: summary.status,
           priority: summary.priority,
           dueDate: summary.dueDate as CalendarDate | null,
+          dueTime: summary.dueTime,
           plannedStartDate: summary.plannedStartDate as CalendarDate | null,
           estimateMinutes: summary.estimateMinutes,
           actualMinutes: actualById.get(summary.id) ?? 0,

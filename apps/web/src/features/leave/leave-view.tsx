@@ -5,6 +5,7 @@ import { CalendarPlus, Siren } from 'lucide-react';
 import { motion } from 'motion/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { FirstRunTip } from '@/features/guidance/first-run-tip';
 import { useSession } from '@/features/session/session-provider';
 import { todayIn } from '@/lib/format/dates';
 import { MyLeave } from './my-leave';
@@ -79,6 +80,7 @@ export function LeaveView() {
           }
         />
       </motion.div>
+      <FirstRunTip tip="leave" />
       {allowed.length > 1 ? (
         <Tabs
           label="Whose leave"

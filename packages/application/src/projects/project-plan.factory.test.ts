@@ -1,5 +1,6 @@
 import {
   DEFAULT_WORKING_CALENDAR,
+  NO_TAILORING,
   type TemplateTask,
   type WorkflowTemplateDefinition,
 } from '@lintel/domain';
@@ -133,6 +134,19 @@ describe('project plan from a template', () => {
       { taskKey: 'brief', name: 'Brief', isRequired: true, reviewerUserId: 'pm' },
       { taskKey: 'layout', name: 'Layout', isRequired: true, reviewerUserId: 'pm' },
     ]);
+  });
+
+  it('never makes the person given a task by hand its reviewer', () => {
+    const workflow = buildWorkflowPlan({
+      definition,
+      calendar: DEFAULT_WORKING_CALENDAR,
+      startDate,
+      options: [],
+      members,
+      tailoring: { ...NO_TAILORING, adjustments: [{ taskKey: 'layout', ownerUserId: 'pm' }] },
+    });
+    const layout = workflow.tasks.find((task) => task.template.key === 'layout');
+    expect(layout).toMatchObject({ ownerUserId: 'pm', reviewerUserId: null });
   });
 
   it('starts template-free projects with one active stage', () => {

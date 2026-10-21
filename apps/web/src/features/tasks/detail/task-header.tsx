@@ -2,7 +2,8 @@ import type { TaskDetail } from '@lintel/api-contracts';
 import { Avatar, PriorityMarker } from '@lintel/design-system/web';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { describeDue, formatCalendarDate } from '@/lib/format/dates';
+import { formatCalendarDate } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 import { ProjectChip, TaskNumber, TaskStatusPill } from '../task-presentation';
 
 function Fact({ label, children }: { readonly label: string; readonly children: ReactNode }) {
@@ -16,7 +17,7 @@ function Fact({ label, children }: { readonly label: string; readonly children: 
 
 /** Where the task sits, who owns it and when it is due. */
 export function TaskFacts({ task, today }: { readonly task: TaskDetail; readonly today: string }) {
-  const due = task.dueDate ? describeDue(task.dueDate, today) : null;
+  const due = describeTaskDue(task, today);
   const moved = task.dueDate && task.baselineDueDate && task.dueDate !== task.baselineDueDate;
   return (
     <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">

@@ -1,3 +1,5 @@
+import { isOverdueAt, type PriorityClock } from '@lintel/domain';
+import type { CalendarDate } from '@lintel/shared';
 import { and, asc, count, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import {
@@ -18,6 +20,12 @@ export interface TaskSummaryQuery {
   readonly offset?: number;
   /** Business-timezone "today" (YYYY-MM-DD), used for `isOverdue`. */
   readonly today: string;
+  /**
+   * The time of day as well: work due today becomes overdue once its due
+   * time (or the end of the working day) has passed. Without it, only from
+   * the next day.
+   */
+  readonly clock?: PriorityClock | undefined;
 }
 
 const OPEN_STATUSES = [
@@ -91,6 +99,7 @@ export async function loadTaskSummaries(
       title: task.title,
       status: task.status,
       dueDate: task.dueDate,
+      dueTime: task.dueTime,
       priority: task.priority,
       project: {
         id: project.id,
@@ -112,7 +121,13 @@ export async function loadTaskSummaries(
         total: checklist?.total ?? 0,
         requiredRemaining: checklist?.requiredRemaining ?? 0,
       },
-      isOverdue: isOpen && task.dueDate !== null && task.dueDate < query.today,
+      isOverdue:
+        isOpen &&
+        isOverdueAt(
+          { dueDate: task.dueDate as CalendarDate | null, dueTime: task.dueTime },
+          query.today as CalendarDate,
+          query.clock,
+        ),
       hasOpenBlocker: blocked.has(task.id),
       requiresReview: task.requiresReview,
       needsAcknowledgement:

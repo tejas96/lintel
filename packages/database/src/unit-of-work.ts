@@ -3,6 +3,7 @@ import type { Database, DatabaseExecutor } from './client';
 import { CapacityReadRepository } from './repositories/capacity-read.repository';
 import { DateChangeRepository } from './repositories/date-change.repository';
 import { DeliverableRepository } from './repositories/deliverable.repository';
+import { GuidanceRepository } from './repositories/guidance.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { LeaveRepository } from './repositories/leave.repository';
 import { LeaveTypeRepository } from './repositories/leave-type.repository';
@@ -32,6 +33,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     access: new ProjectAccessRepository(executor),
     background: createBackgroundStores(executor),
     capacity: new CapacityReadRepository(executor),
+    guidance: new GuidanceRepository(executor),
     identity: new IdentityRepository(executor),
     inbox: new NotificationInboxRepository(executor),
     leave: new LeaveRepository(executor),

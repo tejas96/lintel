@@ -1,5 +1,5 @@
 import { validateEscalationDelay } from '@lintel/domain';
-import { PreconditionFailedError, ValidationFailedError } from '@lintel/shared';
+import { isTimeOfDay, PreconditionFailedError, ValidationFailedError } from '@lintel/shared';
 import type { OperationsStores } from './operations-context';
 import type { ProjectReferences, TaskRecord } from './task.store';
 
@@ -59,6 +59,21 @@ export function assertDateOrder(plannedStartDate: string | null, dueDate: string
   if (plannedStartDate && dueDate && plannedStartDate > dueDate) {
     throw new ValidationFailedError('The planned start must be on or before the due date.', [
       { field: 'plannedStartDate', message: 'Start on or before the due date.' },
+    ]);
+  }
+}
+
+/** A due time is a 24-hour "HH:mm" and needs a due date to belong to. */
+export function assertDueTime(dueDate: string | null, dueTime: string | null): void {
+  if (dueTime === null) return;
+  if (!isTimeOfDay(dueTime)) {
+    throw new ValidationFailedError('Use a 24-hour time such as 11:00.', [
+      { field: 'dueTime', message: 'Use a 24-hour time such as 11:00.' },
+    ]);
+  }
+  if (dueDate === null) {
+    throw new ValidationFailedError('A due time needs a due date.', [
+      { field: 'dueTime', message: 'Choose the due date first.' },
     ]);
   }
 }

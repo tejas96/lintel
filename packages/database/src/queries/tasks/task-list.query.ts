@@ -1,3 +1,4 @@
+import type { PriorityClock } from '@lintel/domain';
 import { OPEN_TASK_STATUSES, type TaskStatus } from '@lintel/domain';
 import {
   and,
@@ -36,6 +37,8 @@ export interface TaskListFilter {
   readonly page: number;
   readonly pageSize: number;
   readonly today: string;
+  /** Flags work due earlier today as overdue once its due time has passed. */
+  readonly clock?: PriorityClock | undefined;
 }
 
 function searchCondition(search: string): SQL | undefined {
@@ -92,6 +95,7 @@ export async function queryTasks(
     limit: filter.pageSize,
     offset: (filter.page - 1) * filter.pageSize,
     today: filter.today,
+    clock: filter.clock,
   });
   return { items, totalItems: totals?.total ?? 0 };
 }

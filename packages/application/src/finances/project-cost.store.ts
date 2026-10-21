@@ -13,6 +13,8 @@ export interface ProjectCostRecord {
   readonly voidedAt: Date | null;
   readonly voidedByUserId: string | null;
   readonly voidReason: string | null;
+  /** The approved scope change this entry records the cost of, if any. */
+  readonly scopeChangeId: string | null;
   readonly version: number;
   readonly createdAt: Date;
 }
@@ -25,6 +27,7 @@ export interface NewProjectCost {
   readonly currency: string;
   readonly note: string | null;
   readonly recordedByUserId: string;
+  readonly scopeChangeId?: string | null;
 }
 
 export interface ProjectCostVoid {
