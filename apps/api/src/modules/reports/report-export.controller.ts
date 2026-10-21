@@ -6,6 +6,7 @@ import type { Response } from 'express';
 import { Ctx } from '../../common/auth/auth.decorators';
 import { contentDisposition } from '../deliverables/file-content.controller';
 import { encodeCsv } from './csv-encoder';
+import { delaysCsv, estimatesCsv, reworkCsv } from './learning-report-csv';
 import { approvalsCsv, type CsvTable, deliveryCsv, leaveCsv, workloadCsv } from './report-csv';
 import { ReportRunner } from './report-runner.service';
 
@@ -14,6 +15,9 @@ const TITLES: Readonly<Record<ReportName, string>> = {
   workload: 'workload-and-capacity',
   leave: 'leave-taken',
   approvals: 'approvals-turnaround',
+  estimates: 'estimate-accuracy',
+  rework: 'rework-rate',
+  delays: 'approval-delays',
 };
 
 /**
@@ -82,6 +86,18 @@ export class ReportExportController {
       case 'approvals': {
         const view = await this.reports.approvals(context, query);
         return { table: approvalsCsv(view, await this.reports.timeZone()), range: view.range };
+      }
+      case 'estimates': {
+        const view = await this.reports.estimates(context, query);
+        return { table: estimatesCsv(view), range: view.range };
+      }
+      case 'rework': {
+        const view = await this.reports.rework(context, query);
+        return { table: reworkCsv(view), range: view.range };
+      }
+      case 'delays': {
+        const view = await this.reports.delays(context, query);
+        return { table: delaysCsv(view, await this.reports.timeZone()), range: view.range };
       }
     }
   }

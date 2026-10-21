@@ -12,6 +12,7 @@ import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ReassignmentsModule } from './reassignments/reassignments.module';
 import { ReportsModule } from './reports/reports.module';
+import { RewardRecordsModule } from './rewards/reward-records.module';
 import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TemplateUpdatesModule } from './template-updates/template-updates.module';
@@ -43,4 +44,5 @@ export const FEATURE_MODULES: Type[] = [
   TemplateUpdatesModule,
   InsightsModule,
   DateChangesModule,
+  RewardRecordsModule,
 ];

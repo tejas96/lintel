@@ -1,6 +1,5 @@
 'use client';
 
-import type { RewardEvaluation } from '@lintel/api-contracts';
 import {
   Button,
   Checkbox,
@@ -12,7 +11,6 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { type FormEvent, useState } from 'react';
 import { isApiError } from '@/lib/api/api-error';
-import type { useDecideReward } from './use-rewards';
 
 const CHOICES = [
   { value: 'approve', label: 'Approve' },
@@ -26,22 +24,28 @@ function toMinorUnits(text: string): number | null {
   return Math.round(Number(cleaned) * 100);
 }
 
+export interface RewardDecision {
+  readonly decision: 'approve' | 'reject';
+  readonly note: string;
+  readonly adjustedAmountMinor: number | null;
+}
+
 interface DecideRewardFormProps {
-  readonly evaluation: RewardEvaluation;
-  readonly mutation: ReturnType<typeof useDecideReward>;
+  /** The proposed amount, when the reviewer may see it. */
+  readonly amountMinor: number | null;
+  readonly busy: boolean;
   readonly blocked: boolean;
+  /** Sends the decision; server field errors come back through `onFailure`. */
+  readonly onDecide: (decision: RewardDecision, onFailure: (error: unknown) => void) => void;
 }
 
 /** Approve (optionally with a different amount) or decline, always with a note. */
-export function DecideRewardForm({ evaluation, mutation, blocked }: DecideRewardFormProps) {
+export function DecideRewardForm({ amountMinor, busy, blocked, onDecide }: DecideRewardFormProps) {
   const [decision, setDecision] = useState<'approve' | 'reject'>('approve');
   const [note, setNote] = useState('');
   const [adjusting, setAdjusting] = useState(false);
-  const [amount, setAmount] = useState(
-    evaluation.amountMinor === null ? '' : String(evaluation.amountMinor / 100),
-  );
+  const [amount, setAmount] = useState(amountMinor === null ? '' : String(amountMinor / 100));
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
-  const busy = mutation.isPending && mutation.variables?.evaluation.id === evaluation.id;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -53,10 +57,9 @@ export function DecideRewardForm({ evaluation, mutation, blocked }: DecideReward
     }
     setErrors(found);
     if (Object.keys(found).length > 0) return;
-    mutation.mutate(
-      { evaluation, decision, note: note.trim(), adjustedAmountMinor: adjusted },
-      { onError: (error) => isApiError(error) && setErrors(error.fieldErrors()) },
-    );
+    onDecide({ decision, note: note.trim(), adjustedAmountMinor: adjusted }, (error) => {
+      if (isApiError(error)) setErrors(error.fieldErrors());
+    });
   };
 
   return (
@@ -86,7 +89,7 @@ export function DecideRewardForm({ evaluation, mutation, blocked }: DecideReward
           maxLength={2000}
         />
       </Field>
-      {decision === 'approve' && evaluation.amountMinor !== null && (
+      {decision === 'approve' && amountMinor !== null && (
         <div className="flex flex-col gap-2">
           <Checkbox
             checked={adjusting}

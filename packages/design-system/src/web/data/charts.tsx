@@ -78,6 +78,8 @@ interface TrendBarsProps {
   readonly data: readonly TrendBarDatum[];
   readonly goodLabel: string;
   readonly badLabel: string;
+  /** The colour of the "bad" part: overdue (late, sent back) or at risk (a warning, not a failure). */
+  readonly badTone?: 'overdue' | 'atRisk';
   readonly label: string;
   readonly height?: number;
   readonly className?: string;
@@ -91,10 +93,12 @@ export function TrendBars({
   data,
   goodLabel,
   badLabel,
+  badTone = 'overdue',
   label,
   height = 96,
   className,
 }: TrendBarsProps) {
+  const badFill = badTone === 'atRisk' ? 'bg-at-risk-solid' : 'bg-overdue-solid';
   const max = Math.max(1, ...data.map((datum) => datum.good + datum.bad));
   return (
     <figure className={cn('flex flex-col gap-3', className)}>
@@ -116,7 +120,7 @@ export function TrendBars({
                   {total === 0 && <span className="h-[2px] rounded-full bg-hairline" />}
                   {datum.bad > 0 && (
                     <motion.span
-                      className="block origin-bottom rounded-t-[4px] bg-overdue-solid"
+                      className={cn('block origin-bottom rounded-t-[4px]', badFill)}
                       style={{ height: Math.max(2, badHeight - 1) }}
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
@@ -167,7 +171,7 @@ export function TrendBars({
           {goodLabel}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 rounded-[3px] bg-overdue-solid" />
+          <span aria-hidden className={cn('size-2.5 rounded-[3px]', badFill)} />
           {badLabel}
         </span>
       </figcaption>

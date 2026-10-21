@@ -8,6 +8,7 @@ import {
   type ResponseSchema,
 } from '../common/primitives';
 import { userSummarySchema } from './people.schema';
+import { challengeabilitySchema, challengeEntrySchema } from './reward-challenge.schema';
 
 const rate = z.number().min(0).max(1);
 const count = z.number().int().min(0).max(1000);
@@ -73,6 +74,9 @@ export const rewardEvaluationObject = z.object({
   decidedAt: instantSchema.nullable(),
   decisionNote: z.string().nullable(),
   createdAt: instantSchema,
+  /** Every challenge of this record, oldest first, with the reviewer's answers. */
+  challenges: z.array(challengeEntrySchema),
+  challengeable: challengeabilitySchema,
   version: z.number().int(),
 });
 export type RewardEvaluation = z.infer<typeof rewardEvaluationObject>;

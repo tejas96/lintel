@@ -106,12 +106,22 @@ export class InMemoryRewardStore implements RewardStore {
       periodStart: row.periodStart,
       status: row.decision?.status ?? row.status,
       amountMinor: row.amountMinor,
+      adjustedAmountMinor: row.decision?.adjustedAmountMinor ?? null,
+      decidedByUserId: row.decision?.decidedByUserId ?? null,
+      decisionNote: row.decision?.decisionNote ?? null,
       version: row.version,
     };
   }
   async decideEvaluation(id: string, expectedVersion: number, decision: RewardDecision) {
     const row = this.evaluations.find((evaluation) => evaluation.id === id);
     if (!row || row.version !== expectedVersion || row.decision) return false;
+    Object.assign(row, { decision, version: row.version + 1 });
+    return true;
+  }
+  async correctEvaluation(id: string, expectedVersion: number, decision: RewardDecision) {
+    const row = this.evaluations.find((evaluation) => evaluation.id === id);
+    if (!row || row.version !== expectedVersion) return false;
+    if ((row.decision?.status ?? row.status) === 'pending_review') return false;
     Object.assign(row, { decision, version: row.version + 1 });
     return true;
   }

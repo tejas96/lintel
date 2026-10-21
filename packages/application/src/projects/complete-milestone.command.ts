@@ -6,12 +6,14 @@ import {
 } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
+import { evaluateMilestoneReward } from '../rewards/evaluate-milestone-reward';
 import type { ProjectCommandDependencies } from './command-dependencies';
 
 /**
  * Completes a milestone once all its tasks are done or cancelled. When that
  * closes the last open work of its stage, the stage completes and the next
- * pending stage becomes active.
+ * pending stage becomes active. A reward attached to the milestone is checked
+ * against its rules in the same transaction and waits for a reviewer.
  */
 export class CompleteMilestoneCommand {
   constructor(private readonly deps: ProjectCommandDependencies) {}
@@ -66,6 +68,12 @@ export class CompleteMilestoneCommand {
         entityId: milestoneId,
         before: { status: milestone.status },
         after: { status: 'completed', note },
+        requestId: context.requestId,
+      });
+      await evaluateMilestoneReward(stores, this.deps.notifierFor, {
+        milestoneId,
+        completedAt: now,
+        actorUserId: context.actor.userId,
         requestId: context.requestId,
       });
       if (milestone.stageId && (await stores.projects.stageIsClosed(milestone.stageId))) {

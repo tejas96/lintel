@@ -53,6 +53,7 @@ export const NOTIFICATION_KIND_GROUPS: readonly {
       'scope_change_requested',
       'scope_change_decided',
       'reward_updated',
+      'reward_review_requested',
     ],
   },
 ];

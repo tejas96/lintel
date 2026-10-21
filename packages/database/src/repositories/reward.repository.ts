@@ -6,7 +6,7 @@ import type {
   RewardStore,
   RewardUpsertOutcome,
 } from '@lintel/application';
-import { and, asc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import { rewardEvaluations, rewardPolicies, teams, users } from '../schema';
 import {
@@ -141,6 +141,9 @@ export class RewardRepository implements RewardStore {
         periodStart: rewardEvaluations.periodStart,
         status: rewardEvaluations.status,
         amountMinor: rewardEvaluations.amountMinor,
+        adjustedAmountMinor: rewardEvaluations.adjustedAmountMinor,
+        decidedByUserId: rewardEvaluations.decidedByUserId,
+        decisionNote: rewardEvaluations.decisionNote,
         version: rewardEvaluations.version,
       })
       .from(rewardEvaluations)
@@ -158,6 +161,22 @@ export class RewardRepository implements RewardStore {
           eq(rewardEvaluations.id, evaluationId),
           eq(rewardEvaluations.version, expectedVersion),
           eq(rewardEvaluations.status, 'pending_review'),
+        ),
+      )
+      .returning({ id: rewardEvaluations.id });
+    return rows.length > 0;
+  }
+
+  /** A challenge correction: only settled evaluations, only at the expected version. */
+  async correctEvaluation(evaluationId: string, expectedVersion: number, decision: RewardDecision) {
+    const rows = await this.db
+      .update(rewardEvaluations)
+      .set({ ...decision, version: sql`${rewardEvaluations.version} + 1`, updatedAt: new Date() })
+      .where(
+        and(
+          eq(rewardEvaluations.id, evaluationId),
+          eq(rewardEvaluations.version, expectedVersion),
+          inArray(rewardEvaluations.status, ['ineligible', 'approved', 'rejected']),
         ),
       )
       .returning({ id: rewardEvaluations.id });

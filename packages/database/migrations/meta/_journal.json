@@ -57,6 +57,13 @@
       "when": 1792590408943,
       "tag": "0007_planning_flexibility",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792590548668,
+      "tag": "0008_fair_rewards",
+      "breakpoints": true
     }
   ]
 }

@@ -10,8 +10,11 @@ import {
 import {
   type DatabaseConnection,
   loadApprovalsReport,
+  loadDelaysReport,
   loadDeliveryReport,
+  loadEstimatesReport,
   loadLeaveReport,
+  loadReworkReport,
   loadWorkloadReport,
   managesAnyProject,
 } from '@lintel/database';
@@ -70,6 +73,24 @@ export class ReportRunner {
       ...sources,
       audience: await this.audience(context, plan),
     });
+  }
+
+  async estimates(context: RequestContext, query: ReportQuery) {
+    const { plan, settings, sources } = await this.plan(context, query);
+    return loadEstimatesReport(this.database.db, plan, {
+      ...sources,
+      workTrackingEnabled: settings.workTrackingEnabled,
+    });
+  }
+
+  async rework(context: RequestContext, query: ReportQuery) {
+    const { plan, sources } = await this.plan(context, query);
+    return loadReworkReport(this.database.db, plan, sources);
+  }
+
+  async delays(context: RequestContext, query: ReportQuery) {
+    const { plan, sources } = await this.plan(context, query);
+    return loadDelaysReport(this.database.db, plan, sources);
   }
 
   /** The studio timezone, for formatting instants in exports. */

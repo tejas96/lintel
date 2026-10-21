@@ -31,9 +31,14 @@ reviewer can check each one.
   the actor comes from the verified session.
 - Sensitive fields are filtered on the server: budgets and project costs
   (`projects.manage_any`, or the project's own manager or owner — see
-  `canSeeProjectFinances`), reward amounts (the person or `rewards.view_all`),
+  `canSeeProjectFinances`), reward amounts (the person or `rewards.view_all`;
+  planners see the milestone reward amount they attach),
   phone numbers always masked in directory views. Cost entries are audited and
   never written to the project activity feed, which every member can read.
+- Reward challenges: only the person a record is about (or a member of its team)
+  may challenge it — anyone else gets 404; only `rewards.decide` answers, never the
+  person who raised it or anyone the record is about; a correction can only grant or
+  raise a reward. Nobody decides their own milestone reward.
 - Reports: `dashboard.view_business` sees the studio; project managers only the
   projects they manage (a project filter outside them answers 404); leave in a
   manager's reports is limited to the people their leave and capacity rights
@@ -147,6 +152,7 @@ probed as a non-member returned 404. Findings and their status:
 | Error logs could include SQL parameters | Low | **Fixed** — parameters stripped |
 | Confidential attachment names visible in task detail | Low | **Fixed** for task attachments |
 | Reward amounts readable in the audit log by administrators | Low | **Fixed** — redacted without `rewards.view_all` |
+| Nested reward amounts (challenge snapshots, milestone shares) in the audit log | Low | **Fixed** — redaction now applies at any depth, with notes and reasons |
 
 ### Known residual risks (accepted for Phase 1, tracked)
 

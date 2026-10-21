@@ -15,7 +15,9 @@ import type { CapacityReadStore } from '../operations/capacity.store';
 import type { PeopleStore } from '../people/people.store';
 import type { ProjectStore } from '../projects/project.store';
 import type { ReassignmentStore } from '../reassignments/reassignment.store';
+import type { MilestoneRewardStore } from '../rewards/milestone-reward.store';
 import type { RewardStore } from '../rewards/reward.store';
+import type { RewardChallengeStore } from '../rewards/reward-challenge.store';
 import type { ScopeChangeStore } from '../scope-changes/scope-change.store';
 import type { SettingsStore } from '../settings/settings.store';
 import type { TaskStore } from '../tasks/task.store';
@@ -44,6 +46,8 @@ export interface ApplicationStores {
   readonly records: RecordStore;
   readonly scopeChanges: ScopeChangeStore;
   readonly rewards: RewardStore;
+  readonly milestoneRewards: MilestoneRewardStore;
+  readonly rewardChallenges: RewardChallengeStore;
   readonly settings: SettingsStore;
   readonly templates: TemplateStore;
   readonly tasks: TaskStore;

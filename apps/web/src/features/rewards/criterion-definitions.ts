@@ -1,5 +1,9 @@
 import type { RewardPolicy } from '@lintel/api-contracts';
-import { REWARD_CRITERION_LABELS, type RewardCriterionType } from '@lintel/domain';
+import {
+  describeRewardCriterion,
+  REWARD_CRITERION_LABELS,
+  type RewardCriterionType,
+} from '@lintel/domain';
 
 export type Criterion = RewardPolicy['criteria'][number];
 
@@ -171,25 +175,7 @@ export function buildCriterion(draft: CriterionDraft): BuiltCriterion {
   }
 }
 
-const percent = (rate: number) => `${Math.round(rate * 100)}%`;
-const count = (value: number, one: string, many: string) => `${value} ${value === 1 ? one : many}`;
-
 /** One plain sentence for a criterion, e.g. "At least 85% of tasks on time, out of 3 or more". */
 export function describeCriterion(criterion: Criterion): string {
-  switch (criterion.type) {
-    case 'on_time_delivery_rate':
-      return `At least ${percent(criterion.minimumRate)} of tasks on time, out of ${criterion.minimumTasks} or more`;
-    case 'first_pass_approval_rate':
-      return `At least ${percent(criterion.minimumRate)} approved first time, out of ${criterion.minimumReviews} or more reviews`;
-    case 'milestones_delivered_on_time':
-      return `At least ${count(criterion.minimumCount, 'milestone', 'milestones')} delivered on time`;
-    case 'proactive_blocker_reporting':
-      return `At least ${count(criterion.minimumCount, 'blocker', 'blockers')} raised ${count(criterion.leadDays, 'day', 'days')} or more before the due date`;
-    case 'collaboration':
-      return `Helped on at least ${count(criterion.minimumTasks, 'task', 'tasks')} owned by others`;
-    case 'process_compliance_rate':
-      return `At least ${percent(criterion.minimumRate)} of tasks finished with the checklist complete, out of ${criterion.minimumTasks} or more`;
-    case 'on_time_improvement':
-      return `On-time delivery up by at least ${count(criterion.minimumPercentagePoints, 'point', 'points')} on the previous period`;
-  }
+  return describeRewardCriterion(criterion);
 }

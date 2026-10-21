@@ -90,9 +90,12 @@ export function ReviewQueue() {
               {evaluation.status === 'pending_review' && (
                 <DecideRewardForm
                   key={evaluation.version}
-                  evaluation={evaluation}
-                  mutation={decide}
+                  amountMinor={evaluation.amountMinor}
+                  busy={decide.isPending && decide.variables?.evaluation.id === evaluation.id}
                   blocked={staleness.stale}
+                  onDecide={(input, onFailure) =>
+                    decide.mutate({ evaluation, ...input }, { onError: onFailure })
+                  }
                 />
               )}
             </EvaluationCard>
