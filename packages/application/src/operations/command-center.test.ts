@@ -58,6 +58,15 @@ describe('command center scope', () => {
       planCommandCenter(ctx('owner').actor, { from: '2026-10-22', to: '2026-10-21' }, today, false),
     ).toThrow(expect.objectContaining({ code: 'VALIDATION_FAILED' }));
   });
+
+  it('ends the delivery trend with the period, never after today', () => {
+    const owner = ctx('owner').actor;
+    expect(planCommandCenter(owner, {}, today, false).trendEndsOn).toBe('2026-10-21');
+    const past = { from: '2024-01-01', to: '2024-01-31' };
+    expect(planCommandCenter(owner, past, today, false).trendEndsOn).toBe('2024-01-31');
+    const ahead = { from: '2026-10-01', to: '2026-11-30' };
+    expect(planCommandCenter(owner, ahead, today, false).trendEndsOn).toBe('2026-10-21');
+  });
 });
 
 describe('command center formulas', () => {

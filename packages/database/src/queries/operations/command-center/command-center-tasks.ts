@@ -1,4 +1,4 @@
-import type { CommandCenterPlan, CompletionFact } from '@lintel/application';
+import { type CommandCenterPlan, type CompletionFact, isoWeekSpanOf } from '@lintel/application';
 import { OPEN_TASK_STATUSES } from '@lintel/domain';
 import {
   addDays,
@@ -67,7 +67,7 @@ export async function completionFacts(
   timeZone: string,
 ): Promise<CompletionFact[]> {
   if (scope.projectIds.length === 0) return [];
-  const trendStart = addDays(plan.week.start, -7 * (plan.trendWeeks - 1));
+  const trendStart = addDays(isoWeekSpanOf(plan.trendEndsOn).start, -7 * (plan.trendWeeks - 1));
   const since = minCalendarDate(plan.previousRange.start, trendStart);
   const until = addDays(plan.range.end > plan.today ? plan.range.end : plan.today, 1);
   const rows = await db

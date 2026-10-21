@@ -17,6 +17,8 @@ export function CommandCenterKpis({
 }) {
   const { kpis, team } = data;
   const needAttention = kpis.projectsAtRisk.value + kpis.projectsOffTrack.value;
+  // With nothing finished in the period there is no rate: show "–", never "0%" or a change.
+  const deliveredAny = (kpis.onTimeDeliveryRate.sampleSize ?? 0) > 0;
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <KpiTile
@@ -44,15 +46,15 @@ export function CommandCenterKpis({
         label="Delivered on time"
         className="order-first col-span-2 xl:order-none xl:col-span-1"
         value={kpis.onTimeDeliveryRate.value}
-        previousValue={kpis.onTimeDeliveryRate.previousValue}
-        format={percent}
+        previousValue={deliveredAny ? kpis.onTimeDeliveryRate.previousValue : null}
+        format={(value) => (deliveredAny ? percent(value) : '–')}
         detail={
-          kpis.onTimeDeliveryRate.sampleSize
+          deliveredAny
             ? `${kpis.onTimeDeliveryRate.sampleSize} tasks finished in this period`
-            : 'Nothing finished in this period yet'
+            : `Nothing finished in this period${data.range.end >= today ? ' yet' : ''}`
         }
         chart={
-          data.deliveryTrend.length > 0 && (
+          data.deliveryTrend.some((week) => week.onTime + week.late > 0) && (
             <TrendBars
               label="Tasks finished on time and late, by week"
               goodLabel="On time"
