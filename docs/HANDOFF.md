@@ -4,7 +4,7 @@
 
 **Lintel**, a business operations platform for interior design and architecture studios:
 
-- **API** (NestJS) — 134 contract routes plus file-download and CSV routes; everything
+- **API** (NestJS) — 141 contract routes plus file-download and CSV routes; everything
   except sign-in and health checks needs a session and passes permission checks.
 - **Background worker** (Temporal) — deadline reminders, escalations, review and blocker
   follow-ups, leave reassessment, push / SMS / email delivery, a daily email digest, a
@@ -33,6 +33,21 @@ built, merged into `main` and tested:
 - **Docs** — `docs/` (start with `README.md` and `docs/IMPLEMENTATION_PLAN.md`).
 
 All code is committed on `main` (local git, nothing pushed anywhere).
+
+## Evening update — planning flexibility (branch `claude/keen-bardeen-6da0eb`)
+
+- Tasks can be due at a set time (for example 11:00); Today, reminders and every task screen
+  use it.
+- New projects get a **Plan** step: leave out or add stages and tasks, change dates and
+  lengths, choose a person per task, and watch the plan and end date update live.
+- Scope changes can carry a cost and a fee (seen only by people who see the budget) and can
+  wait for the client's sign-off (who, when, how). Approval puts the cost on the cost
+  ledger and adds the fee to the budget.
+- Project managers drag task bars on the Timeline (or use the keyboard) and see what moves
+  with them before saving; moving the agreed end becomes a scope change.
+- Short first-time tips on Today, a task, a project, leave and the command center, shown
+  once per person (Account → Tips shows them again).
+- Screenshots 131–146 in `docs/screenshots/web/`.
 
 ## Running right now
 

@@ -92,6 +92,24 @@ A review against the original requirements found gaps; all were built, merged an
 - ✅ SMS and email notifications (with daily digest) and web push, behind ports with development adapters.
 - 🟡 Live SMS, email and web push not tried: no MSG91 SMS template, SMTP server or Firebase web app yet.
 
+## Stage 10 — Planning flexibility (21 Oct, evening) ✅
+
+Built on branch `claude/keen-bardeen-6da0eb` (migration `0006_planning_flexibility`).
+
+- ✅ Optional due time on tasks (studio time): Today's order and overdue flags, the deadline
+  reminders (overdue at the due time) and every task screen on web and phone use it.
+- ✅ Tailor a project before it starts: the wizard's Plan step leaves out or adds stages and
+  tasks, changes start dates and lengths and picks a person per task, with a live plan
+  preview and end date from the same plan builder that creates the project.
+- ✅ Scope changes carry a cost (to the cost ledger on approval) and a fee (added to the
+  budget), seen only by budget viewers, and can require the client's sign-off (who, when,
+  how; every record kept) before approval.
+- ✅ Drag to reschedule on the timeline (and the keyboard alternative): the knock-on is
+  shown before saving; committed dates keep a reason and history; a move of the agreed
+  end becomes a scope change.
+- ✅ First-run tips per role on Today, a task, the project control room, leave and the
+  command center, stored per person (seen once on any device); "Show tips again" in Account.
+
 ## Known external blockers
 
 | Item | Needs |

@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { DropdownMenu } from 'radix-ui';
 import type { PointerEvent } from 'react';
 import { TASK_STATUS_PRESENTATION, TaskNumber } from '@/features/tasks/task-presentation';
-import { describeDue } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 import { legalTargets } from './use-board-move';
 
 interface BoardCardProps {
@@ -23,7 +23,7 @@ interface BoardCardProps {
 
 /** A task card: drag it to a column, or use "Move to" from the keyboard or a phone. */
 export function BoardCard({ task, today, dragging, onPointerDown, onMove }: BoardCardProps) {
-  const due = task.dueDate ? describeDue(task.dueDate, today) : null;
+  const due = describeTaskDue(task, today);
   return (
     <motion.li
       layout

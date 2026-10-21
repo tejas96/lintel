@@ -115,7 +115,7 @@ describe('deadline activities', () => {
       'due_date_changed',
     );
     expect(await fake.activities.sendDeadlineStep('task-1', '2026-11-09T15:00', step)).toBe('sent');
-    expect(fake.stores.notifications.created[0]?.body).toContain('Mon 9 Nov at 15:00');
+    expect(fake.stores.notifications.created[0]?.body).toContain('Mon 9 Nov at 3:00 pm');
   });
 
   it('reports a closed or archived task so the workflow can stop', async () => {

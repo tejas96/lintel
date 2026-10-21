@@ -4,6 +4,7 @@ import type { TaskDetail } from '@lintel/api-contracts';
 import { AvatarStack, Card } from '@lintel/design-system/web';
 import { useState } from 'react';
 import { TaskDeliverables } from '@/features/deliverables/task-deliverables';
+import { FirstRunTip } from '@/features/guidance/first-run-tip';
 import { EditTaskButton } from '../edit/edit-task-sheet';
 import { ReportBlockerSheet } from '../report-blocker-sheet';
 import { DetailSection } from './detail-section';
@@ -85,6 +86,7 @@ export function TaskDetailBody({
     <>
       {layout === 'drawer' ? (
         <div className="flex flex-col gap-8 p-5 sm:p-6">
+          <FirstRunTip tip="task" className="-mb-4" />
           <TaskTransitions task={task} onReportBlocker={report} />
           <div className="flex flex-col gap-3">
             <TaskFacts task={task} today={today} />
@@ -95,6 +97,7 @@ export function TaskDetailBody({
         </div>
       ) : (
         <div className="flex flex-col gap-8">
+          <FirstRunTip tip="task" className="-mb-4" />
           <TaskTransitions task={task} onReportBlocker={report} />
           <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="flex min-w-0 flex-col gap-10">{main}</div>

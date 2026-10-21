@@ -1,6 +1,6 @@
 'use client';
 
-import type { ScopeChangeDetail } from '@lintel/api-contracts';
+import type { ProjectDetail, ScopeChangeDetail } from '@lintel/api-contracts';
 import {
   Avatar,
   Button,
@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 import { formatRelativeInstant } from '@/lib/format/dates';
 import { additionRowsOf, ScopeAdditions } from './scope-additions';
+import { ScopeChangeTerms } from './scope-change-terms';
 import { ScopeImpacts } from './scope-impacts';
 import { useScopeChangeMutations } from './use-scope-changes';
 
@@ -30,15 +31,18 @@ export function ScopeChangeCard({
   change,
   today,
   canDecide,
+  project,
 }: {
   readonly change: ScopeChangeDetail;
   readonly today: string;
   readonly canDecide: boolean;
+  readonly project: Pick<ProjectDetail, 'currency' | 'clientName' | 'viewerCanManage'>;
 }) {
   const { decide } = useScopeChangeMutations(change.projectId);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const status = STATUS[change.status];
+  const awaitingClient = change.requiresClientSignOff && change.clientSignOffs.length === 0;
   const run = (decision: 'approved' | 'rejected') => {
     if (note.trim().length < 3) {
       setError('Add a short note explaining the decision.');
@@ -71,6 +75,13 @@ export function ScopeChangeCard({
         today={today}
       />
       <ScopeAdditions {...additionRowsOf(change)} today={today} />
+      <ScopeChangeTerms
+        change={change}
+        today={today}
+        currency={project.currency}
+        clientName={project.clientName}
+        canRecordSignOff={project.viewerCanManage || canDecide}
+      />
       {change.decidedBy && (
         <p className="type-body-sm text-ink-muted">
           {status.label} by {change.decidedBy.fullName}
@@ -82,7 +93,11 @@ export function ScopeChangeCard({
         <div className="flex flex-col gap-3 border-t border-hairline pt-4">
           <Field
             label="Decision note"
-            hint="Approving applies the dates, adds and cancels the tasks together, and keeps the history."
+            hint={
+              awaitingClient
+                ? 'Approval waits for the client’s sign-off. You can reject it now.'
+                : 'Approving applies the dates, adds and cancels the tasks together, and keeps the history.'
+            }
             error={error}
             required
           >
@@ -98,6 +113,7 @@ export function ScopeChangeCard({
               variant="primary"
               size="sm"
               pending={decide.isPending && decide.variables?.decision === 'approved'}
+              disabled={awaitingClient}
               onClick={() => run('approved')}
             >
               Approve and apply

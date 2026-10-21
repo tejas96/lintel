@@ -10,7 +10,7 @@ import {
   TASK_STATUS_PRESENTATION,
   TaskStatusPill,
 } from '@/features/tasks/task-presentation';
-import { describeDue } from '@/lib/format/dates';
+import { describeTaskDue } from '@/lib/format/task-due';
 import { TaskQuickAction } from './task-quick-action';
 
 const NOTABLE_STATUSES = new Set(['blocked', 'in_review', 'changes_requested']);
@@ -43,7 +43,7 @@ export function TaskRow({
   showActions = true,
 }: TaskRowProps) {
   const status = TASK_STATUS_PRESENTATION[task.status];
-  const due = task.dueDate ? describeDue(task.dueDate, today) : null;
+  const due = describeTaskDue(task, today);
   return (
     <motion.li
       layout="position"

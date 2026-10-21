@@ -45,7 +45,7 @@ export function GanttDependencies({
   return (
     <svg
       aria-hidden
-      className="pointer-events-none absolute top-0 left-[9.5rem] sm:left-[16rem]"
+      className="pointer-events-none absolute top-0 left-(--gantt-label)"
       width={scale.width}
       height={rowCount * GANTT_ROW_HEIGHT}
     >

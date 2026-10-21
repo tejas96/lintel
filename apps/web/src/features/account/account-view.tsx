@@ -3,6 +3,7 @@
 import { PageHeader, pageEnter } from '@lintel/design-system/web';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { TipsSetting } from '@/features/guidance/tips-setting';
 import { AppearanceControls } from '@/shell/appearance-controls';
 import { ActiveSessions } from './active-sessions';
 import { NotificationSettings } from './notification-settings';
@@ -61,6 +62,13 @@ export function AccountView() {
         <div className="max-w-md rounded-lg border border-hairline bg-raised p-5">
           <AppearanceControls size="md" />
         </div>
+      </AccountSection>
+      <AccountSection
+        id="tips"
+        title="Tips"
+        description="A short tip the first time you open Today, a task, a project, leave or the command center. Each shows once, on any device."
+      >
+        <TipsSetting />
       </AccountSection>
       <AccountSection
         id="notifications"

@@ -97,7 +97,7 @@ export function previewReschedule(
       dueDate: asDate(task.dueDate),
     })),
     dependencies: facts.dependencies,
-    changes: toTaskDateChanges(changes),
+    changes: toTaskDateChanges(changes, calendar, facts),
     calendar,
     plannedEndDate: plannedEnd,
   });

@@ -100,6 +100,21 @@ compatible with the new schema for one release.
   commands; switching it off ends running sessions.
 - `tasks.escalate_after_overdue_days` is editable per task by its project manager.
 
+## Planning flexibility (migration `0006_planning_flexibility`)
+
+- `tasks.due_time` — optional `"HH:mm"` in the business timezone (CHECK: needs a due date
+  and a 24-hour time). `task_schedule_changes.previous_due_time` / `new_due_time` keep the
+  times around a move.
+- `scope_change_requests.cost_impact_minor` (> 0), `cost_category`, `fee_impact_minor`
+  (≠ 0, signed) and `requires_client_sign_off`. `scope_change_client_sign_offs` is
+  append-only (who confirmed, `method` enum meeting/email/call/message, `confirmed_on`,
+  note, who recorded it and when); the latest row counts.
+- `scope_change_task_impacts.current_start_date`, `proposed_start_date` and
+  `applies_exact_dates` (true for timeline drags: approval sets the proposed dates).
+- `project_cost_entries.scope_change_id` links the cost entry an approval writes (partial
+  unique index: at most one per scope change).
+- `user_guidance_tips (user_id, tip_key, seen_at)` — first-run tips each person has seen.
+
 ## Integration tests
 
 A second database `lintel_test` is created by `infrastructure/docker/postgres-init`.

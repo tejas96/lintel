@@ -115,7 +115,7 @@ describe('deadline escalation plan', () => {
     const overdue = steps.find((step) => step.kind === 'task_overdue');
     // 11:00 in Asia/Kolkata is 05:30 UTC.
     expect(overdue?.at.toISOString()).toBe('2026-11-09T05:30:00.000Z');
-    expect(overdue?.label).toBe('Overdue at 11:00 on the due day');
+    expect(overdue?.label).toBe('Overdue at 11:00 am on the due day');
     expect(steps.find((step) => step.audience === 'project_manager')?.at.toISOString()).toBe(
       '2026-11-10T04:00:00.000Z',
     );

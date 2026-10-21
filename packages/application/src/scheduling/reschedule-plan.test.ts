@@ -74,4 +74,30 @@ describe('previewing a timeline reschedule', () => {
       ),
     ).toThrow('Some dates cannot be used.');
   });
+
+  it('moves a date dropped on a day off to the next working day', () => {
+    const preview = previewReschedule(
+      facts,
+      // Sunday 8 Nov is not a working day: Layout starts and ends on Monday 9 Nov.
+      [{ taskId: 'layout', plannedStartDate: '2026-11-08', dueDate: '2026-11-08' }],
+      DEFAULT_WORKING_CALENDAR,
+    );
+    expect(preview.moves[0]).toMatchObject({
+      proposedStartDate: '2026-11-09',
+      proposedDueDate: '2026-11-09',
+    });
+  });
+
+  it("keeps a moved bar's length in working days when it lands on a day off", () => {
+    const preview = previewReschedule(
+      facts,
+      // Measure (Mon 2 – Tue 3, 2 working days) moved whole onto Sun 8 – Mon 9 Nov.
+      [{ taskId: 'measure', plannedStartDate: '2026-11-08', dueDate: '2026-11-09' }],
+      DEFAULT_WORKING_CALENDAR,
+    );
+    expect(preview.moves[0]).toMatchObject({
+      proposedStartDate: '2026-11-09',
+      proposedDueDate: '2026-11-10',
+    });
+  });
 });

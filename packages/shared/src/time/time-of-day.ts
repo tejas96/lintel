@@ -17,3 +17,11 @@ export function timeOfDayInTimeZone(instant: Date, timeZone: string): string {
 export function compareTimesOfDay(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
+
+/** "17:30" → "5:30 pm": how people say a studio time (minutes always shown). */
+export function spokenTimeOfDay(time: string): string {
+  if (!isTimeOfDay(time)) return time;
+  const hours = Number(time.slice(0, 2));
+  const hour = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hour}:${time.slice(3, 5)} ${hours < 12 ? 'am' : 'pm'}`;
+}

@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { FirstRunTip } from '@/features/guidance/first-run-tip';
 import { useSession } from '@/features/session/session-provider';
 import { describeError } from '@/lib/api/describe-error';
 import { todayIn } from '@/lib/format/dates';
@@ -64,6 +65,7 @@ export function ProjectRoom({
           <motion.div {...pageEnter}>
             <ProjectHeader project={project.data} today={todayIn(user.timeZone)} />
           </motion.div>
+          <FirstRunTip tip="control_room" />
           <TabNav
             label="Project sections"
             link={Link}

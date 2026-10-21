@@ -70,7 +70,15 @@ export function ScopeTab({ projectId }: { readonly projectId: string }) {
       {changes.data && changes.data.length > 0 && (
         <div className="flex flex-col gap-4">
           {changes.data.map((change) => (
-            <ScopeChangeCard key={change.id} change={change} today={today} canDecide={canDecide} />
+            <ScopeChangeCard
+              key={change.id}
+              change={change}
+              today={today}
+              canDecide={canDecide}
+              project={
+                project ?? { currency: 'INR', clientName: 'the client', viewerCanManage: false }
+              }
+            />
           ))}
         </div>
       )}

@@ -11,6 +11,7 @@ import {
 } from '@lintel/design-system/web';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
+import { FirstRunTip } from '@/features/guidance/first-run-tip';
 import { InsightFilterBar } from '@/features/insights/insight-filter-bar';
 import { useFilterOptions } from '@/features/insights/use-filter-options';
 import { useInsightFilters } from '@/features/insights/use-insight-filters';
@@ -76,6 +77,7 @@ export function CommandCenterView() {
           }
         />
       </motion.div>
+      <FirstRunTip tip="command_center" />
       <InsightFilterBar
         filters={filters}
         onChange={update}

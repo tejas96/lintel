@@ -36,8 +36,3 @@ export function minutesUntilDeadlineToday(
   const current = minutesOfDay(now.time) ?? 0;
   return deadline - current;
 }
-
-/** "11:00" → "11:00"; null → "the end of the day". Used in plain-language explanations. */
-export function describeDeadlineTime(dueTime: string | null): string {
-  return dueTime ? `at ${dueTime}` : 'by the end of the day';
-}

@@ -1,6 +1,7 @@
 import { createProjectBodySchema, type TemplateVersion } from '@lintel/api-contracts';
 import type { ProjectCriticality, ProjectRole, ProjectType } from '@lintel/domain';
 import type { z } from 'zod';
+import { EMPTY_PLAN_DRAFT, isDraftEmpty, type PlanDraft, toTailoring } from './plan-draft';
 
 export type CreateProjectBody = z.infer<typeof createProjectBodySchema>;
 
@@ -24,6 +25,8 @@ export interface WizardState {
   /** Who does the work for each project role. */
   readonly roleAssignments: Readonly<Partial<Record<ProjectRole, string>>>;
   readonly budgetRupees: string;
+  /** Changes to the template's plan (step "Plan"); reset when the template or options change. */
+  readonly plan: PlanDraft;
 }
 
 export const INITIAL_WIZARD_STATE: WizardState = {
@@ -43,9 +46,13 @@ export const INITIAL_WIZARD_STATE: WizardState = {
   managerUserId: null,
   roleAssignments: {},
   budgetRupees: '',
+  plan: EMPTY_PLAN_DRAFT,
 };
 
-export const WIZARD_STEPS = ['Basics', 'Workflow', 'Schedule and team', 'Review'] as const;
+export const WIZARD_STEPS = ['Basics', 'Workflow', 'Schedule and team', 'Plan', 'Review'] as const;
+
+/** The step where the plan is tailored and previewed. */
+export const PLAN_STEP = 3;
 
 /** Project roles the chosen template assigns work to (manager is chosen separately). */
 export function rolesInTemplate(version: TemplateVersion | undefined): ProjectRole[] {
@@ -66,15 +73,21 @@ function nullable(value: string): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
+/** The team as the API takes it: everyone chosen for a role, and the manager. */
+export function membersOf(state: WizardState): { userId: string; projectRole: ProjectRole }[] {
+  const members = Object.entries(state.roleAssignments).flatMap(([projectRole, userId]) =>
+    userId ? [{ userId, projectRole: projectRole as ProjectRole }] : [],
+  );
+  if (state.managerUserId) members.push({ userId: state.managerUserId, projectRole: 'manager' });
+  return members;
+}
+
 /** Builds and validates the request body with the API's own schema. */
 export function toCreateBody(
   state: WizardState,
 ): { ok: true; body: CreateProjectBody } | { ok: false; errors: Readonly<Record<string, string>> } {
   const rupees = state.budgetRupees.replace(/[,\s]/g, '');
-  const members = Object.entries(state.roleAssignments).flatMap(([projectRole, userId]) =>
-    userId ? [{ userId, projectRole }] : [],
-  );
-  if (state.managerUserId) members.push({ userId: state.managerUserId, projectRole: 'manager' });
+  const members = membersOf(state);
   const parsed = createProjectBodySchema.safeParse({
     name: state.name,
     clientName: state.clientName,
@@ -90,6 +103,9 @@ export function toCreateBody(
     templateOptions: state.templateOptions,
     members,
     budgetMinor: rupees === '' ? null : Math.round(Number(rupees) * 100),
+    ...(state.templateVersionId && !isDraftEmpty(state.plan)
+      ? { tailoring: toTailoring(state.plan) }
+      : {}),
   });
   if (parsed.success) return { ok: true, body: parsed.data };
   const errors: Record<string, string> = {};
@@ -116,4 +132,5 @@ export const FIELD_STEP: Readonly<Record<string, number>> = {
   plannedStartDate: 2,
   members: 2,
   budgetMinor: 2,
+  tailoring: 3,
 };

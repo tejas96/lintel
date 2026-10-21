@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { Icon } from '@/components/icon';
 import { StatusPill } from '@/components/status-pill';
-import { dueLabel } from '@/formatting/dates';
+import { taskDueLabel } from '@/formatting/dates';
 import { projectSwatch, useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
 import { OVERDUE_PRESENTATION, taskStatusPresentation } from '@/theme/status-vocabulary';
@@ -25,18 +25,19 @@ export function TaskContextLine({ task }: { readonly task: TaskSummary }) {
   );
 }
 
-/** Status pill, due date and checklist progress, wrapped onto as many lines as needed. */
+/** Status pill, due date (and time) and checklist progress, wrapped onto as many lines as needed. */
 export function TaskFacts({ task, today }: { readonly task: TaskSummary; readonly today: string }) {
   const { colors, status } = useAppTheme();
-  const dueColor = task.isOverdue ? status.overdue.fg : colors.textSecondary;
+  const due = taskDueLabel(task, today);
+  const dueColor = due.late ? status.overdue.fg : colors.textSecondary;
   return (
     <View style={styles.facts}>
       <StatusPill status={taskStatusPresentation(task.status)} />
       {task.isOverdue ? <StatusPill status={OVERDUE_PRESENTATION} /> : null}
-      <View style={styles.fact}>
+      <View style={[styles.fact, styles.shrink]}>
         <Icon name="calendar" size={13} color={dueColor} />
-        <AppText variant="label" color={dueColor}>
-          {dueLabel(task.dueDate, today)}
+        <AppText variant="label" color={dueColor} numberOfLines={1} style={styles.shrink}>
+          {due.text}
         </AppText>
       </View>
       {task.checklist.total > 0 ? (

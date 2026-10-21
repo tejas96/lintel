@@ -1,10 +1,19 @@
 import {
+  addWorkingDays,
+  nextWorkingDayOnOrAfter,
   planTaskReschedule,
   rescheduleChangeIssue,
   type TaskDateChange,
   type WorkingCalendar,
+  workingDaysInRange,
 } from '@lintel/domain';
-import { type CalendarDate, type ErrorDetail, isCalendarDate } from '@lintel/shared';
+import {
+  type CalendarDate,
+  daysBetween,
+  type ErrorDetail,
+  isCalendarDate,
+  maxCalendarDate,
+} from '@lintel/shared';
 import type { ProjectScheduleFacts } from './scope-change.store';
 import type { TaskDateRequest } from './scope-change-additions';
 import type { ScopeChangeImpactResult } from './scope-change-impact';
@@ -46,12 +55,57 @@ export function taskDateChangeIssues(
   });
 }
 
-/** Converts checked requests to domain changes (call `taskDateChangeIssues` first). */
-export function toTaskDateChanges(changes: readonly TaskDateRequest[]): TaskDateChange[] {
+type CurrentDates = ReadonlyMap<string, { start: CalendarDate | null; due: CalendarDate | null }>;
+
+/**
+ * One request on the studio calendar. A bar moved whole (same length in
+ * days) keeps its length in working days and starts on the first working day
+ * at or after where it was dropped; a resized bar snaps each end forward to a
+ * working day.
+ */
+function snapToWorkingDays(
+  calendar: WorkingCalendar,
+  start: CalendarDate,
+  due: CalendarDate,
+  current: { start: CalendarDate | null; due: CalendarDate | null } | undefined,
+): { start: CalendarDate; due: CalendarDate } {
+  const snappedStart = nextWorkingDayOnOrAfter(calendar, start);
+  const moved =
+    current?.start &&
+    current.due &&
+    daysBetween(start, due) === daysBetween(current.start, current.due);
+  if (moved && current?.start && current.due) {
+    const length = Math.max(1, workingDaysInRange(calendar, current.start, current.due).length);
+    return { start: snappedStart, due: addWorkingDays(calendar, snappedStart, length - 1) };
+  }
+  return {
+    start: snappedStart,
+    due: maxCalendarDate(snappedStart, nextWorkingDayOnOrAfter(calendar, due)),
+  };
+}
+
+/**
+ * Converts checked requests to domain changes (call `taskDateChangeIssues`
+ * first). Dates dropped on a day off move to the next working day, so a bar
+ * dragged onto a Sunday starts on Monday — and a moved bar keeps its length.
+ */
+export function toTaskDateChanges(
+  changes: readonly TaskDateRequest[],
+  calendar: WorkingCalendar,
+  facts?: Pick<ProjectScheduleFacts, 'tasks'>,
+): TaskDateChange[] {
+  const current: CurrentDates = new Map(
+    (facts?.tasks ?? []).map((task) => [
+      task.id,
+      { start: asDate(task.plannedStartDate), due: asDate(task.dueDate) },
+    ]),
+  );
   return changes.flatMap((change) => {
     const start = asDate(change.plannedStartDate);
     const due = asDate(change.dueDate);
-    return start && due ? [{ taskId: change.taskId, plannedStartDate: start, dueDate: due }] : [];
+    if (!start || !due) return [];
+    const snapped = snapToWorkingDays(calendar, start, due, current.get(change.taskId));
+    return [{ taskId: change.taskId, plannedStartDate: snapped.start, dueDate: snapped.due }];
   });
 }
 
@@ -74,7 +128,7 @@ export function exactDateImpact(
       dueDate: asDate(task.dueDate),
     })),
     dependencies: facts.dependencies,
-    changes: toTaskDateChanges(changes),
+    changes: toTaskDateChanges(changes, calendar, facts),
     calendar,
     plannedEndDate: plannedEnd ?? ('9999-12-31' as CalendarDate),
   });

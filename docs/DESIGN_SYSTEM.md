@@ -58,7 +58,8 @@ phones), `Popover`, `Tooltip`, toasts (`ToastProvider`, `useToast`). Data: `Badg
 `AvatarStack`, `ProgressRing`, `StageTracker`, `KpiTile` (count-up), `Sparkline`,
 `TrendBars`, `ActivityFeed`, `ApprovalCard`. Timeline: `MilestoneTimeline`,
 `createTimelineScale`, `GanttChart`, `GanttRow`, `GanttBar`, `GanttMilestoneMark`,
-`GanttDependencies`. Feedback: `EmptyState` + `LineDrawing` (architectural line art),
+`GanttDependencies`, `GanttEditableBar` (drag to move, drag an end to resize, keyboard),
+`GanttDateLines` (agreed and proposed end lines). Feedback: `EmptyState` + `LineDrawing` (architectural line art),
 `ErrorState` (shows the request id), `Skeleton`/`SkeletonGroup` (shimmer only after
 300 ms). Layout: `Card`, `CardHeader`, `PageHeader`, `Tabs`, `TabNav` (routed tabs),
 `SegmentedControl`, `ResponsiveTable` (table on wide screens, cards on phones).
@@ -165,3 +166,26 @@ tokens at AA contrast on every surface of their theme.
   hatched overflow past the budget; the indicator is always a `StatusPill` (colour,
   glyph, word). Money is Indian-grouped (`₹43,68,000`), whole rupees drop the paise.
   The cost ledger never edits: voided entries stay, struck through, with who and why.
+- **Timeline rescheduling** (`features/projects/room/`): `GanttEditableBar` follows the
+  pointer day by day (a 4 px threshold keeps clicks opening the task; the click that ends
+  a drag is swallowed, including React's `onClick`), shows its dates in a dark chip, and
+  leaves a dashed outline where it was. On drop the server previews the knock-on and every
+  moved bar slides to its proposed place with the layout spring (accent ring, dashed "was"
+  outline), the agreed end is a dashed line and a moved end a solid at-risk line. The
+  review floats as a compact bar at the bottom (summary, folded details, one-line reason,
+  Put it back / Apply), and the reviewed bar is scrolled to the middle of the screen so it
+  stays visible above it. `GanttChart` wraps its rows in a `layoutRoot`, so content added
+  above the chart never makes bars animate. `focusDate` opens a chart on a date other than
+  today; `labelWidth="compact"` narrows the name column (`--gantt-label`).
+- **Plan tailoring** (`features/projects/new/`): the wizard's Plan step keeps the draft in
+  `plan-draft.ts`, asks the server to date it after a 220 ms pause (`use-plan-preview.ts`,
+  compared as text so equal requests are never refetched), and merges template, draft and
+  preview in `plan-outline.ts`. The summary's dates slide when they change; the side
+  timeline uses the month scale and stays in view while the list scrolls.
+- **First-run tips** (`features/guidance/`): `FirstRunTip` decides once per visit whether
+  to show, marks the tip seen on the server at once, and folds away when dismissed; it sits
+  in the page flow (a `section`, not an `aside`, so it is not a stray landmark).
+- **Due times** read the way people say them ("5:30 pm") everywhere, from one shared
+  helper (`spokenTimeOfDay`). On Today, a top task due today at a time swaps the day ruler
+  for an hour ruler (Now, Due, time left), whose labels never overlap the hour numbers.
+

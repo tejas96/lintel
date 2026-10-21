@@ -1,4 +1,4 @@
-import { type CalendarDate, daysBetween, isCalendarDate } from '@lintel/shared';
+import { type CalendarDate, daysBetween, isCalendarDate, spokenTimeOfDay } from '@lintel/shared';
 
 const LOCALE = 'en-IN';
 
@@ -52,13 +52,18 @@ function asCalendarDate(value: string): CalendarDate | null {
   return isCalendarDate(value) ? value : null;
 }
 
+/** Whole days from `today` to `date`; null when either is not a calendar date. */
+function dayDistance(date: string, today: string): number | null {
+  const target = asCalendarDate(date);
+  const now = asCalendarDate(today);
+  return target && now ? daysBetween(now, target) : null;
+}
+
 /** "Due today", "Due tomorrow", "Due Thu, 23 Oct", "2 days overdue". */
 export function dueLabel(dueDate: string | null, today: string): string {
   if (!dueDate) return 'No due date';
-  const due = asCalendarDate(dueDate);
-  const now = asCalendarDate(today);
-  if (!due || !now) return `Due ${formatShortDate(dueDate)}`;
-  const days = daysBetween(now, due);
+  const days = dayDistance(dueDate, today);
+  if (days === null) return `Due ${formatShortDate(dueDate)}`;
   if (days === 0) return 'Due today';
   if (days === 1) return 'Due tomorrow';
   if (days === -1) return '1 day overdue';
@@ -68,14 +73,55 @@ export function dueLabel(dueDate: string | null, today: string): string {
 
 /** Distance only, for use beside a printed date: "today", "in 6 days", "2 days overdue". */
 export function relativeDayLabel(date: string, today: string): string {
-  const target = asCalendarDate(date);
-  const now = asCalendarDate(today);
-  if (!target || !now) return '';
-  const days = daysBetween(now, target);
+  const days = dayDistance(date, today);
+  if (days === null) return '';
   if (days === 0) return 'today';
   if (days === 1) return 'tomorrow';
   if (days > 1) return `in ${days} days`;
   return days === -1 ? '1 day overdue' : `${-days} days overdue`;
+}
+
+/**
+ * A studio wall-clock time ("HH:mm", never shifted to the phone's timezone):
+ * "14:30" → "2:30 pm", the same words the server uses.
+ */
+export const formatTimeOfDay = spokenTimeOfDay;
+
+/** The due fields every task carries; a null time means "by the end of the working day". */
+export interface TaskDue {
+  readonly dueDate: string | null;
+  readonly dueTime: string | null;
+  readonly isOverdue: boolean;
+}
+
+export interface DueLabel {
+  readonly text: string;
+  /** Shown in the overdue tone: the server's `isOverdue`, true once the due moment has passed. */
+  readonly late: boolean;
+}
+
+/**
+ * `dueLabel` with the task's due time: "Due 11:00 am today", "Was due 11:00 am",
+ * "Due 11:00 am tomorrow", "Due Fri, 23 Oct, 11:00 am". Earlier days keep "2 days overdue".
+ */
+export function taskDueLabel(task: TaskDue, today: string): DueLabel {
+  const late = task.isOverdue;
+  const text = dueLabel(task.dueDate, today);
+  if (!task.dueDate || !task.dueTime) return { text, late };
+  const time = formatTimeOfDay(task.dueTime);
+  const days = dayDistance(task.dueDate, today);
+  if (days === 0) return { text: late ? `Was due ${time}` : `Due ${time} today`, late };
+  if (days === 1) return { text: `Due ${time} tomorrow`, late };
+  if (days === null || days > 1) return { text: `${text}, ${time}`, late };
+  return { text, late };
+}
+
+/** The printed due moment beside its distance: "Fri, 23 Oct, 11:00 am · in 2 days". */
+export function dueDateLine(task: Omit<TaskDue, 'isOverdue'>, today: string): string {
+  if (!task.dueDate) return 'No due date';
+  const time = task.dueTime ? `, ${formatTimeOfDay(task.dueTime)}` : '';
+  const relative = relativeDayLabel(task.dueDate, today);
+  return `${formatShortDate(task.dueDate)}${time}${relative ? ` · ${relative}` : ''}`;
 }
 
 const TIME = new Intl.DateTimeFormat(LOCALE, { hour: 'numeric', minute: '2-digit' });

@@ -8,6 +8,8 @@ export interface TaskEditValues {
   readonly completionCriteria: string;
   readonly plannedStartDate: string | null;
   readonly dueDate: string | null;
+  /** "HH:mm"; null = the end of the working day. */
+  readonly dueTime: string | null;
   readonly estimateHours: string;
   readonly priority: TaskPriority;
   readonly requiresReview: boolean;
@@ -21,6 +23,7 @@ export interface TaskEditChanges {
   completionCriteria?: string | null;
   plannedStartDate?: string | null;
   dueDate?: string | null;
+  dueTime?: string | null;
   estimateMinutes?: number | null;
   priority?: TaskPriority;
   requiresReview?: boolean;
@@ -40,6 +43,7 @@ export function editValuesOf(task: TaskDetail): TaskEditValues {
     completionCriteria: task.completionCriteria ?? '',
     plannedStartDate: task.plannedStartDate,
     dueDate: task.dueDate,
+    dueTime: task.dueTime,
     estimateHours: hoursText(task.estimateMinutes),
     priority: task.priority,
     requiresReview: task.requiresReview,
@@ -56,9 +60,17 @@ function estimateMinutesOf(values: TaskEditValues): number | null {
   return text === '' ? null : Math.round(Number(text) * 60);
 }
 
-/** A committed due date (anything past draft) moves only with a recorded reason. */
+/** The time that goes with the date: none once the date is cleared. */
+function dueTimeOf(values: TaskEditValues): string | null {
+  return values.dueDate ? values.dueTime : null;
+}
+
+/** A committed deadline (date or time, anything past draft) moves only with a recorded reason. */
 export function dueDateMoves(task: TaskDetail, values: TaskEditValues): boolean {
-  return task.status !== 'draft' && values.dueDate !== task.dueDate;
+  return (
+    task.status !== 'draft' &&
+    (values.dueDate !== task.dueDate || dueTimeOf(values) !== task.dueTime)
+  );
 }
 
 /** Only what changed, so a save never overwrites someone else's edit by accident. */
@@ -72,6 +84,7 @@ export function changesOf(task: TaskDetail, values: TaskEditValues): TaskEditCha
   if (values.plannedStartDate !== task.plannedStartDate)
     changes.plannedStartDate = values.plannedStartDate;
   if (values.dueDate !== task.dueDate) changes.dueDate = values.dueDate;
+  if (dueTimeOf(values) !== task.dueTime) changes.dueTime = dueTimeOf(values);
   const estimate = estimateMinutesOf(values);
   if (estimate !== task.estimateMinutes) changes.estimateMinutes = estimate;
   if (values.priority !== task.priority) changes.priority = values.priority;
@@ -102,7 +115,8 @@ export function checkTaskEdit(task: TaskDetail, values: TaskEditValues) {
       errors.dueDate = 'Choose a date instead of clearing it.';
     }
     if (values.scheduleChangeReason.trim().length < 3) {
-      errors.scheduleChangeReason = 'Say why the committed date moves. It stays in the history.';
+      errors.scheduleChangeReason =
+        'Say why the committed deadline moves. It stays in the history.';
     }
   }
   return errors;

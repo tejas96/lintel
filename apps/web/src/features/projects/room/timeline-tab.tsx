@@ -2,42 +2,40 @@
 
 import {
   Button,
-  cn,
   createTimelineScale,
   EmptyState,
-  GanttBar,
-  GanttChart,
-  GanttDependencies,
-  GanttMilestoneMark,
-  GanttRow,
   SegmentedControl,
   Skeleton,
   SkeletonGroup,
   type TimelineZoom,
+  useCalmMotion,
 } from '@lintel/design-system/web';
 import { useQueries } from '@tanstack/react-query';
-import { ChevronRight } from 'lucide-react';
+import { Move } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
-import { TASK_STATUS_PRESENTATION } from '@/features/tasks/task-presentation';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { todayIn } from '@/lib/format/dates';
 import { queryKeys } from '@/lib/query/query-keys';
-import { buildLinks, buildTimelineRows, taskTone, timelineRange } from './timeline-rows';
+import { ReschedulePanel } from './reschedule-panel';
+import { TimelineChart } from './timeline-chart';
+import { buildLinks, buildTimelineRows, timelineRange } from './timeline-rows';
 import { useProject, useProjectTasks } from './use-project-room';
+import { useTimelineReschedule } from './use-timeline-reschedule';
 
-const STAGE_TONE = {
-  completed: 'done',
-  active: 'neutral',
-  pending: 'neutral',
-  skipped: 'neutral',
-} as const;
+const DAY_WIDTH: Readonly<Record<TimelineZoom, number>> = { week: 32, month: 9 };
 
-/** Gantt of the project: stages that fold, task bars, dependency lines and a today line. */
+/**
+ * Gantt of the project: stages that fold, task bars, dependency lines and a
+ * today line. Project managers drag bars to reschedule and see the knock-on
+ * before anything is saved; the keyboard does the same from a focused bar.
+ */
 export function TimelineTab({ projectId }: { readonly projectId: string }) {
   const { user } = useSession();
   const router = useRouter();
+  const hintId = useId();
   const today = todayIn(user.timeZone);
   const project = useProject(projectId).data;
   const tasks = useProjectTasks(projectId);
@@ -48,13 +46,10 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
     // Finished stages start folded so the chart opens on the work still to do.
     if (!project || foldedFinished.current) return;
     foldedFinished.current = true;
-    setCollapsed(
-      new Set(
-        project.stages.filter((stage) => stage.status === 'completed').map((stage) => stage.id),
-      ),
-    );
+    setCollapsed(new Set(project.stages.filter((s) => s.status === 'completed').map((s) => s.id)));
   }, [project]);
-  const taskIds = (tasks.data?.items ?? []).slice(0, 60).map((task) => task.id);
+  const items = tasks.data?.items ?? [];
+  const taskIds = items.slice(0, 60).map((task) => task.id);
   const details = useQueries({
     queries: taskIds.map((id) => ({
       queryKey: queryKeys.task(id),
@@ -67,6 +62,16 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
     () => (project && tasks.data ? buildTimelineRows(project, tasks.data.items, collapsed) : null),
     [project, tasks.data, collapsed],
   );
+  const reschedule = useTimelineReschedule(project, items, DAY_WIDTH[zoom], today);
+  const calm = useCalmMotion();
+  const reviewedId = reschedule.reviewing ? reschedule.edit?.taskId : undefined;
+  useEffect(() => {
+    // Keep the moved bar in view above the floating review.
+    if (!reviewedId) return;
+    document
+      .querySelector(`[data-gantt-key="${reviewedId}"]`)
+      ?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: calm ? 'auto' : 'smooth' });
+  }, [reviewedId, calm]);
 
   if (!project || tasks.isPending || !built) {
     return (
@@ -86,7 +91,11 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
   }
   const range = timelineRange(project, built.rows);
   const scale = createTimelineScale(range.start, range.end, zoom);
-  const links = buildLinks(built.rows, loadedDetails);
+  // Links follow the bars as they are dragged or proposed.
+  const shownRows = built.rows.map((row) =>
+    row.kind === 'task' ? { ...row, ...reschedule.shownDates(row) } : row,
+  );
+  const links = buildLinks(shownRows, loadedDetails);
   const toggle = (stageId: string) =>
     setCollapsed((current) => {
       const next = new Set(current);
@@ -95,6 +104,7 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
       return next;
     });
   const stageIds = project.stages.map((stage) => stage.id);
+  const canEdit = project.viewerCanManage;
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,82 +134,62 @@ export function TimelineTab({ projectId }: { readonly projectId: string }) {
           </Button>
         </div>
       </div>
-      <GanttChart
+      {canEdit && (
+        <p id={hintId} className="flex items-start gap-2 type-body-sm text-ink-muted">
+          <Move aria-hidden className="mt-0.5 size-4 shrink-0 text-ink-faint" />
+          <span className="pointer-coarse:hidden">
+            Drag a bar to move it, or drag its ends to change its dates. With the keyboard, focus a
+            bar and use ← → to move it, Shift + ← → for its end, Alt + ← → for its start, then
+            Enter. You see what follows before anything is saved.
+          </span>
+          <span className="hidden pointer-coarse:inline">
+            On a touch screen, open a task to change its dates. On a computer you can drag the bars
+            and see what follows before anything is saved.
+          </span>
+        </p>
+      )}
+      <TimelineChart
+        project={project}
+        rows={built.rows}
         scale={scale}
         today={today}
-        label={`Timeline for ${project.name}`}
-        overlay={<GanttDependencies scale={scale} links={links} rowCount={built.rows.length} />}
-      >
-        {built.rows.map((row, index) =>
-          row.kind === 'stage' ? (
-            <GanttRow
-              key={row.id}
-              depth={0}
-              label={
-                <button
-                  type="button"
-                  aria-expanded={!collapsed.has(row.id)}
-                  onClick={() => toggle(row.id)}
-                  className="flex min-h-9 min-w-0 items-center gap-1.5 rounded-sm text-left"
-                >
-                  <ChevronRight
-                    aria-hidden
-                    className={cn(
-                      'size-4 shrink-0 text-ink-faint transition-transform duration-(--duration-base)',
-                      !collapsed.has(row.id) && 'rotate-90',
-                    )}
-                  />
-                  <span className="truncate">{row.stage.name}</span>
-                  <span className="shrink-0 font-normal text-ink-faint tabular-nums">
-                    {row.taskCount}
-                  </span>
-                </button>
-              }
-              className="bg-sunken/40"
-            >
-              {row.stage.plannedStartDate && row.stage.plannedEndDate && (
-                <GanttBar
-                  scale={scale}
-                  start={row.stage.plannedStartDate}
-                  end={row.stage.plannedEndDate}
-                  tone={STAGE_TONE[row.stage.status]}
-                  title={row.stage.name}
-                  statusLabel={row.stage.status}
-                  index={index}
-                />
-              )}
-              {project.milestones
-                .filter((milestone) => milestone.stageId === row.id)
-                .map((milestone) => (
-                  <GanttMilestoneMark
-                    key={milestone.id}
-                    scale={scale}
-                    date={milestone.dueDate}
-                    label={milestone.name}
-                  />
-                ))}
-            </GanttRow>
-          ) : (
-            <GanttRow key={row.id} label={<span className="truncate">{row.task.title}</span>}>
-              <GanttBar
-                scale={scale}
-                start={row.start}
-                end={row.end}
-                tone={taskTone(row.task)}
-                title={row.task.title}
-                statusLabel={TASK_STATUS_PRESENTATION[row.task.status].label}
-                progress={
-                  row.task.checklist.total > 0
-                    ? row.task.checklist.done / row.task.checklist.total
-                    : undefined
-                }
-                index={index}
-                onSelect={() => router.push(`/tasks/${row.task.id}`)}
-              />
-            </GanttRow>
-          ),
+        links={links}
+        collapsed={collapsed}
+        onToggleStage={toggle}
+        canEdit={canEdit}
+        shownDates={reschedule.shownDates}
+        dateLines={reschedule.dateLines}
+        hintId={hintId}
+        onOpen={(taskId) => router.push(`/tasks/${taskId}`)}
+        onBarPointerDown={(row, part, event) => {
+          // One change at a time: finish or put back the one being reviewed first.
+          if (reschedule.reviewing) return;
+          reschedule.startDrag({ id: row.task.id, start: row.start, end: row.end }, part, event);
+        }}
+        onBarKeyDown={(row, event) => {
+          if (reschedule.reviewing) return;
+          reschedule.keyDown({ id: row.task.id, start: row.start, end: row.end }, event);
+        }}
+      />
+      {/* The review floats over the page, so the chart stays put and its bars can be seen moving. */}
+      <AnimatePresence>
+        {reschedule.reviewing && reschedule.editedTask && (
+          <div className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-2xl sm:bottom-6">
+            <ReschedulePanel
+              key={reschedule.edit?.taskId}
+              taskTitle={reschedule.editedTask.title}
+              preview={reschedule.preview.data}
+              previewError={reschedule.preview.error}
+              saving={reschedule.saving}
+              saveError={reschedule.saveError}
+              today={today}
+              onCancel={reschedule.cancel}
+              onApply={reschedule.apply}
+              onPropose={reschedule.propose}
+            />
+          </div>
         )}
-      </GanttChart>
+      </AnimatePresence>
     </div>
   );
 }

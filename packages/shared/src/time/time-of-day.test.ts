@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { compareTimesOfDay, isTimeOfDay, timeOfDayInTimeZone } from './time-of-day';
+import {
+  compareTimesOfDay,
+  isTimeOfDay,
+  spokenTimeOfDay,
+  timeOfDayInTimeZone,
+} from './time-of-day';
 
 describe('time of day', () => {
   it('accepts 24-hour HH:mm only', () => {
@@ -22,5 +27,12 @@ describe('time of day', () => {
     expect(compareTimesOfDay('09:30', '11:00')).toBe(-1);
     expect(compareTimesOfDay('18:30', '11:00')).toBe(1);
     expect(compareTimesOfDay('11:00', '11:00')).toBe(0);
+  });
+
+  it('says times the way people do', () => {
+    expect(spokenTimeOfDay('17:30')).toBe('5:30 pm');
+    expect(spokenTimeOfDay('09:05')).toBe('9:05 am');
+    expect(spokenTimeOfDay('12:00')).toBe('12:00 pm');
+    expect(spokenTimeOfDay('00:15')).toBe('12:15 am');
   });
 });

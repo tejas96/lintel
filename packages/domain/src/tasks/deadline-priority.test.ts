@@ -50,16 +50,16 @@ describe('task deadlines with an optional due time', () => {
       at('12:15'),
     );
     expect(entry?.bucket).toBe('overdue');
-    expect(entry?.headline).toBe('Recommended because it was due today at 11:00.');
+    expect(entry?.headline).toBe('Recommended because it was due today at 11:00 am.');
   });
 
   it('adds urgency when the due time is less than two hours away', () => {
     const soon = deadlineSignal({ dueDate: today, dueTime: '11:00' }, today, at('09:45'));
     expect(soon).toMatchObject({ code: 'DUE_WITHIN_HOURS', points: 34 });
-    expect(soon?.explanation).toBe('It is due at 11:00 today, in under 2 hours.');
+    expect(soon?.explanation).toBe('It is due at 11:00 am today, in under 2 hours.');
     const later = deadlineSignal({ dueDate: today, dueTime: '17:00' }, today, at('09:45'));
     expect(later).toMatchObject({ code: 'DUE_TODAY', points: 30 });
-    expect(later?.explanation).toBe('It is due today at 17:00.');
+    expect(later?.explanation).toBe('It is due today at 5:00 pm.');
   });
 
   it('orders equal scores by due time, with no time meaning the end of the day', () => {
@@ -82,6 +82,6 @@ describe('task deadlines with an optional due time', () => {
       today,
       at('09:00'),
     );
-    expect(signal?.explanation).toBe('It is due tomorrow at 10:30.');
+    expect(signal?.explanation).toBe('It is due tomorrow at 10:30 am.');
   });
 });

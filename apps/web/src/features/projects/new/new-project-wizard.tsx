@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ErrorState, PageHeader, swapEnter, useToast } from '@lintel/design-system/web';
+import { Button, cn, ErrorState, PageHeader, swapEnter, useToast } from '@lintel/design-system/web';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -14,12 +14,14 @@ import { todayIn } from '@/lib/format/dates';
 import { queryKeys } from '@/lib/query/query-keys';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 import { StepBasics } from './step-basics';
+import { StepPlan } from './step-plan';
 import { StepReview } from './step-review';
 import { StepTeam } from './step-team';
 import { StepWorkflow } from './step-workflow';
 import {
   FIELD_STEP,
   INITIAL_WIZARD_STATE,
+  PLAN_STEP,
   toCreateBody,
   WIZARD_STEPS,
   type WizardState,
@@ -114,7 +116,12 @@ export function NewProjectWizard() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-5 py-6 md:px-10 md:py-9">
+    <div
+      className={cn(
+        'mx-auto flex w-full flex-col gap-8 px-5 py-6 transition-[max-width] duration-(--duration-slow) md:px-10 md:py-9',
+        step === PLAN_STEP ? 'max-w-7xl' : 'max-w-4xl',
+      )}
+    >
       <Link
         href="/projects"
         className="inline-flex min-h-11 items-center gap-1 self-start rounded-sm type-body-sm text-ink-muted hover:text-ink"
@@ -124,7 +131,7 @@ export function NewProjectWizard() {
       </Link>
       <PageHeader
         title="New project"
-        description="Four short steps. A template lays out the stages, tasks and dates for you."
+        description="Five short steps. A template lays out the stages, tasks and dates; tailor them before you start."
       />
       <WizardStepper current={step} onSelect={goTo} />
       <AnimatePresence mode="wait" initial={false}>
@@ -139,7 +146,10 @@ export function NewProjectWizard() {
               today={todayIn(user.timeZone)}
             />
           )}
-          {step === 3 && <StepReview state={state} goTo={goTo} />}
+          {step === PLAN_STEP && (
+            <StepPlan state={state} update={update} today={todayIn(user.timeZone)} />
+          )}
+          {step === 4 && <StepReview state={state} goTo={goTo} />}
         </motion.section>
       </AnimatePresence>
       <div className="flex items-center justify-between gap-3 border-t border-hairline pt-6">

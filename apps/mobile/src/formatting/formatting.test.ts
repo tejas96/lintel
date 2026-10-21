@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { dueLabel, formatDateRange, relativeDayLabel } from './dates';
+import {
+  dueDateLine,
+  dueLabel,
+  formatDateRange,
+  formatTimeOfDay,
+  relativeDayLabel,
+  taskDueLabel,
+} from './dates';
 import { formatElapsed, formatHalfDayNumber, formatHalfDays, formatMinutes } from './quantities';
 
 describe('dates', () => {
@@ -15,6 +22,55 @@ describe('dates', () => {
   it('keeps calendar dates on their day in any phone timezone', () => {
     expect(formatDateRange('2026-10-26', '2026-10-28')).toBe('26 – 28 Oct');
     expect(formatDateRange('2026-10-30', '2026-11-02')).toBe('30 Oct – 2 Nov');
+  });
+});
+
+describe('due times', () => {
+  const today = '2026-10-21';
+  const dueAt = (dueDate: string, isOverdue = false) =>
+    taskDueLabel({ dueDate, dueTime: '11:00', isOverdue }, today);
+
+  it('prints a studio wall-clock time with lower-case am/pm', () => {
+    expect(formatTimeOfDay('14:30')).toBe('2:30 pm');
+    expect(formatTimeOfDay('09:05')).toBe('9:05 am');
+    expect(formatTimeOfDay('11:00')).toBe('11:00 am');
+    expect(formatTimeOfDay('12:00')).toBe('12:00 pm');
+    expect(formatTimeOfDay('00:00')).toBe('12:00 am');
+    expect(formatTimeOfDay('23:59')).toBe('11:59 pm');
+  });
+
+  it('adds the due time to the label', () => {
+    expect(dueAt('2026-10-21')).toEqual({ text: 'Due 11:00 am today', late: false });
+    expect(dueAt('2026-10-21', true)).toEqual({ text: 'Was due 11:00 am', late: true });
+    expect(dueAt('2026-10-22')).toEqual({ text: 'Due 11:00 am tomorrow', late: false });
+    expect(dueAt('2026-10-23')).toEqual({ text: 'Due Fri, 23 Oct, 11:00 am', late: false });
+    expect(dueAt('2026-10-20', true)).toEqual({ text: '1 day overdue', late: true });
+    expect(dueAt('2026-10-18', true)).toEqual({ text: '3 days overdue', late: true });
+  });
+
+  it('keeps the day wording without a time, turning late once the working day ends', () => {
+    const endOfDay = { dueDate: '2026-10-21', dueTime: null };
+    expect(taskDueLabel({ ...endOfDay, isOverdue: false }, today)).toEqual({
+      text: 'Due today',
+      late: false,
+    });
+    expect(taskDueLabel({ ...endOfDay, isOverdue: true }, today)).toEqual({
+      text: 'Due today',
+      late: true,
+    });
+    expect(taskDueLabel({ dueDate: null, dueTime: null, isOverdue: false }, today).text).toBe(
+      'No due date',
+    );
+  });
+
+  it('prints the full due moment beside its distance', () => {
+    expect(dueDateLine({ dueDate: '2026-10-23', dueTime: '14:30' }, today)).toBe(
+      'Fri, 23 Oct, 2:30 pm · in 2 days',
+    );
+    expect(dueDateLine({ dueDate: '2026-10-21', dueTime: null }, today)).toBe(
+      'Wed, 21 Oct · today',
+    );
+    expect(dueDateLine({ dueDate: null, dueTime: null }, today)).toBe('No due date');
   });
 });
 

@@ -1,4 +1,4 @@
-import { addDays, type CalendarDate, zonedTimeToInstant } from '@lintel/shared';
+import { addDays, type CalendarDate, spokenTimeOfDay, zonedTimeToInstant } from '@lintel/shared';
 import { addWorkingDays, isWorkingDay, type WorkingCalendar } from '../calendar/working-calendar';
 import type { ProjectCriticality } from '../projects/project-status';
 import { deadlineTimeOf } from '../tasks/task-deadline';
@@ -59,7 +59,9 @@ export function planDeadlineEscalation(input: DeadlineEscalationInput): Escalati
       at: zonedTimeToInstant(input.dueDate, deadlineTimeOf(dueTime, calendar.dayEndTime), zone),
       audience: 'task_owner',
       kind: 'task_overdue',
-      label: dueTime ? `Overdue at ${dueTime} on the due day` : 'Overdue at the end of the due day',
+      label: dueTime
+        ? `Overdue at ${spokenTimeOfDay(dueTime)} on the due day`
+        : 'Overdue at the end of the due day',
     },
   ];
   const managerDay = addWorkingDays(

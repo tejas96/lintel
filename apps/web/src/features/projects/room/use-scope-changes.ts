@@ -1,7 +1,7 @@
 'use client';
 
 import { useToast } from '@lintel/design-system/web';
-import type { TaskPriority } from '@lintel/domain';
+import type { ProjectCostCategory, TaskPriority } from '@lintel/domain';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { queryKeys } from '@/lib/query/query-keys';
@@ -11,6 +11,8 @@ export type TaskShift = { readonly taskId: string; readonly shiftWorkingDays: nu
 
 export interface ScopeRequest {
   readonly taskShifts: TaskShift[];
+  /** Exact dates dragged on the timeline (not together with taskShifts). */
+  readonly taskDateChanges?: { taskId: string; plannedStartDate: string; dueDate: string }[];
   readonly newTasks: {
     title: string;
     stageId: string | null;
@@ -20,6 +22,15 @@ export interface ScopeRequest {
     priority: TaskPriority;
   }[];
   readonly cancelTaskIds: string[];
+}
+
+export interface ScopeProposal extends ScopeRequest {
+  readonly title: string;
+  readonly description: string;
+  readonly requiresClientSignOff?: boolean;
+  readonly costImpactMinor?: number | null;
+  readonly costCategory?: ProjectCostCategory | null;
+  readonly feeImpactMinor?: number | null;
 }
 
 export function useScopeChanges(projectId: string) {
@@ -49,7 +60,7 @@ export function useScopeChangeMutations(projectId: string) {
     onError: (error) => fail(error, 'preview the change'),
   });
   const propose = useMutation({
-    mutationFn: (input: ScopeRequest & { title: string; description: string }) =>
+    mutationFn: (input: ScopeProposal) =>
       expectStatus(
         api.projects.proposeScopeChange({ params: { id: projectId }, body: input }),
         201,

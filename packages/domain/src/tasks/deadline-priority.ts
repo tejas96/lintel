@@ -1,4 +1,4 @@
-import { type CalendarDate, daysBetween } from '@lintel/shared';
+import { type CalendarDate, daysBetween, spokenTimeOfDay } from '@lintel/shared';
 import {
   type BusinessMoment,
   deadlineTimeOf,
@@ -28,7 +28,7 @@ export interface DeadlineSignal {
 export const DUE_WITHIN_HOURS_MINUTES = 120;
 
 function at(dueTime: string | null): string {
-  return dueTime ? ` at ${dueTime}` : '';
+  return dueTime ? ` at ${spokenTimeOfDay(dueTime)}` : '';
 }
 
 /**
@@ -53,7 +53,7 @@ function sameDaySignal(task: DeadlineFacts, clock: PriorityClock | undefined): D
       return {
         code: 'DUE_WITHIN_HOURS',
         points: 34,
-        explanation: `It is due at ${task.dueTime} today, in under ${left <= 60 ? 'an hour' : '2 hours'}.`,
+        explanation: `It is due at ${spokenTimeOfDay(task.dueTime)} today, in under ${left <= 60 ? 'an hour' : '2 hours'}.`,
       };
     }
   }
@@ -75,7 +75,9 @@ export function deadlineSignal(
   }
   if (daysLeft === 0) {
     if (isOverdueAt(task, today, clock)) {
-      const when = task.dueTime ? `at ${task.dueTime}` : 'by the end of the working day';
+      const when = task.dueTime
+        ? `at ${spokenTimeOfDay(task.dueTime)}`
+        : 'by the end of the working day';
       return { code: 'OVERDUE', points: 35, explanation: `It was due today ${when}.` };
     }
     return sameDaySignal(task, clock);
