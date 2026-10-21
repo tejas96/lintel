@@ -27,7 +27,8 @@
     "@lintel/domain": "workspace:*",
     "@lintel/shared": "workspace:*",
     "@temporalio/client": "catalog:",
-    "firebase-admin": "catalog:"
+    "firebase-admin": "catalog:",
+    "nodemailer": "10.1.7"
   },
   "devDependencies": {
     "@lintel/tsconfig": "workspace:*",

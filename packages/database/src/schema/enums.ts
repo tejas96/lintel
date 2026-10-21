@@ -91,8 +91,18 @@ export const deliveryStatusEnum = pgEnum('delivery_status', [
   'sent',
   'failed',
   'skipped',
+  // An email held for the person's daily digest.
+  'digest',
 ]);
 export const devicePlatformEnum = pgEnum('device_platform', ['ios', 'android', 'web']);
-export const pushTokenTypeEnum = pgEnum('push_token_type', ['fcm', 'apns']);
+export const pushTokenTypeEnum = pgEnum('push_token_type', ['fcm', 'apns', 'fcm_fid']);
+/** How one SMS/email send attempt ended; null on the row while it is in flight. */
+export const deliveryAttemptOutcomeEnum = pgEnum('delivery_attempt_outcome', [
+  'sent',
+  'retryable_failure',
+  'permanent_failure',
+  'not_configured',
+  'recipient_unavailable',
+]);
 export const sessionClientEnum = pgEnum('session_client', ['web', 'mobile']);
 export const priorityConflictStatusEnum = pgEnum('priority_conflict_status', ['open', 'resolved']);

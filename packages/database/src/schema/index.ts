@@ -3,6 +3,7 @@ export * from './deliverables.schema';
 export * from './enums';
 export * from './identity.schema';
 export * from './leave.schema';
+export * from './notification-channels.schema';
 export * from './notifications.schema';
 export * from './organization.schema';
 export * from './projects.schema';

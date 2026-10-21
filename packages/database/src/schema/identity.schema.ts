@@ -1,5 +1,6 @@
 import {
   type AnyPgColumn,
+  boolean,
   index,
   integer,
   pgTable,
@@ -31,6 +32,8 @@ export const users = pgTable(
     avatarHue: integer('avatar_hue').notNull().default(220),
     quietHoursStart: text('quiet_hours_start'),
     quietHoursEnd: text('quiet_hours_end'),
+    /** Non-urgent emails wait for one digest a day instead of going out one by one. */
+    emailDigestEnabled: boolean('email_digest_enabled').notNull().default(false),
     lastActiveAt: instant('last_active_at'),
     deactivatedAt: instant('deactivated_at'),
     version: version(),

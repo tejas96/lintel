@@ -426,6 +426,9 @@ importers:
         specifier: 'catalog:'
         version: 1.24.0
     devDependencies:
+      '@lintel/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
       '@lintel/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
@@ -648,6 +651,9 @@ importers:
       firebase-admin:
         specifier: 'catalog:'
         version: 14.5.0
+      nodemailer:
+        specifier: 10.1.7
+        version: 10.1.7
     devDependencies:
       '@lintel/tsconfig':
         specifier: workspace:*
@@ -5899,6 +5905,10 @@ packages:
   node-releases@2.0.59:
     resolution: {integrity: sha512-5qr2okC4ItAI0hG5SaV0HoYMpnM/Y6+Oqr7AmPYy/2uEoGvS+GbSKLeRxSS1uAdu59yz0ouzcuXievSgg///WA==}
     engines: {node: '>=18'}
+
+  nodemailer@10.1.7:
+    resolution: {integrity: sha512-OQa6FDln5fLttmqSbjDiRYvFDOFNrBqfiOwHPlEbURil3b+vPB1v8xpi+Sp46drzNDlsTnNsS502vthmz56r4w==}
+    engines: {node: '>=20.0.0'}
 
   noxcturnal@0.1.7:
     resolution: {integrity: sha512-RVIIdLx9Q6EsoHmTeg+n23ZeswbZozH3zNDXA3fw3tCS6i4PDNXhHwcNqzObDaS0Ak5BGZdOk5nb3QPl7H9r2Q==}
@@ -12746,6 +12756,8 @@ snapshots:
   node-int64@0.4.0: {}
 
   node-releases@2.0.59: {}
+
+  nodemailer@10.1.7: {}
 
   noxcturnal@0.1.7:
     dependencies:

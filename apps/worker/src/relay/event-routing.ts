@@ -1,6 +1,7 @@
 import type { OutboxRecord } from '@lintel/application';
 import type { DomainEventType } from '@lintel/domain';
 import {
+  type MessageDeliveryRequest,
   type ReviewSubject,
   SIGNALS,
   WORKFLOW_IDS,
@@ -185,6 +186,20 @@ const ROUTES: Partial<Record<DomainEventType, RouteBuilder>> = {
       WORKFLOW_TYPES.notificationDelivery,
       WORKFLOW_IDS.notification(notificationId),
       [notificationId],
+      { subjectType: 'notification', subjectId: notificationId },
+    );
+  },
+  NotificationMessageQueued: (event) => {
+    const notificationId = requiredText(event, 'notificationId');
+    const channel = requiredText(event, 'channel');
+    if (channel !== 'sms' && channel !== 'email') {
+      throw new MalformedOutboxEventError(event.eventType, 'channel');
+    }
+    const request: MessageDeliveryRequest = { notificationId, channel };
+    return startOnce(
+      WORKFLOW_TYPES.messageDelivery,
+      WORKFLOW_IDS.notificationMessage(notificationId, channel),
+      [request],
       { subjectType: 'notification', subjectId: notificationId },
     );
   },

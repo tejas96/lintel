@@ -51,6 +51,7 @@ export class BusinessContextService {
       quietHoursStart: settings.defaultQuietHoursStart,
       quietHoursEnd: settings.defaultQuietHoursEnd,
       smsConfigured: this.flags.smsNotificationsEnabled,
+      emailConfigured: this.flags.emailNotificationsEnabled,
     };
   }
 

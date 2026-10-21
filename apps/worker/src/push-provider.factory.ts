@@ -23,6 +23,7 @@ export function createPushProvider(
       projectId: env.FIREBASE_PROJECT_ID,
       clientEmail: env.FIREBASE_CLIENT_EMAIL,
       privateKey: env.FIREBASE_PRIVATE_KEY,
+      webBaseUrl: env.WEB_BASE_URL,
     });
   }
   return new LogPushProvider({ log: (message) => logger.info(message, { provider: 'log' }) });

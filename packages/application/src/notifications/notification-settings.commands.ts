@@ -19,9 +19,13 @@ export function defaultChannelPreference(channel: NotificationChannel): boolean 
 
 const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+export type EmailDigestChoice = 'off' | 'daily';
+
 export interface PreferencesInput {
   readonly quietHours: { start: string; end: string } | null;
   readonly channels: readonly ChannelPreferenceRecord[];
+  /** Left unchanged when absent (older clients do not send it). */
+  readonly emailDigest?: EmailDigestChoice | undefined;
 }
 
 type InboxStores = Pick<ApplicationStores, 'inbox' | 'records'>;
@@ -67,12 +71,18 @@ export class NotificationSettingsCommands {
       const userId = context.actor.userId;
       await stores.inbox.savePreferences(userId, input.channels);
       await stores.inbox.setQuietHours(userId, quiet?.start ?? null, quiet?.end ?? null);
+      if (input.emailDigest)
+        await stores.inbox.setEmailDigest(userId, input.emailDigest === 'daily');
       await stores.records.appendAudit({
         actorUserId: userId,
         action: 'notifications.preferences_updated',
         entityType: 'user',
         entityId: userId,
-        after: { quietHours: quiet, changedRows: input.channels.length },
+        after: {
+          quietHours: quiet,
+          changedRows: input.channels.length,
+          ...(input.emailDigest ? { emailDigest: input.emailDigest } : {}),
+        },
         requestId: context.requestId,
       });
     });

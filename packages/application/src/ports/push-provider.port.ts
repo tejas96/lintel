@@ -1,6 +1,13 @@
+/**
+ * `fcm`: an FCM registration token (Android). `fcm_fid`: a Firebase
+ * Installation ID (the web app registers with `register()`/`onRegistered()`).
+ * `apns`: a raw APNs token (iOS without the Firebase iOS SDK; never sent).
+ */
+export type PushTokenType = 'fcm' | 'fcm_fid' | 'apns';
+
 export interface PushMessage {
   readonly token: string;
-  readonly tokenType: 'fcm' | 'apns';
+  readonly tokenType: PushTokenType;
   readonly title: string;
   readonly body: string;
   /** Only an in-app path; never sensitive content. */

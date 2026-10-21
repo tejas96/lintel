@@ -3,4 +3,6 @@ export interface FeatureFlags {
   /** Always false in Phase 1. See docs/AI_PHASE_TWO.md. */
   readonly aiFeaturesEnabled: boolean;
   readonly smsNotificationsEnabled: boolean;
+  /** EMAIL_NOTIFICATIONS_ENABLED: the email channel (immediate and daily digest) is planned. */
+  readonly emailNotificationsEnabled: boolean;
 }

@@ -63,13 +63,18 @@ export const adapterFactory = {
         projectId: env.FIREBASE_PROJECT_ID,
         clientEmail: env.FIREBASE_CLIENT_EMAIL,
         privateKey: env.FIREBASE_PRIVATE_KEY,
+        webBaseUrl: env.WEB_BASE_URL,
       });
     }
     return new LogPushProvider(new Logger('Push'));
   },
 
   featureFlags(env: Environment): FeatureFlags {
-    return { aiFeaturesEnabled: false, smsNotificationsEnabled: env.SMS_NOTIFICATIONS_ENABLED };
+    return {
+      aiFeaturesEnabled: false,
+      smsNotificationsEnabled: env.SMS_NOTIFICATIONS_ENABLED,
+      emailNotificationsEnabled: env.EMAIL_NOTIFICATIONS_ENABLED,
+    };
   },
 };
 

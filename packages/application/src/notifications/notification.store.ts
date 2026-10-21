@@ -16,7 +16,8 @@ export interface NewNotification {
 
 export interface PlannedDelivery {
   readonly channel: NotificationChannel;
-  readonly status: 'pending' | 'deferred' | 'skipped';
+  /** `digest`: an email held for the person's daily digest. */
+  readonly status: 'pending' | 'deferred' | 'digest' | 'skipped';
   readonly notBefore: Date | null;
   readonly reason: string;
 }
@@ -26,6 +27,8 @@ export interface NotificationRecipientContext {
   readonly quietHoursStart: string | null;
   readonly quietHoursEnd: string | null;
   readonly hasActiveDevice: boolean;
+  /** Email facts; absent when the store does not know them (treated as no address). */
+  readonly email?: { readonly hasAddress: boolean; readonly dailyDigest: boolean };
   readonly preferences: readonly {
     kind: NotificationKind;
     channel: NotificationChannel;

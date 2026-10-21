@@ -5,6 +5,8 @@ const CACHE_MS = 30_000;
 
 export interface OrganizationContextOptions {
   readonly smsConfigured: boolean;
+  /** EMAIL_NOTIFICATIONS_ENABLED. */
+  readonly emailConfigured?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export class OrganizationContext {
       quietHoursStart: settings.defaultQuietHoursStart,
       quietHoursEnd: settings.defaultQuietHoursEnd,
       smsConfigured: this.options.smsConfigured,
+      emailConfigured: this.options.emailConfigured ?? false,
     };
   }
 }

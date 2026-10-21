@@ -1,8 +1,10 @@
 import type { BackgroundStores } from '@lintel/application';
 import type { DatabaseExecutor } from '../client';
 import { DailyOperationsRepository } from './daily-operations.repository';
+import { EmailDigestRepository } from './email-digest.repository';
 import { FollowUpRepository } from './follow-up.repository';
 import { LeaveImpactRepository } from './leave-impact.repository';
+import { MessageDeliveryRepository } from './message-delivery.repository';
 import { OutboxRelayRepository } from './outbox-relay.repository';
 import { PushDeliveryRepository } from './push-delivery.repository';
 import { WorkflowRunRepository } from './workflow-run.repository';
@@ -16,5 +18,7 @@ export function createBackgroundStores(executor: DatabaseExecutor): BackgroundSt
     leaveImpact: new LeaveImpactRepository(executor),
     pushDeliveries: new PushDeliveryRepository(executor),
     operations: new DailyOperationsRepository(executor),
+    messageDeliveries: new MessageDeliveryRepository(executor),
+    emailDigests: new EmailDigestRepository(executor),
   };
 }
