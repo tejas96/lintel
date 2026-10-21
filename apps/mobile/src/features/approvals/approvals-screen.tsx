@@ -19,6 +19,7 @@ const GROUPS: readonly { readonly type: ApprovalItem['type']; readonly title: st
   { type: 'scope_change', title: 'Scope changes' },
   { type: 'priority_conflict', title: 'Priority conflicts' },
   { type: 'reward_review', title: 'Rewards' },
+  { type: 'reassignment_request', title: 'Handover requests' },
 ];
 
 /** Everything waiting for the viewer's decision, urgent first within each kind. */
