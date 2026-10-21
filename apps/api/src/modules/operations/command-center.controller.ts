@@ -43,6 +43,7 @@ export class CommandCenterController {
         currency: settings.currency,
         viewerCapabilities: context.actor.capabilities,
         now: this.clock.now(),
+        profitabilityEnabled: settings.profitabilityEnabled,
         utilisation: (userIds, span) =>
           this.capacityQuery.rowsForUsers(userIds, {
             start: toCalendarDate(span.start),

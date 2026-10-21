@@ -15,6 +15,7 @@ const organizationSchema = z.object({
   defaultQuietHoursEnd: z.string(),
   leaveSecondApprovalAboveHalfDays: z.number().int(),
   workTrackingEnabled: z.boolean(),
+  profitabilityEnabled: z.boolean(),
 });
 
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use 24-hour HH:mm.');
@@ -35,6 +36,8 @@ export const platformContract = c.router({
       defaultQuietHoursStart: time,
       defaultQuietHoursEnd: time,
       leaveSecondApprovalAboveHalfDays: z.number().int().min(1).max(120),
+      /** Optional so older clients keep the current value. */
+      profitabilityEnabled: z.boolean().optional(),
     }),
     responses: { 200: organizationSchema },
   },

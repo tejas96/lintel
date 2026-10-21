@@ -23,10 +23,14 @@ function orderedCapabilities(granted: Iterable<Capability>): Capability[] {
 export class ManageSettingsCommands {
   constructor(private readonly uow: UnitOfWork<SettingsStores>) {}
 
+  /** `profitabilityEnabled` may be left out, which keeps the current value. */
   async updateOrganization(
     context: RequestContext,
-    settings: OrganizationSettings,
+    input: Omit<OrganizationSettings, 'profitabilityEnabled'> & {
+      readonly profitabilityEnabled?: boolean | undefined;
+    },
   ): Promise<OrganizationSettings> {
+    const { profitabilityEnabled, ...settings } = input;
     requireCapability(context, 'organization.manage_settings');
     const issues = [
       ...(isValidTimeZone(settings.timeZone)
@@ -39,7 +43,10 @@ export class ManageSettingsCommands {
     if (issues.length > 0) throw new ValidationFailedError('Check the studio settings.', issues);
     return this.uow.transaction(async (stores) => {
       const before = await stores.settings.organization();
-      const after = await stores.settings.updateOrganization(settings);
+      const after = await stores.settings.updateOrganization({
+        ...settings,
+        profitabilityEnabled: profitabilityEnabled ?? before.profitabilityEnabled,
+      });
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
         action: 'organization.updated',

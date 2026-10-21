@@ -9,6 +9,7 @@ import { NotificationInboxRepository } from './repositories/notification-inbox.r
 import { PeopleRepository } from './repositories/people.repository';
 import { ProjectRepository } from './repositories/project.repository';
 import { ProjectAccessRepository } from './repositories/project-access.repository';
+import { ProjectCostRepository } from './repositories/project-cost.repository';
 import { RecordRepository } from './repositories/record.repository';
 import { RewardRepository } from './repositories/reward.repository';
 import { ScopeChangeRepository } from './repositories/scope-change.repository';
@@ -40,6 +41,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     taskItems: new TaskItemRepository(executor),
     workSessions: new WorkSessionRepository(executor),
     deliverables: new DeliverableRepository(executor),
+    costs: new ProjectCostRepository(executor),
   };
 }
 

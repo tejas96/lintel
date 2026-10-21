@@ -6,6 +6,7 @@ import {
   type ResponseSchema,
 } from '../common/primitives';
 import { approvalItemSchema } from './deliverable.schema';
+import { portfolioProfitabilitySchema } from './finance.schema';
 import { leaveRequestSchema } from './leave.schema';
 import { userSummarySchema } from './people.schema';
 import {
@@ -60,6 +61,8 @@ export const commandCenterObject = z.object({
       currency: z.string(),
     })
     .nullable(),
+  /** Only when profitability is switched on, over the projects whose budgets the viewer may see. */
+  profitability: portfolioProfitabilitySchema.nullable(),
 });
 export type CommandCenter = z.infer<typeof commandCenterObject>;
 export const commandCenterSchema: ResponseSchema<CommandCenter> = commandCenterObject;

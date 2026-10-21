@@ -53,10 +53,14 @@ export async function requireActiveUsers(
 }
 
 /**
- * Budgets are visible to the studio owner and administrators, and to the
- * project's own manager and owner. Everyone else sees `null`.
+ * Budgets and costs are visible to people who can manage any project
+ * (`projects.manage_any`: the owner and administrators by default), and to
+ * the project's own manager and owner. Everyone else sees `null`.
  */
-export function canSeeProjectFinances(actor: Actor, access: ProjectAccess): boolean {
-  if (actor.role === 'owner' || actor.role === 'administrator') return true;
+export function canSeeProjectFinances(
+  actor: Actor,
+  access: Pick<ProjectAccess, 'managerUserId' | 'ownerUserId'>,
+): boolean {
+  if (actor.capabilities.has('projects.manage_any')) return true;
   return access.managerUserId === actor.userId || access.ownerUserId === actor.userId;
 }

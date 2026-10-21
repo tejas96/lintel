@@ -18,6 +18,8 @@ export const organizationSettings = pgTable(
       .notNull()
       .default(10),
     workTrackingEnabled: boolean('work_tracking_enabled').notNull().default(true),
+    /** Budget against recorded cost, for people allowed to see project finances. Off by default. */
+    profitabilityEnabled: boolean('profitability_enabled').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
