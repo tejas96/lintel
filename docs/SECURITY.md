@@ -29,9 +29,19 @@ reviewer can check each one.
   Missing and forbidden records both return 404 to prevent ID probing (IDOR).
 - Client-supplied user IDs, roles, ownership or project claims are never trusted;
   the actor comes from the verified session.
-- Sensitive fields are filtered on the server: budgets (owner/admin/PM only),
-  reward amounts (the person or `rewards.view_all`), phone numbers always masked
-  in directory views.
+- Sensitive fields are filtered on the server: budgets and project costs
+  (`projects.manage_any`, or the project's own manager or owner — see
+  `canSeeProjectFinances`), reward amounts (the person or `rewards.view_all`),
+  phone numbers always masked in directory views. Cost entries are audited and
+  never written to the project activity feed, which every member can read.
+- Reports: `dashboard.view_business` sees the studio; project managers only the
+  projects they manage (a project filter outside them answers 404); leave in a
+  manager's reports is limited to the people their leave and capacity rights
+  cover; everyone else gets 403. Leave reasons never appear in reports.
+- CSV exports (`/v1/reports/:report/csv`): same session and rules as the JSON
+  report, `Cache-Control: private, no-store`, `nosniff`, attachment with an
+  RFC 6266 file name; text cells starting with `= + - @`, tab or CR are prefixed
+  with a single quote so spreadsheets never run them as formulas.
 - Separation of duties: nobody reviews their own deliverable; only the owner can
   grant the owner role; the owner account cannot be deactivated.
 
@@ -121,8 +131,9 @@ probed as a non-member returned 404. Findings and their status:
 - **Deliverable version history** shows file names even when a file is confidential.
 - **Cross-project titles in some notifications** (priority conflicts to each project's
   manager) and in a requester's own leave-impact list.
-- **Some checks use role names** (budget visibility, command-center entry) rather than
-  capabilities; editing role capabilities does not change them.
+- **Some checks use role names** (command-center and reports entry for project managers)
+  rather than capabilities; editing role capabilities does not change them. Budget
+  visibility now follows `projects.manage_any` plus the project's manager and owner.
 - **No version check** on replacing project members, task collaborators and template
   archive; a few lists (deliverables, site updates, comments, blockers) are unpaginated.
 - **Idempotency** has no in-flight lock: two identical concurrent requests can both run.

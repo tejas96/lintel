@@ -144,3 +144,24 @@ tokens at AA contrast on every surface of their theme.
   JSON-encodes non-file fields, which the API rejects.
 - **Server sentences** sometimes carry ISO dates; `withReadableDates()` turns them into
   "Tuesday 27 October" before they are shown.
+- **Insight filters** (`features/insights/`): the command center and the reports share
+  one URL-backed filter set (`?from=&to=&project=&manager=&team=`, `router.push` so
+  Back undoes a change). Wide screens show the period, project, manager and team
+  controls in one 44 px row; phones keep the period and move the rest into a bottom
+  sheet. Applied filters are removable chips; removing one moves focus to the next.
+  The period popover offers common ranges with their dates in Geist Mono and a custom
+  range, and scrolls inside the viewport on small phones. A filter that leaves nothing
+  in view shows an empty state with Clear filters, never a wall of zeros.
+- **Reports** (`features/reports/`): every chart has the numbers beside it or one press
+  away ("Show the numbers"), each bar or gauge carries a tooltip and an accessible
+  label, and tables become cards on phones (`ResponsiveTable`). The workload chart is a
+  gauge per period: the track is available time, the fill is planned work coloured by
+  load status, a dark tick is logged time. `TrendBars` takes an optional `tick` per
+  datum for a sparse axis under the bars. Figures in tables are Geist Mono tabular;
+  hero numbers stay in the display serif (`KpiTile`). Units go into KPI labels
+  ("Available hours") so large numbers never wrap on phones.
+- **Budgets** (`features/finances/`): `BudgetBar` is the budget as a track, recorded cost
+  as the fill in the margin's status colour, a tick where the margin turns thin and a
+  hatched overflow past the budget; the indicator is always a `StatusPill` (colour,
+  glyph, word). Money is Indian-grouped (`₹43,68,000`), whole rupees drop the paise.
+  The cost ledger never edits: voided entries stay, struck through, with who and why.

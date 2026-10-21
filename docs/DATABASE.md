@@ -19,7 +19,7 @@ PostgreSQL 17, Drizzle ORM 0.45 and Drizzle Kit 0.31. Schema source:
 | Deletion | soft states (`archived_at`, `deactivated_at`, `status`) for business records; cascades only for owned children |
 | JSON | `jsonb` only for documents that are read and written whole (template definitions, reward evidence, conflict snapshots) |
 
-## Model overview (44 tables)
+## Model overview (45 tables)
 
 - **Organisation & identity:** `organization_settings` (single row), `working_calendars`,
   `calendar_holidays`, `teams`, `users`, `role_capabilities`, `otp_challenges`,
@@ -38,6 +38,10 @@ PostgreSQL 17, Drizzle ORM 0.45 and Drizzle Kit 0.31. Schema source:
 - **Notifications:** `notifications` (unique per recipient + dedupe key),
   `notification_deliveries` (one per channel), `notification_preferences`, `device_tokens`.
 - **Platform:** `activity_events`, `audit_log`, `outbox_events`, `idempotency_records`, `workflow_runs`.
+- **Finances:** `project_cost_entries` (the cost ledger: date, category enum, amount in
+  minor units > 0 by CHECK, currency, note; never edited or deleted — voided with
+  `voided_at`/`voided_by_user_id`/`void_reason` and a `version`). Profitability is
+  switched on by `organization_settings.profitability_enabled` (default false).
 
 ## Migrations
 
@@ -67,7 +71,12 @@ compatible with the new schema for one release.
   fictional people (`+91 90000 000xx`), example leave types, the six starter
   templates. Refuses to run with `NODE_ENV=production`.
 - `pnpm --filter @lintel/database db:seed:demo` — demo projects created through the
-  real project-creation use case with dates relative to today.
+  real project-creation use case with dates relative to today, plus completed history
+  for the reports (run once, keyed on the first finished demo project): two finished
+  projects, realistic on-time and late completions, backdated milestone sign-offs,
+  logged work sessions, five months of leave, reviewed deliverables, decided scope
+  changes and a cost ledger per project. Demo history files are metadata only (no
+  bytes in object storage), so downloading one answers 404.
 
 ## Integration tests
 
