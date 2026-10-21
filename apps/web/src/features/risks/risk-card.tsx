@@ -102,7 +102,7 @@ export function RiskCard({
         className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-md border border-accent/25 bg-accent-soft/50 px-3.5 py-2.5 type-body-sm font-medium text-on-accent-soft transition-colors hover:bg-accent-soft"
       >
         <span className="min-w-0">
-          <span className="block type-label text-on-accent-soft/70">Next action</span>
+          <span className="block type-label text-on-accent-soft">Next action</span>
           <span className="block">{card.nextAction.label}</span>
         </span>
         <ArrowRight

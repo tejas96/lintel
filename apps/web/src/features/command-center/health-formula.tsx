@@ -25,7 +25,11 @@ export function HealthFormula({ health }: { readonly health: CommandCenterBriefi
         </button>
       }
     >
-      <div className="flex max-h-[min(40rem,70vh)] flex-col gap-4 overflow-y-auto p-4">
+      <div
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be keyboard reachable (WCAG 2.1.1)
+        tabIndex={0}
+        className="flex max-h-[min(40rem,70vh)] flex-col gap-4 overflow-y-auto rounded-md p-4 focus-visible:outline-2 focus-visible:outline-accent"
+      >
         <div>
           <p className="type-title-md text-ink">100 minus five penalties</p>
           <p className="mt-1 type-body-sm text-ink-muted">
