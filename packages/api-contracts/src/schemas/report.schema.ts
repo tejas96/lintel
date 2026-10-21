@@ -11,7 +11,8 @@ import { projectRefSchema } from './project.schema';
 
 const span = { start: calendarDateSchema, end: calendarDateSchema };
 
-const reportMeta = z.object({
+/** What every report answers with first: when, for whom, over which range and buckets. */
+export const reportMeta = z.object({
   generatedAt: instantSchema,
   /** business = the whole studio; managed = only the viewer's own projects. */
   scope: z.enum(['business', 'managed']),

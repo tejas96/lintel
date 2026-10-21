@@ -2,6 +2,11 @@ import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { calendarDateSchema, idSchema } from '../common/primitives';
 import {
+  delaysReportSchema,
+  estimatesReportSchema,
+  reworkReportSchema,
+} from '../schemas/learning-report.schema';
+import {
   approvalsReportSchema,
   deliveryReportSchema,
   leaveReportSchema,
@@ -20,7 +25,15 @@ export const reportQuerySchema = z.object({
 });
 export type ReportQuery = z.infer<typeof reportQuerySchema>;
 
-export const REPORT_NAMES = ['delivery', 'workload', 'leave', 'approvals'] as const;
+export const REPORT_NAMES = [
+  'delivery',
+  'workload',
+  'leave',
+  'approvals',
+  'estimates',
+  'rework',
+  'delays',
+] as const;
 export type ReportName = (typeof REPORT_NAMES)[number];
 export const reportNameSchema = z.enum(REPORT_NAMES);
 
@@ -64,5 +77,26 @@ export const reportsContract = c.router({
     query: reportQuerySchema,
     responses: { 200: approvalsReportSchema },
     summary: `Turnaround of deliverable reviews, leave decisions and scope changes.${access}`,
+  },
+  estimatesReport: {
+    method: 'GET',
+    path: '/reports/estimates',
+    query: reportQuerySchema,
+    responses: { 200: estimatesReportSchema },
+    summary: `Estimated against logged effort of finished tasks, per person, task type and template.${access}`,
+  },
+  reworkReport: {
+    method: 'GET',
+    path: '/reports/rework',
+    query: reportQuerySchema,
+    responses: { 200: reworkReportSchema },
+    summary: `Deliverable versions sent back after review, per task, person and project.${access}`,
+  },
+  delaysReport: {
+    method: 'GET',
+    path: '/reports/delays',
+    query: reportQuerySchema,
+    responses: { 200: delaysReportSchema },
+    summary: `Client sign-offs, client waits and internal reviews that took longer than 48 hours, by client and project.${access}`,
   },
 });
