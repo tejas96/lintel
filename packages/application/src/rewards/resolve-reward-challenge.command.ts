@@ -10,8 +10,12 @@ import {
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
 import type { NotifierFactory } from '../notifications/notifier-factory';
-import { applyCorrection, loadChallengeable } from './challengeable-records';
-import type { ChallengeRecordSnapshot } from './reward-challenge.store';
+import {
+  applyCorrection,
+  type ChallengeableRecordView,
+  loadChallengeable,
+} from './challengeable-records';
+import type { ChallengeRecordSnapshot, RewardChallengeRecord } from './reward-challenge.store';
 import { sendRewardNotice } from './reward-notices';
 
 type ResolveStores = Pick<
@@ -58,43 +62,18 @@ export class ResolveRewardChallengeCommand {
     }
     const now = this.clock.now();
     await this.uow.transaction(async (stores) => {
-      const challenge = await stores.rewardChallenges.find(challengeId);
-      if (!challenge) throw new NotFoundError('Challenge');
-      if (challenge.status !== 'open') {
-        throw new InvalidTransitionError(`This challenge was already ${challenge.status}.`);
-      }
-      if (challenge.version !== input.version) throw new StaleVersionError('This challenge');
-      const record = await loadChallengeable(stores, challenge.target);
-      if (!record) throw new NotFoundError('Reward record');
-      if (
-        challenge.raisedByUserId === context.actor.userId ||
-        record.subjectUserIds.includes(context.actor.userId)
-      ) {
-        throw new ForbiddenError('Someone else answers a challenge about your own reward.');
-      }
-      let after: ChallengeRecordSnapshot = record.snapshot;
-      if (input.correctedAmountMinor !== null) {
-        const problem = correctionProblem(record.snapshot, input.correctedAmountMinor);
-        if (problem) {
-          throw new ValidationFailedError(problem, [
-            { field: 'correctedAmountMinor', message: problem },
-          ]);
-        }
-        const corrected = await applyCorrection(stores, record, {
-          status: 'approved',
-          decidedByUserId: context.actor.userId,
-          decidedAt: now,
-          decisionNote: input.note,
-          adjustedAmountMinor: input.correctedAmountMinor,
-          adjustmentReason: input.note,
-        });
-        if (!corrected) throw new StaleVersionError('This reward record');
-        after = {
-          status: 'approved',
-          grantedAmountMinor: input.correctedAmountMinor,
-          decisionNote: input.note,
-        };
-      }
+      const { challenge, record } = await this.openChallenge(stores, context, challengeId, input);
+      const after =
+        input.correctedAmountMinor === null
+          ? record.snapshot
+          : await this.correct(
+              stores,
+              context,
+              record,
+              input.correctedAmountMinor,
+              input.note,
+              now,
+            );
       const status = correcting ? 'corrected' : 'upheld';
       const resolved = await stores.rewardChallenges.resolve(challenge.id, challenge.version, {
         status,
@@ -119,21 +98,80 @@ export class ResolveRewardChallengeCommand {
           status,
         }),
       );
-      const recipients = correcting
-        ? [challenge.raisedByUserId, ...record.subjectUserIds]
-        : [challenge.raisedByUserId];
-      await sendRewardNotice(await this.notifierFor(stores), 'reward_updated', recipients, {
-        title: correcting
-          ? `Your challenge was accepted: ${record.title}`
-          : `Your challenge was answered: ${record.title}`,
-        body: correcting
-          ? 'The record was corrected. See the note in Rewards.'
-          : 'The record stands. See the reviewer’s note in Rewards.',
-        linkPath: '/rewards',
-        subjectType: 'reward_challenge',
-        subjectId: challenge.id,
-        window: status,
-      });
+      await this.tell(stores, challenge, record, correcting);
+    });
+  }
+
+  /** The open challenge at the expected version, and its record; never one's own. */
+  private async openChallenge(
+    stores: ResolveStores,
+    context: RequestContext,
+    challengeId: string,
+    input: ChallengeResolutionInput,
+  ): Promise<{ challenge: RewardChallengeRecord; record: ChallengeableRecordView }> {
+    const challenge = await stores.rewardChallenges.find(challengeId);
+    if (!challenge) throw new NotFoundError('Challenge');
+    if (challenge.status !== 'open') {
+      throw new InvalidTransitionError(`This challenge was already ${challenge.status}.`);
+    }
+    if (challenge.version !== input.version) throw new StaleVersionError('This challenge');
+    const record = await loadChallengeable(stores, challenge.target);
+    if (!record) throw new NotFoundError('Reward record');
+    const own =
+      challenge.raisedByUserId === context.actor.userId ||
+      record.subjectUserIds.includes(context.actor.userId);
+    if (own) throw new ForbiddenError('Someone else answers a challenge about your own reward.');
+    return { challenge, record };
+  }
+
+  /** Grants the record (or raises it) and returns its outcome after the correction. */
+  private async correct(
+    stores: ResolveStores,
+    context: RequestContext,
+    record: ChallengeableRecordView,
+    amountMinor: number,
+    note: string,
+    now: Date,
+  ): Promise<ChallengeRecordSnapshot> {
+    const problem = correctionProblem(record.snapshot, amountMinor);
+    if (problem) {
+      throw new ValidationFailedError(problem, [
+        { field: 'correctedAmountMinor', message: problem },
+      ]);
+    }
+    const corrected = await applyCorrection(stores, record, {
+      status: 'approved',
+      decidedByUserId: context.actor.userId,
+      decidedAt: now,
+      decisionNote: note,
+      adjustedAmountMinor: amountMinor,
+      adjustmentReason: note,
+    });
+    if (!corrected) throw new StaleVersionError('This reward record');
+    return { status: 'approved', grantedAmountMinor: amountMinor, decisionNote: note };
+  }
+
+  /** The person who raised it hears the answer; on a correction, everyone the record is about. */
+  private async tell(
+    stores: ResolveStores,
+    challenge: RewardChallengeRecord,
+    record: ChallengeableRecordView,
+    correcting: boolean,
+  ): Promise<void> {
+    const recipients = correcting
+      ? [challenge.raisedByUserId, ...record.subjectUserIds]
+      : [challenge.raisedByUserId];
+    await sendRewardNotice(await this.notifierFor(stores), 'reward_updated', recipients, {
+      title: correcting
+        ? `Your challenge was accepted: ${record.title}`
+        : `Your challenge was answered: ${record.title}`,
+      body: correcting
+        ? 'The record was corrected. See the note in Rewards.'
+        : 'The record stands. See the reviewer’s note in Rewards.',
+      linkPath: '/rewards',
+      subjectType: 'reward_challenge',
+      subjectId: challenge.id,
+      window: correcting ? 'corrected' : 'upheld',
     });
   }
 }
