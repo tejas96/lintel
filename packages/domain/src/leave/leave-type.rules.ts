@@ -58,7 +58,7 @@ export function validateLeaveTypeDefinition(definition: LeaveTypeDefinition): Le
   if (allowance !== null && !isWholeNumberBetween(allowance, 1, limits.maximumAllowanceHalfDays)) {
     problems.push({
       field: 'annualAllowanceHalfDays',
-      message: `Use half a day up to ${limits.maximumAllowanceHalfDays / 2} days, or no allowance.`,
+      message: `Use whole or half days, up to ${limits.maximumAllowanceHalfDays / 2} a year.`,
     });
   }
   if (allowance !== null && !definition.allowsHalfDay && allowance % 2 !== 0) {

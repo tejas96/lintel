@@ -133,7 +133,7 @@ export function OrganizationForm() {
       <section className="grid gap-5 sm:grid-cols-2">
         <Switch
           label="Track working time"
-          description="People start and pause work sessions on their tasks."
+          description="People start and pause work sessions on their tasks. Switching it off ends running sessions and keeps their time."
           checked={draft.workTrackingEnabled}
           onCheckedChange={(workTrackingEnabled) => update({ workTrackingEnabled })}
         />

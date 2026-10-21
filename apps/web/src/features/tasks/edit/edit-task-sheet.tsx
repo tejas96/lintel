@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
+import { useFieldErrors } from '@/features/common/use-field-errors';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { isApiError } from '@/lib/api/api-error';
 import { queryKeys } from '@/lib/query/query-keys';
@@ -100,15 +101,13 @@ function TaskEditForm({
   const queryClient = useQueryClient();
   const save = useSaveTask(task);
   const [values, setValues] = useState<TaskEditValues>(() => editValuesOf(task));
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const fields = useFieldErrors((next: TaskEditValues) => checkTaskEdit(task, next));
   const changes = changesOf(task, values);
   const hasChanges = Object.keys(changes).length > 0;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const found = checkTaskEdit(task, values);
-    setErrors(found);
-    if (Object.keys(found).length > 0 || !hasChanges) return;
+    if (!fields.validate(values) || !hasChanges) return;
     const reason = dueDateMoves(task, values) ? values.scheduleChangeReason.trim() : undefined;
     save.mutate(
       { changes, scheduleChangeReason: reason },
@@ -119,7 +118,7 @@ function TaskEditForm({
         },
         onError: (error) => {
           if (staleness.catchStale(error)) return;
-          if (isApiError(error)) setErrors(error.fieldErrors());
+          if (isApiError(error)) fields.showServerErrors(error.fieldErrors());
           fail(error, 'save the task');
         },
       },
@@ -139,8 +138,11 @@ function TaskEditForm({
       <TaskEditFields
         task={task}
         values={values}
-        onChange={setValues}
-        errors={errors}
+        onChange={(next) => {
+          setValues(next);
+          fields.recheck(next);
+        }}
+        errors={fields.errors}
         today={today}
       />
       <div className="flex justify-end gap-2 border-t border-hairline pt-5">

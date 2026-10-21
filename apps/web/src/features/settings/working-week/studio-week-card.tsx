@@ -6,6 +6,7 @@ import { weeklyWorkingMinutes } from '@lintel/domain';
 import { CalendarClock } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
+import { useFieldErrors } from '@/features/common/use-field-errors';
 import { isApiError } from '@/lib/api/api-error';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 import { useWorkingCalendarMutations } from './use-working-calendars';
@@ -32,7 +33,7 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
   const staleness = useStaleVersion();
   const { update } = useWorkingCalendarMutations();
   const [values, setValues] = useState<WorkingWeekValues>(() => weekValuesOf(calendar));
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const fields = useFieldErrors((next: WorkingWeekValues) => checkWorkingWeek(next, false));
   const changes = weekChangesOf(calendar, values);
   const dirty = Object.keys(changes).length > 0;
   const preview = weekOf(values);
@@ -40,9 +41,7 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const found = checkWorkingWeek(values, false);
-    setErrors(found);
-    if (Object.keys(found).length > 0 || !dirty) return;
+    if (!fields.validate(values) || !dirty) return;
     update.mutate(
       { calendar, changes },
       {
@@ -50,7 +49,7 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
           toast({ tone: 'success', title: 'Studio week saved', description: describeWeek(saved) }),
         onError: (error) => {
           if (staleness.catchStale(error)) return;
-          if (isApiError(error)) setErrors(error.fieldErrors());
+          if (isApiError(error)) fields.showServerErrors(error.fieldErrors());
           fail(error, 'save the studio week');
         },
       },
@@ -71,15 +70,20 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
           <div className="flex flex-col gap-1">
             <h3 className="type-title-md text-ink">Studio week</h3>
             <p className="type-body-sm text-ink-muted">
-              {calendar.peopleCount === 1
-                ? '1 person follows'
-                : `${calendar.peopleCount} people follow`}{' '}
-              it, everyone without a working week of their own.
+              Followed by{' '}
+              {calendar.peopleCount === 1 ? '1 person' : `${calendar.peopleCount} people`}: everyone
+              without a working week of their own.
             </p>
           </div>
         </div>
-        <p aria-live="polite" className="font-mono text-[0.8125rem] text-ink-muted">
-          {previewValid ? `${formatDuration(weeklyWorkingMinutes(preview))} a week` : '—'}
+        <p
+          aria-live="polite"
+          className="flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0 sm:text-right"
+        >
+          <span className="type-display-md text-ink tabular-nums">
+            {previewValid ? formatDuration(weeklyWorkingMinutes(preview)) : '—'}
+          </span>
+          <span className="type-label text-ink-faint">of work a week</span>
         </p>
       </div>
       <StaleVersionNotice
@@ -90,7 +94,15 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
           onRefresh();
         }}
       />
-      <WorkingWeekFields values={values} onChange={setValues} errors={errors} idPrefix="studio" />
+      <WorkingWeekFields
+        values={values}
+        onChange={(next) => {
+          setValues(next);
+          fields.recheck(next);
+        }}
+        errors={fields.errors}
+        idPrefix="studio"
+      />
       <div className="flex flex-col gap-3 border-t border-hairline pt-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-prose type-body-sm text-ink-faint">
           Capacity, new plans, leave and reminders use the new week straight away. Dates already
@@ -101,7 +113,7 @@ export function StudioWeekCard({ calendar, onRefresh }: StudioWeekCardProps) {
             variant="quiet"
             onClick={() => {
               setValues(weekValuesOf(calendar));
-              setErrors({});
+              fields.clear();
             }}
             disabled={!dirty || update.isPending}
           >

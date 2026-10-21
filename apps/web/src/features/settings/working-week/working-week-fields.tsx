@@ -50,7 +50,7 @@ export function WorkingWeekFields({
         aria-describedby={daysError ? `${idPrefix}-days-error` : undefined}
       >
         <legend className="mb-2 type-label text-ink-muted">Working days</legend>
-        <div className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap">
+        <div className="grid max-w-[30rem] grid-cols-7 gap-1.5">
           {WEEKDAY_NAMES.map((name, index) => {
             const day = index + 1;
             const on = values.workingWeekdays.includes(day);
@@ -62,7 +62,7 @@ export function WorkingWeekFields({
                 aria-label={name}
                 onClick={() => toggle(day)}
                 className={cn(
-                  'flex h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border px-2 transition-colors sm:w-16',
+                  'flex h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md border px-1 transition-colors',
                   on
                     ? 'border-accent bg-accent-soft text-on-accent-soft'
                     : 'border-hairline bg-raised text-ink-muted hover:border-rule hover:text-ink',

@@ -143,7 +143,7 @@ export function TaskEditFields({ task, values, onChange, errors, today }: TaskEd
           hint={
             manages
               ? 'Working days overdue. Reminders re-plan as soon as you save.'
-              : `${managerHint} Working days overdue.`
+              : `Working days overdue. ${managerHint}`
           }
           error={errors.escalateAfterOverdueDays}
           className="max-w-xs"

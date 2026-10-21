@@ -86,7 +86,7 @@ export function checkLeaveType(values: LeaveTypeFormValues): Record<string, stri
     const days = numberOf(values.allowanceDays);
     const halfDays = days * 2;
     if (!Number.isInteger(halfDays) || halfDays < 1 || halfDays > limits.maximumAllowanceHalfDays) {
-      errors.annualAllowanceHalfDays = `Use half a day up to ${limits.maximumAllowanceHalfDays / 2} days.`;
+      errors.annualAllowanceHalfDays = `Use whole or half days, up to ${limits.maximumAllowanceHalfDays / 2} a year.`;
     } else if (!values.allowsHalfDay && !Number.isInteger(days)) {
       errors.annualAllowanceHalfDays = 'Without half days, the allowance must be whole days.';
     }

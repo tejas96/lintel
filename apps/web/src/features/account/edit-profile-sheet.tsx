@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
-import { sessionQueryKey } from '@/features/session/session-provider';
+import { sessionQueryKey, useSession } from '@/features/session/session-provider';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { isApiError } from '@/lib/api/api-error';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
@@ -81,6 +81,7 @@ function ProfileForm({
   const toast = useToast();
   const fail = useFailureToast();
   const staleness = useStaleVersion();
+  const { can } = useSession();
   const [values, setValues] = useState<ProfileValues>({
     fullName: profile.fullName,
     email: profile.email ?? '',
@@ -153,7 +154,7 @@ function ProfileForm({
           <Lock aria-hidden className="size-3.5 text-ink-faint" />
           Set by your studio
         </h3>
-        <dl className="grid grid-cols-3 gap-3">
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {managed.map((fact) => (
             <div key={fact.label} className="flex min-w-0 flex-col gap-0.5">
               <dt className="type-label text-ink-faint">{fact.label}</dt>
@@ -170,7 +171,9 @@ function ProfileForm({
           ))}
         </dl>
         <p className="type-body-sm text-ink-faint">
-          To change these, ask a studio administrator. A new number signs you out everywhere.
+          {can('users.manage')
+            ? 'You change these under People, as for anyone else. A new number signs you out everywhere.'
+            : 'To change these, ask a studio administrator. A new number signs you out everywhere.'}
         </p>
       </section>
       <div className="flex justify-end gap-2 border-t border-hairline pt-5">

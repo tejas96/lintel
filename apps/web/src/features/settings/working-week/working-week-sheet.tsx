@@ -4,6 +4,7 @@ import type { ManagedWorkingCalendar } from '@lintel/api-contracts';
 import { Button, Sheet, useToast } from '@lintel/design-system/web';
 import { type FormEvent, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
+import { useFieldErrors } from '@/features/common/use-field-errors';
 import { isApiError } from '@/lib/api/api-error';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 import { useWorkingCalendarMutations } from './use-working-calendars';
@@ -66,12 +67,12 @@ function WorkingWeekForm({
   const [values, setValues] = useState<WorkingWeekValues>(() =>
     calendar ? weekValuesOf(calendar) : emptyWorkingWeek(),
   );
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const fields = useFieldErrors((next: WorkingWeekValues) => checkWorkingWeek(next, true));
   const changes = calendar ? weekChangesOf(calendar, values) : null;
   const pending = create.isPending || update.isPending;
   const onError = (error: unknown) => {
     if (staleness.catchStale(error)) return;
-    if (isApiError(error)) setErrors(error.fieldErrors());
+    if (isApiError(error)) fields.showServerErrors(error.fieldErrors());
     fail(error, calendar ? 'save the working week' : 'add the working week');
   };
   const onSaved = (saved: ManagedWorkingCalendar) => {
@@ -84,9 +85,7 @@ function WorkingWeekForm({
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const found = checkWorkingWeek(values, true);
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (!fields.validate(values)) return;
     if (!calendar) create.mutate(weekOf(values), { onSuccess: onSaved, onError });
     else if (changes && Object.keys(changes).length > 0) {
       update.mutate({ calendar, changes }, { onSuccess: onSaved, onError });
@@ -105,8 +104,11 @@ function WorkingWeekForm({
       />
       <WorkingWeekFields
         values={values}
-        onChange={setValues}
-        errors={errors}
+        onChange={(next) => {
+          setValues(next);
+          fields.recheck(next);
+        }}
+        errors={fields.errors}
         withName
         idPrefix="sheet"
       />

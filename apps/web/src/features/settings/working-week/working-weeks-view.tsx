@@ -42,26 +42,28 @@ function OtherWeekRow({
         <h3 className="type-title-md text-ink">{calendar.name}</h3>
         <p className="type-body-sm text-ink-muted">{describeWeek(calendar)}</p>
       </div>
-      <p className="flex items-center gap-1.5 type-body-sm text-ink-faint">
-        <Users aria-hidden className="size-3.5" />
-        {calendar.peopleCount === 0 ? 'Nobody yet' : people}
-      </p>
-      <div className="flex gap-1">
-        <IconButton label={`Edit ${calendar.name}`} size="sm" onClick={onEdit}>
-          <Pencil aria-hidden />
-        </IconButton>
-        <IconButton
-          label={
-            calendar.peopleCount > 0
-              ? `${calendar.name} cannot be removed while ${people} follow it`
-              : `Remove ${calendar.name}`
-          }
-          size="sm"
-          disabled={calendar.peopleCount > 0 || removing}
-          onClick={onRemove}
-        >
-          <Trash2 aria-hidden />
-        </IconButton>
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+        <p className="flex items-center gap-1.5 type-body-sm text-ink-faint">
+          <Users aria-hidden className="size-3.5" />
+          {calendar.peopleCount === 0 ? 'Nobody yet' : people}
+        </p>
+        <div className="flex gap-1">
+          <IconButton label={`Edit ${calendar.name}`} size="sm" onClick={onEdit}>
+            <Pencil aria-hidden />
+          </IconButton>
+          <IconButton
+            label={
+              calendar.peopleCount > 0
+                ? `${calendar.name} cannot be removed while ${people} follow it`
+                : `Remove ${calendar.name}`
+            }
+            size="sm"
+            disabled={calendar.peopleCount > 0 || removing}
+            onClick={onRemove}
+          >
+            <Trash2 aria-hidden />
+          </IconButton>
+        </div>
       </div>
     </div>
   );

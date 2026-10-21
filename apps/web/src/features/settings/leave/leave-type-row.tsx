@@ -80,7 +80,7 @@ export function LeaveTypeRow({
         </ul>
         <p className="font-mono text-[0.75rem] text-ink-faint">{usageOf(type)}</p>
       </div>
-      <div className="flex shrink-0 gap-1 sm:flex-col sm:items-end lg:flex-row lg:items-center">
+      <div className="-ml-3 flex shrink-0 gap-1 sm:ml-0 sm:flex-col sm:items-end lg:flex-row lg:items-center">
         <Button
           size="sm"
           variant="quiet"

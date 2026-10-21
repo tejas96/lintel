@@ -4,6 +4,7 @@ import type { ManagedLeaveType } from '@lintel/api-contracts';
 import { Button, Sheet, useToast } from '@lintel/design-system/web';
 import { type FormEvent, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
+import { useFieldErrors } from '@/features/common/use-field-errors';
 import { isApiError } from '@/lib/api/api-error';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 import { LeaveTypeFields } from './leave-type-fields';
@@ -67,12 +68,12 @@ function LeaveTypeForm({
   const [values, setValues] = useState<LeaveTypeFormValues>(() =>
     mode.kind === 'edit' ? leaveTypeValuesOf(mode.type) : emptyLeaveType(mode.colorIndex),
   );
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const fields = useFieldErrors(checkLeaveType);
   const changes = mode.kind === 'edit' ? leaveTypeChangesOf(mode.type, values) : null;
   const pending = create.isPending || update.isPending;
   const onError = (error: unknown) => {
     if (staleness.catchStale(error)) return;
-    if (isApiError(error)) setErrors(error.fieldErrors());
+    if (isApiError(error)) fields.showServerErrors(error.fieldErrors());
     fail(error, mode.kind === 'edit' ? 'save the leave type' : 'add the leave type');
   };
   const onSaved = (saved: ManagedLeaveType) => {
@@ -85,9 +86,7 @@ function LeaveTypeForm({
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const found = checkLeaveType(values);
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (!fields.validate(values)) return;
     if (mode.kind === 'add') {
       create.mutate(definitionOf(values), { onSuccess: onSaved, onError });
     } else if (changes && Object.keys(changes).length > 0) {
@@ -105,7 +104,14 @@ function LeaveTypeForm({
           onRefresh();
         }}
       />
-      <LeaveTypeFields values={values} onChange={setValues} errors={errors} />
+      <LeaveTypeFields
+        values={values}
+        onChange={(next) => {
+          setValues(next);
+          fields.recheck(next);
+        }}
+        errors={fields.errors}
+      />
       <div className="flex justify-end gap-2 border-t border-hairline pt-5">
         <Button variant="quiet" onClick={onDone} disabled={pending}>
           Cancel
