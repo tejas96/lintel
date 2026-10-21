@@ -44,6 +44,7 @@ function auditSnapshot(person: PersonRecord, includePhone: boolean): Record<stri
     role: person.role,
     teamId: person.teamId,
     capacityPercent: person.capacityPercent,
+    workingCalendarId: person.workingCalendarId,
     ...(includePhone ? { phone: maskPhoneNumber(person.phoneE164) } : {}),
   };
 }
@@ -179,6 +180,11 @@ export class ManagePeopleCommands {
     if (input.teamId && !(await stores.people.teamExists(input.teamId))) {
       throw new ValidationFailedError('That team does not exist.', [
         { field: 'teamId', message: 'Unknown team.' },
+      ]);
+    }
+    if (input.workingCalendarId && !(await stores.calendars.find(input.workingCalendarId))) {
+      throw new ValidationFailedError('That working week does not exist.', [
+        { field: 'workingCalendarId', message: 'Choose one of the studio’s working weeks.' },
       ]);
     }
     if (input.reportsToUserId && !(await stores.people.findById(input.reportsToUserId))) {

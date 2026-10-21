@@ -18,6 +18,7 @@ import { TaskRepository } from './repositories/task.repository';
 import { TaskItemRepository } from './repositories/task-item.repository';
 import { TemplateRepository } from './repositories/template.repository';
 import { WorkSessionRepository } from './repositories/work-session.repository';
+import { WorkingCalendarRepository } from './repositories/working-calendar.repository';
 import { createBackgroundStores } from './worker/background-stores';
 
 /** Builds every repository on top of one executor (the pool or a transaction). */
@@ -42,6 +43,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     workSessions: new WorkSessionRepository(executor),
     deliverables: new DeliverableRepository(executor),
     leaveTypes: new LeaveTypeRepository(executor),
+    calendars: new WorkingCalendarRepository(executor),
   };
 }
 

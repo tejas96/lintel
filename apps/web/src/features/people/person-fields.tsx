@@ -4,6 +4,7 @@ import type { DirectoryEntry, Team } from '@lintel/api-contracts';
 import { Field, Input, Select } from '@lintel/design-system/web';
 import { ROLE_LABELS, ROLES, type Role } from '@lintel/domain';
 import { PersonCombobox } from './person-combobox';
+import { STUDIO_WEEK, WorkingWeekSelect } from './working-week-select';
 
 export interface PersonFormValues {
   readonly fullName: string;
@@ -14,6 +15,8 @@ export interface PersonFormValues {
   readonly teamId: string;
   readonly reportsTo: string | null;
   readonly capacityPercent: string;
+  /** A working calendar id, or STUDIO_WEEK. */
+  readonly workingCalendarId: string;
 }
 
 export const NO_TEAM = 'none';
@@ -28,6 +31,7 @@ export function emptyPerson(): PersonFormValues {
     teamId: NO_TEAM,
     reportsTo: null,
     capacityPercent: '100',
+    workingCalendarId: STUDIO_WEEK,
   };
 }
 
@@ -41,6 +45,7 @@ export function valuesOf(person: DirectoryEntry): PersonFormValues {
     teamId: person.team?.id ?? NO_TEAM,
     reportsTo: person.reportsTo?.id ?? null,
     capacityPercent: String(person.capacityPercent),
+    workingCalendarId: person.workingCalendarId ?? STUDIO_WEEK,
   };
 }
 
@@ -176,6 +181,11 @@ export function PersonFields({
           trailing={<span className="pr-1">%</span>}
         />
       </Field>
+      <WorkingWeekSelect
+        value={values.workingCalendarId}
+        onValueChange={(workingCalendarId) => set('workingCalendarId', workingCalendarId)}
+        error={errors.workingCalendarId}
+      />
     </div>
   );
 }

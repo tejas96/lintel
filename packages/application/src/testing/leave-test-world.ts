@@ -110,6 +110,7 @@ export function person(id: string, role: Role, extra: Partial<PersonRecord> = {}
     teamId: 'design',
     reportsToUserId: null,
     capacityPercent: 100,
+    workingCalendarId: null,
     status: 'active',
     version: 1,
     ...extra,

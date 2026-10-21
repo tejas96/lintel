@@ -10,6 +10,7 @@ import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TemplatesModule } from './templates/templates.module';
 import { WorkModule } from './work/work.module';
+import { WorkingCalendarsModule } from './working-calendars/working-calendars.module';
 
 /**
  * Business modules registered with the application. Each feature module owns
@@ -27,4 +28,5 @@ export const FEATURE_MODULES: Type[] = [
   OperationsModule,
   ProfileModule,
   LeavePoliciesModule,
+  WorkingCalendarsModule,
 ];

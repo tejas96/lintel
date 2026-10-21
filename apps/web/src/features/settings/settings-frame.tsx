@@ -13,6 +13,11 @@ const SECTIONS: readonly { href: string; label: string; requires: Capability }[]
   { href: '/settings', label: 'Studio', requires: 'organization.manage_settings' },
   { href: '/settings/roles', label: 'Roles and access', requires: 'roles.manage' },
   { href: '/settings/holidays', label: 'Holidays', requires: 'organization.manage_settings' },
+  {
+    href: '/settings/working-week',
+    label: 'Working week',
+    requires: 'organization.manage_settings',
+  },
   { href: '/settings/leave', label: 'Leave', requires: 'leave.manage_policies' },
 ];
 
@@ -45,7 +50,7 @@ export function SettingsFrame({ children }: { readonly children: ReactNode }) {
       <motion.div {...pageEnter}>
         <PageHeader
           title="Settings"
-          description="How the studio works: its details, who can do what, and the days it is closed."
+          description="How the studio works: its details, who can do what, when it works and how leave is handled."
         />
       </motion.div>
       <TabNav

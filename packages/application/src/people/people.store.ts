@@ -10,6 +10,8 @@ export interface PersonInput {
   readonly teamId: string | null;
   readonly reportsToUserId: string | null;
   readonly capacityPercent: number;
+  /** The person's working week; null follows the studio week. */
+  readonly workingCalendarId: string | null;
 }
 
 export interface PersonRecord extends PersonInput {

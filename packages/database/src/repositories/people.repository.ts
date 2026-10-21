@@ -15,6 +15,7 @@ function toPerson(row: typeof users.$inferSelect): PersonRecord {
     teamId: row.teamId,
     reportsToUserId: row.reportsToUserId,
     capacityPercent: row.capacityPercent,
+    workingCalendarId: row.workingCalendarId,
     status: row.status,
     version: row.version,
   };

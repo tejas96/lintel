@@ -1,5 +1,6 @@
 import type { ProjectAccessStore } from '../access/project-access.store';
 import type { BackgroundStores } from '../background/background.stores';
+import type { WorkingCalendarStore } from '../calendars/working-calendar.store';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { LeaveStore } from '../leave/leave.store';
@@ -43,6 +44,7 @@ export interface ApplicationStores {
   readonly workSessions: WorkSessionStore;
   readonly deliverables: DeliverableStore;
   readonly leaveTypes: LeaveTypeStore;
+  readonly calendars: WorkingCalendarStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */

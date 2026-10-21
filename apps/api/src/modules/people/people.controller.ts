@@ -44,9 +44,13 @@ export class PeopleController {
         return { status: 200, body: await this.entry(params.id) };
       },
       createPerson: async ({ body }) => {
-        const { countryCallingCode, nationalNumber, ...rest } = body;
+        const { countryCallingCode, nationalNumber, workingCalendarId, ...rest } = body;
         const phoneE164 = phoneFromInput({ countryCallingCode, nationalNumber });
-        const person = await this.commands.create(context, { ...rest, phoneE164 });
+        const person = await this.commands.create(context, {
+          ...rest,
+          phoneE164,
+          workingCalendarId: workingCalendarId ?? null,
+        });
         return { status: 201, body: await this.entry(person.id) };
       },
       updatePerson: async ({ params, body }) => {

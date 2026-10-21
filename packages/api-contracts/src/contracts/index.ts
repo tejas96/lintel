@@ -11,6 +11,7 @@ import { projectsContract } from './projects.contract';
 import { tasksContract } from './tasks.contract';
 import { templatesContract } from './templates.contract';
 import { workContract } from './work.contract';
+import { workingCalendarsContract } from './working-calendars.contract';
 
 /**
  * The whole public API, as module contracts. Each app assembles the router with
@@ -30,6 +31,7 @@ export type ApiRouterDefinition = {
   readonly platform: typeof platformContract;
   readonly profile: typeof profileContract;
   readonly leavePolicies: typeof leavePoliciesContract;
+  readonly workingCalendars: typeof workingCalendarsContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -45,6 +47,7 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   platform: platformContract,
   profile: profileContract,
   leavePolicies: leavePoliciesContract,
+  workingCalendars: workingCalendarsContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -66,3 +69,8 @@ export { createProjectBodySchema, projectsContract } from './projects.contract';
 export { createTaskBodySchema, tasksContract } from './tasks.contract';
 export { templatesContract } from './templates.contract';
 export { workContract } from './work.contract';
+export {
+  type ManagedWorkingCalendar,
+  workingCalendarSchema,
+  workingCalendarsContract,
+} from './working-calendars.contract';
