@@ -64,6 +64,8 @@ export default function SignedInLayout() {
         }}
       />
       <Stack.Screen name="account" options={{ title: 'Account' }} />
+      <Stack.Screen name="rewards/index" options={{ title: '' }} />
+      <Stack.Screen name="rewards/challenge" options={sheet([0.75, 0.95], colors.surface)} />
       <Stack.Screen
         name="profile"
         options={{

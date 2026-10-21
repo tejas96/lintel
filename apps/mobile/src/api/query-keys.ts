@@ -26,4 +26,8 @@ export const queryKeys = {
   projectDocuments: (projectId: string, folder: string) =>
     ['projects', projectId, 'documents', folder] as const,
   document: (documentId: string) => ['documents', documentId] as const,
+  rewards: ['rewards'] as const,
+  rewardPolicies: ['rewards', 'policies'] as const,
+  myRewardEvaluations: ['rewards', 'evaluations', 'mine'] as const,
+  myMilestoneRewards: ['rewards', 'milestones', 'mine'] as const,
 } as const;

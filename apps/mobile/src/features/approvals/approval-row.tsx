@@ -21,6 +21,9 @@ const DECIDED_IN_APP: ReadonlySet<ApprovalItem['type']> = new Set([
 
 /** The in-app screen for an item: its server link first, then its type and id. */
 export function approvalHref(item: ApprovalItem): Href | null {
+  // Reward reviews link to `/rewards`, which in the app is the reviewer's own
+  // recognition, not the review queue. Reviewing rewards happens on the web.
+  if (item.type === 'reward_review') return null;
   const linked = hrefForLinkPath(item.linkPath);
   if (linked) return linked;
   if (item.type === 'task_review') return { pathname: '/tasks/[id]', params: { id: item.id } };

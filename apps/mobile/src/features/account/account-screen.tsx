@@ -7,15 +7,17 @@ import { AppText } from '@/components/app-text';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { ListRow } from '@/components/list-row';
 import { ScreenScroll } from '@/components/screen';
 import { Section } from '@/components/section';
+import { can } from '@/session/capabilities';
 import { useCurrentUser, useSession } from '@/session/session-provider';
 import { SPACE } from '@/theme/layout';
 import { PushSettings } from './push-settings';
 import { QuietHours } from './quiet-hours';
 import { SessionsList } from './sessions-list';
 
-/** Profile, notifications, quiet hours, signed-in devices and sign out. */
+/** Profile, rewards, notifications, quiet hours, signed-in devices and sign out. */
 export function AccountScreen() {
   const user = useCurrentUser();
   const { signOut, refreshUser } = useSession();
@@ -60,6 +62,18 @@ export function AccountScreen() {
         onPress={() => router.push('/profile')}
         accessibilityHint="Change your name, email or designation"
       />
+      {can(user, 'rewards.view_own') ? (
+        <Section title="Recognition">
+          <Card style={styles.group}>
+            <ListRow
+              icon="reward"
+              title="Rewards"
+              subtitle="What earns a reward, your results and any challenges"
+              onPress={() => router.push('/rewards')}
+            />
+          </Card>
+        </Section>
+      ) : null}
       <Section title="Notifications">
         <Card style={styles.group}>
           <PushSettings />
