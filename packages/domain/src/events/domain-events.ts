@@ -18,6 +18,12 @@ export interface DomainEventMap {
   UrgentAbsenceRecorded: { leaveRequestId: string; userId: string };
   ScopeChangeDecided: { scopeChangeId: string; projectId: string; status: string };
   NotificationCreated: { notificationId: string; recipientId: string };
+  /** An SMS or an immediate email waits to be sent by the worker. */
+  NotificationMessageQueued: {
+    notificationId: string;
+    recipientId: string;
+    channel: 'sms' | 'email';
+  };
   RewardEvaluated: { evaluationId: string; userId: string | null; status: string };
 }
 

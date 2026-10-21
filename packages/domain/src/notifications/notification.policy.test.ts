@@ -38,6 +38,45 @@ describe('notification delivery plan', () => {
     expect(isWithinQuietHours({ start: '21:00', end: '08:00' }, '08:00')).toBe(false);
   });
 
+  it('sends SMS only for urgent kinds the person opted into, when SMS is switched on', () => {
+    const channels = (input: Parameters<typeof planNotificationDelivery>[0]) =>
+      planNotificationDelivery(input).map((d) => `${d.channel}:${d.deliver}`);
+    const smsOn = [
+      { kind: 'absence_reassessment' as const, channel: 'sms' as const, enabled: true },
+    ];
+    const urgent = { ...base, kind: 'absence_reassessment' as const, preferences: smsOn };
+    expect(channels({ ...urgent, smsConfigured: true })).toContain('sms:now');
+    expect(channels({ ...urgent, smsConfigured: false })).not.toContain('sms:now');
+    expect(channels({ ...urgent, preferences: [], smsConfigured: true })).not.toContain('sms:now');
+    const notUrgent = [{ kind: 'task_assigned' as const, channel: 'sms' as const, enabled: true }];
+    expect(channels({ ...base, preferences: notUrgent, smsConfigured: true })).not.toContain(
+      'sms:now',
+    );
+  });
+
+  it('plans email only when opted in, immediately or for the daily digest', () => {
+    const emailOn = (kind: 'task_assigned' | 'absence_reassessment') => ({
+      ...base,
+      kind,
+      preferences: [{ kind, channel: 'email' as const, enabled: true }],
+    });
+    const email = { configured: true, hasAddress: true, dailyDigest: false };
+    const decide = (input: Parameters<typeof planNotificationDelivery>[0]) =>
+      planNotificationDelivery(input).find((d) => d.channel === 'email')?.deliver ?? 'none';
+    expect(decide({ ...base, email })).toBe('none');
+    expect(decide(emailOn('task_assigned'))).toBe('none');
+    const notConfigured = { ...email, configured: false };
+    expect(decide({ ...emailOn('task_assigned'), email: notConfigured })).toBe('none');
+    expect(decide({ ...emailOn('task_assigned'), email })).toBe('now');
+    const noAddress = { ...email, hasAddress: false };
+    expect(decide({ ...emailOn('task_assigned'), email: noAddress })).toBe('skip');
+    const digest = { ...email, dailyDigest: true };
+    expect(decide({ ...emailOn('task_assigned'), email: digest })).toBe('digest');
+    expect(decide({ ...emailOn('absence_reassessment'), email: digest })).toBe('now');
+    // Quiet hours hold push, never email.
+    expect(decide({ ...emailOn('task_assigned'), email, localTime: '23:30' })).toBe('now');
+  });
+
   it('hides sensitive details in push previews', () => {
     expect(pushPreviewFor('reward_updated', 'Reward approved', '₹5,000').body).not.toContain('₹');
   });
