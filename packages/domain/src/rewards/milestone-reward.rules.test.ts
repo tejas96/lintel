@@ -7,8 +7,8 @@ import {
   assessMilestoneReward,
   formatRewardDate,
   type MilestoneRewardFacts,
-  splitMilestoneReward,
 } from './milestone-reward.rules';
+import { splitMilestoneReward } from './milestone-reward.split';
 
 const date = toCalendarDate;
 const ANA = 'ana';

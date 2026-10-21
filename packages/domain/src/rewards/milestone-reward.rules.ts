@@ -28,6 +28,14 @@ export const MILESTONE_REWARD_CHECK_LABELS: Readonly<Record<MilestoneRewardCheck
   documentation: 'Required documents on file',
 };
 
+/** Short names for the summary line. */
+const CHECK_NOUNS: Readonly<Record<MilestoneRewardCheck, string>> = {
+  deliverables_submitted: 'deliverables',
+  reviews_passed: 'reviews',
+  on_time: 'timing',
+  documentation: 'documents',
+};
+
 /** A team reward is shared by 2 to 20 people; an individual one belongs to one person. */
 export const MAX_SHARED_REWARD_RECIPIENTS = 20;
 
@@ -203,30 +211,13 @@ export function assessMilestoneReward(facts: MilestoneRewardFacts): MilestoneRew
     onTimeCheck(facts),
     documentationCheck(facts),
   ];
-  const failed = checks.filter((check) => !check.passed).map((check) => check.label.toLowerCase());
+  const failed = checks.filter((check) => !check.passed).map((check) => CHECK_NOUNS[check.type]);
   return {
     recommendation: failed.length === 0 ? 'grant' : 'withhold',
     checks,
     summary:
       failed.length === 0
         ? 'Every condition was met. A reviewer confirms the reward.'
-        : `Not met: ${failed.join(', ')}. A reviewer decides; nothing is deducted automatically.`,
+        : `${failed.length} of ${checks.length} conditions not met (${failed.join(', ')}). A reviewer decides; nothing is deducted automatically.`,
   };
-}
-
-/**
- * Splits a shared reward into equal shares in minor units. The remainder
- * (amount mod people) goes one minor unit each to the first recipients, in
- * the order given (by name), so the shares always add up to the amount.
- */
-export function splitMilestoneReward(amountMinor: number, recipients: number): number[] {
-  if (!Number.isInteger(amountMinor) || amountMinor < 0) {
-    throw new RangeError('A reward amount is a whole, non-negative number of minor units.');
-  }
-  if (!Number.isInteger(recipients) || recipients < 1) {
-    throw new RangeError('A reward needs at least one recipient.');
-  }
-  const base = Math.floor(amountMinor / recipients);
-  const remainder = amountMinor - base * recipients;
-  return Array.from({ length: recipients }, (_, index) => base + (index < remainder ? 1 : 0));
 }
