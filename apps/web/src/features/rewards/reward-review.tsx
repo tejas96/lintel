@@ -15,9 +15,19 @@ type ReviewKind = (typeof KINDS)[number];
 const isKind = (value: string | null): value is ReviewKind =>
   value !== null && (KINDS as readonly string[]).includes(value);
 
-/** "Challenges · 2" when something waits; the plain word otherwise. */
-const counted = (label: string, waiting: number | undefined) =>
-  waiting ? `${label} · ${waiting}` : label;
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+/** "Waiting for you: 2 milestone rewards and 1 challenge." — or null when nothing waits. */
+function waitingLine(periods: number, milestones: number, challenges: number): string | null {
+  const parts = [
+    periods > 0 ? plural(periods, 'periodic evaluation', 'periodic evaluations') : null,
+    milestones > 0 ? plural(milestones, 'milestone reward', 'milestone rewards') : null,
+    challenges > 0 ? plural(challenges, 'challenge', 'challenges') : null,
+  ].filter((part): part is string => part !== null);
+  if (parts.length === 0) return null;
+  const last = parts.pop();
+  return `Waiting for you: ${parts.length > 0 ? `${parts.join(', ')} and ${last}` : last}.`;
+}
 
 /**
  * Everything a reward reviewer decides, in three queues: periodic
@@ -35,16 +45,22 @@ export function RewardReview() {
   const periods = useReviewQueue('pending_review', 1, enabled);
   const milestones = useMilestoneRewardQueue('pending_review', enabled);
   const challenges = useChallengeQueue('open', enabled);
+  const waiting = waitingLine(
+    periods.data?.totalItems ?? 0,
+    milestones.data?.totalItems ?? 0,
+    challenges.data?.totalItems ?? 0,
+  );
   return (
     <div className="flex flex-col gap-6">
+      {waiting && <p className="type-body text-ink">{waiting}</p>}
       <SegmentedControl
         label="What to review"
         value={kind}
         onValueChange={(next) => router.replace(`${pathname}?kind=${next}`, { scroll: false })}
         options={[
-          { value: 'periods', label: counted('Monthly and quarterly', periods.data?.totalItems) },
-          { value: 'milestones', label: counted('Milestones', milestones.data?.totalItems) },
-          { value: 'challenges', label: counted('Challenges', challenges.data?.totalItems) },
+          { value: 'periods', label: 'Periods' },
+          { value: 'milestones', label: 'Milestones' },
+          { value: 'challenges', label: 'Challenges' },
         ]}
         className="self-start max-sm:self-stretch"
       />

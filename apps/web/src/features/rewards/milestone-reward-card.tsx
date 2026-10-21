@@ -31,8 +31,7 @@ function AmountLine({ share }: { readonly share: MilestoneRewardShare }) {
       </p>
       {share.sharedBy > 1 && share.totalAmountMinor !== null && (
         <p className="type-body-sm text-ink-faint">
-          Share of {formatAmount(share.totalAmountMinor, share.currency)}, split {share.sharedBy}{' '}
-          ways
+          Share of {formatAmount(share.totalAmountMinor, share.currency)}
         </p>
       )}
     </div>
