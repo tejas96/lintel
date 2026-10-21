@@ -2,6 +2,7 @@ import type { RewardEvaluationStatus } from '@lintel/domain';
 import { and, asc, count, desc, eq, or } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { rewardEvaluations, rewardPolicies, teams, users } from '../../schema';
+import { challengeabilityOf, loadChallengeEntries } from '../rewards/challenge-entries.query';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 
 /** Policies people can see; managers of rewards also see inactive ones. */
@@ -94,11 +95,22 @@ export async function queryRewardEvaluations(db: DatabaseExecutor, query: Reward
     db,
     rows.flatMap((row) => [row.evaluation.userId, row.evaluation.decidedByUserId]),
   );
+  const isSubjectOf = (evaluation: { userId: string | null; teamId: string | null }) =>
+    evaluation.userId === query.viewerUserId ||
+    (evaluation.teamId !== null && evaluation.teamId === viewerTeamId);
+  const subjectIds = new Set(
+    rows.filter((row) => isSubjectOf(row.evaluation)).map((row) => row.evaluation.id),
+  );
+  const history = await loadChallengeEntries(
+    db,
+    'evaluation',
+    rows.map((row) => row.evaluation.id),
+    (id) => query.canViewAll || subjectIds.has(id),
+  );
   const items = rows.map(({ evaluation, policy, team }) => {
-    const isSubject =
-      evaluation.userId === query.viewerUserId ||
-      (evaluation.teamId !== null && evaluation.teamId === viewerTeamId);
+    const isSubject = isSubjectOf(evaluation);
     const showAmounts = query.canViewAll || isSubject;
+    const challenges = history.get(evaluation.id) ?? [];
     return {
       id: evaluation.id,
       policy: { id: policy.id, name: policy.name, scope: policy.scope },
@@ -117,6 +129,16 @@ export async function queryRewardEvaluations(db: DatabaseExecutor, query: Reward
       decidedAt: evaluation.decidedAt?.toISOString() ?? null,
       decisionNote: evaluation.decisionNote,
       createdAt: evaluation.createdAt.toISOString(),
+      challenges,
+      challengeable: challengeabilityOf({
+        status: evaluation.status,
+        grantedAmountMinor:
+          evaluation.status === 'approved'
+            ? (evaluation.adjustedAmountMinor ?? evaluation.amountMinor)
+            : null,
+        isSubject,
+        history: challenges,
+      }),
       version: evaluation.version,
     };
   });

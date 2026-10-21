@@ -12,6 +12,7 @@ import { projectCostsContract } from './project-costs.contract';
 import { projectsContract } from './projects.contract';
 import { reassignmentsContract } from './reassignments.contract';
 import { reportsContract } from './reports.contract';
+import { rewardRecordsContract } from './reward-records.contract';
 import { tasksContract } from './tasks.contract';
 import { templateUpdatesContract } from './template-updates.contract';
 import { templatesContract } from './templates.contract';
@@ -42,6 +43,7 @@ export type ApiRouterDefinition = {
   readonly documents: typeof documentsContract;
   readonly reassignments: typeof reassignmentsContract;
   readonly templateUpdates: typeof templateUpdatesContract;
+  readonly rewardRecords: typeof rewardRecordsContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -63,6 +65,7 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   documents: documentsContract,
   reassignments: reassignmentsContract,
   templateUpdates: templateUpdatesContract,
+  rewardRecords: rewardRecordsContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -93,6 +96,7 @@ export {
   reportQuerySchema,
   reportsContract,
 } from './reports.contract';
+export { rewardRecordsContract } from './reward-records.contract';
 export { createTaskBodySchema, tasksContract } from './tasks.contract';
 export { templateUpdatesContract } from './template-updates.contract';
 export { templatesContract } from './templates.contract';

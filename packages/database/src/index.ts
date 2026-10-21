@@ -12,6 +12,7 @@ export * from './queries/people';
 export * from './queries/projects';
 export * from './queries/reassignments';
 export * from './queries/reports';
+export * from './queries/rewards';
 export * from './queries/shared';
 export * from './queries/tasks';
 export * from './queries/templates';

@@ -18,6 +18,7 @@ export const NOTIFICATION_KINDS = [
   'scope_change_requested',
   'scope_change_decided',
   'reward_updated',
+  'reward_review_requested',
   'priority_changed',
   'reassignment_requested',
   'reassignment_decided',
@@ -50,6 +51,7 @@ export const NOTIFICATION_URGENCY: Readonly<Record<NotificationKind, Notificatio
   scope_change_requested: 'normal',
   scope_change_decided: 'normal',
   reward_updated: 'low',
+  reward_review_requested: 'normal',
   priority_changed: 'normal',
   reassignment_requested: 'normal',
   reassignment_decided: 'normal',
@@ -61,6 +63,7 @@ export const NOTIFICATION_URGENCY: Readonly<Record<NotificationKind, Notificatio
  */
 export const SENSITIVE_NOTIFICATION_KINDS: ReadonlySet<NotificationKind> = new Set([
   'reward_updated',
+  'reward_review_requested',
   'leave_decided',
   'leave_info_requested',
 ]);

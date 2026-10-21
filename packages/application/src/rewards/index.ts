@@ -1,5 +1,15 @@
+export * from './challengeable-records';
+export * from './decide-milestone-reward.command';
 export * from './decide-reward-evaluation.command';
+export * from './evaluate-milestone-reward';
 export * from './manage-reward-policies.commands';
+export * from './milestone-reward.store';
+export * from './milestone-reward-planning';
+export * from './plan-milestone-reward.command';
+export * from './raise-reward-challenge.command';
+export * from './resolve-reward-challenge.command';
 export * from './reward.store';
+export * from './reward-challenge.store';
 export { previousRewardPeriod, type RewardPeriodRange, rewardPeriodFor } from './reward-period';
 export * from './run-reward-evaluation.command';
+export * from './withdraw-milestone-reward.command';

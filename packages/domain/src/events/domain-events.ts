@@ -25,6 +25,10 @@ export interface DomainEventMap {
     channel: 'sms' | 'email';
   };
   RewardEvaluated: { evaluationId: string; userId: string | null; status: string };
+  MilestoneRewardEvaluated: { milestoneRewardId: string; milestoneId: string; projectId: string };
+  MilestoneRewardDecided: { shareId: string; userId: string; status: string };
+  RewardChallengeRaised: { challengeId: string; recordKind: string; recordId: string };
+  RewardChallengeResolved: { challengeId: string; status: string };
 }
 
 export type DomainEventType = keyof DomainEventMap;

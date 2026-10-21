@@ -3,6 +3,7 @@ import {
   DELIVERABLE_STATUSES,
   DOCUMENT_FOLDERS,
   LEAVE_STATUSES,
+  MILESTONE_REWARD_STATUSES,
   MILESTONE_STATUSES,
   NOTIFICATION_CHANNELS,
   NOTIFICATION_KINDS,
@@ -11,6 +12,7 @@ import {
   PROJECT_STATUSES,
   PROJECT_TYPES,
   REASSIGNMENT_STATUSES,
+  REWARD_CHALLENGE_STATUSES,
   REWARD_EVALUATION_STATUSES,
   REWARD_PERIODS,
   REWARD_SCOPES,
@@ -84,6 +86,15 @@ export const rewardPeriodEnum = pgEnum('reward_period', REWARD_PERIODS);
 export const rewardEvaluationStatusEnum = pgEnum(
   'reward_evaluation_status',
   REWARD_EVALUATION_STATUSES,
+);
+export const milestoneRewardStatusEnum = pgEnum(
+  'milestone_reward_status',
+  MILESTONE_REWARD_STATUSES,
+);
+export const rewardRecommendationEnum = pgEnum('reward_recommendation', ['grant', 'withhold']);
+export const rewardChallengeStatusEnum = pgEnum(
+  'reward_challenge_status',
+  REWARD_CHALLENGE_STATUSES,
 );
 export const notificationKindEnum = pgEnum('notification_kind', NOTIFICATION_KINDS);
 export const notificationChannelEnum = pgEnum('notification_channel', NOTIFICATION_CHANNELS);

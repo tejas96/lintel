@@ -5,6 +5,7 @@ import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { LeaveRepository } from './repositories/leave.repository';
 import { LeaveTypeRepository } from './repositories/leave-type.repository';
+import { MilestoneRewardRepository } from './repositories/milestone-reward.repository';
 import { NotificationRepository } from './repositories/notification.repository';
 import { NotificationInboxRepository } from './repositories/notification-inbox.repository';
 import { PeopleRepository } from './repositories/people.repository';
@@ -15,6 +16,7 @@ import { ProjectDocumentRepository } from './repositories/project-document.repos
 import { ReassignmentRepository } from './repositories/reassignment.repository';
 import { RecordRepository } from './repositories/record.repository';
 import { RewardRepository } from './repositories/reward.repository';
+import { RewardChallengeRepository } from './repositories/reward-challenge.repository';
 import { ScopeChangeRepository } from './repositories/scope-change.repository';
 import { SettingsRepository } from './repositories/settings.repository';
 import { TaskRepository } from './repositories/task.repository';
@@ -40,6 +42,8 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     records: new RecordRepository(executor),
     scopeChanges: new ScopeChangeRepository(executor),
     rewards: new RewardRepository(executor),
+    milestoneRewards: new MilestoneRewardRepository(executor),
+    rewardChallenges: new RewardChallengeRepository(executor),
     settings: new SettingsRepository(executor),
     templates: new TemplateRepository(executor),
     tasks: new TaskRepository(executor),

@@ -27,6 +27,7 @@ const KIND_ICON: Readonly<Record<NotificationItem['kind'], IconName>> = {
   scope_change_requested: 'projects',
   scope_change_decided: 'projects',
   reward_updated: 'flag',
+  reward_review_requested: 'approvals',
   priority_changed: 'flag',
   reassignment_requested: 'person',
   reassignment_decided: 'person',

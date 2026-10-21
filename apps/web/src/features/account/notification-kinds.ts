@@ -76,7 +76,11 @@ export const KIND_COPY: Readonly<Record<NotificationKind, KindCopy>> = {
   },
   reward_updated: {
     label: 'Your reward is updated',
-    explanation: 'When your recognition is reviewed.',
+    explanation: 'When your recognition is reviewed, or your challenge is answered.',
+  },
+  reward_review_requested: {
+    label: 'A reward or challenge needs your review',
+    explanation: 'A milestone reward to confirm, or someone challenging a reward record.',
   },
   reassignment_requested: {
     label: 'Someone asks to hand over a task',
@@ -133,6 +137,7 @@ export const KIND_GROUPS: readonly {
       'scope_change_requested',
       'scope_change_decided',
       'reward_updated',
+      'reward_review_requested',
     ],
   },
 ];

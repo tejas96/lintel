@@ -83,6 +83,9 @@ export interface RewardEvaluationRecord {
   readonly periodStart: string;
   readonly status: RewardEvaluationStatus;
   readonly amountMinor: number;
+  readonly adjustedAmountMinor: number | null;
+  readonly decidedByUserId: string | null;
+  readonly decisionNote: string | null;
   readonly version: number;
 }
 
@@ -120,6 +123,12 @@ export interface RewardStore {
   upsertEvaluation(input: RewardEvaluationUpsert): Promise<RewardUpsertOutcome>;
   findEvaluation(evaluationId: string): Promise<RewardEvaluationRecord | null>;
   decideEvaluation(
+    evaluationId: string,
+    expectedVersion: number,
+    decision: RewardDecision,
+  ): Promise<boolean>;
+  /** Grants a settled evaluation on a challenge correction, when the version still matches. */
+  correctEvaluation(
     evaluationId: string,
     expectedVersion: number,
     decision: RewardDecision,

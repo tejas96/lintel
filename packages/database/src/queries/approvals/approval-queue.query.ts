@@ -16,6 +16,7 @@ import {
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import type { ProjectRefView, UserSummaryView } from '../shared/view-types';
 import { reassignmentApprovals } from './approval-sources.reassignments';
+import { milestoneRewardApprovals, rewardChallengeApprovals } from './approval-sources.rewards';
 import {
   type ApprovalDraft,
   deliverableReviews,
@@ -164,6 +165,8 @@ export async function loadApprovalQueue(
     leaveApprovals(db, viewer, today),
     can('scope_changes.approve') ? scopeChangeApprovals(db, today) : none,
     can('rewards.decide') ? rewardApprovals(db) : none,
+    can('rewards.decide') ? milestoneRewardApprovals(db, viewer.userId) : none,
+    can('rewards.decide') ? rewardChallengeApprovals(db, viewer.userId) : none,
     priorityConflictReviews(db, viewer.userId),
     reassignmentApprovals(db, viewer, today),
   ]);
