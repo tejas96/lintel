@@ -15,6 +15,7 @@ import {
 } from '../../schema';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import type { ProjectRefView, UserSummaryView } from '../shared/view-types';
+import { dateChangeApprovals } from './approval-sources.date-changes';
 import { reassignmentApprovals } from './approval-sources.reassignments';
 import {
   type ApprovalDraft,
@@ -166,6 +167,7 @@ export async function loadApprovalQueue(
     can('rewards.decide') ? rewardApprovals(db) : none,
     priorityConflictReviews(db, viewer.userId),
     reassignmentApprovals(db, viewer, today),
+    dateChangeApprovals(db, viewer, today),
   ]);
   const drafts = sources
     .flat()

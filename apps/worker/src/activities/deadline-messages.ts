@@ -12,6 +12,13 @@ function textFor(task: TaskDeadlineFacts, step: DeadlineStepRef, due: string): M
   const project = task.project.name;
   const owner = task.ownerName ?? 'no owner';
   const status = TASK_STATUS_LABELS[task.status].toLowerCase();
+  if (step.kind === 'task_late_start') {
+    const start = task.plannedStartDate ? formatCalendarDate(task.plannedStartDate) : 'its start';
+    return {
+      title: `Not started yet: ${task.title}`,
+      body: `"${task.title}" (${project}) was planned to start on ${start}. Start it, report a blocker, or ask for a new date.`,
+    };
+  }
   if (step.kind === 'deadline_upcoming') {
     return {
       title: `Due ${due}: ${task.title}`,
@@ -53,7 +60,10 @@ export function deadlineNotification(
     kind: step.kind,
     title,
     body,
-    linkPath: `/tasks/${task.taskId}`,
+    linkPath:
+      step.kind === 'task_late_start'
+        ? `/tasks/${task.taskId}?nudge=late-start`
+        : `/tasks/${task.taskId}`,
     subjectType: 'task',
     subjectId: task.taskId,
     dedupeKey: notificationDedupeKey({

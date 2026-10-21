@@ -35,6 +35,11 @@ export const queryKeys = {
     ['projects', 'detail', projectId, 'documents'] as const,
   document: (documentId: string) => ['documents', documentId] as const,
   taskReassignments: (taskId: string) => ['tasks', 'detail', taskId, 'reassignments'] as const,
+  taskDateChanges: (taskId: string) => ['tasks', 'detail', taskId, 'date-changes'] as const,
+  briefing: (query: Record<string, unknown>) => ['dashboard', 'briefing', query] as const,
+  allBriefings: ['dashboard', 'briefing'] as const,
+  projectRisks: (projectId: string) => ['projects', 'detail', projectId, 'risks'] as const,
+  coverSuggestions: (leaveId: string) => ['leave', leaveId, 'cover-suggestions'] as const,
   templateUpdate: (projectId: string) =>
     ['projects', 'detail', projectId, 'template-update'] as const,
   templateUpdatePreview: (projectId: string, versionId: string, ticked: readonly string[]) =>

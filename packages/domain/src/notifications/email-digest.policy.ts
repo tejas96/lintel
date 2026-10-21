@@ -17,7 +17,10 @@ export const NOTIFICATION_KIND_GROUPS: readonly {
       'task_reassigned',
       'deadline_upcoming',
       'task_overdue',
+      'task_late_start',
       'priority_changed',
+      'reassignment_decided',
+      'date_change_decided',
     ],
   },
   {
@@ -28,6 +31,8 @@ export const NOTIFICATION_KIND_GROUPS: readonly {
       'review_requested',
       'review_reminder',
       'review_decided',
+      'reassignment_requested',
+      'date_change_requested',
     ],
   },
   {

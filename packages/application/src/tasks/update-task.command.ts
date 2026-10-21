@@ -58,6 +58,7 @@ const MANAGER_FIELDS: readonly (keyof EditableTaskFields)[] = [
 const DEADLINE_PLAN_FIELDS: readonly (keyof EditableTaskFields)[] = [
   'priority',
   'escalateAfterOverdueDays',
+  'plannedStartDate',
 ];
 
 function changedFields(task: TaskRecord, changes: Partial<EditableTaskFields>): TaskChanges {

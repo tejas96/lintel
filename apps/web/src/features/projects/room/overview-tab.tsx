@@ -12,12 +12,8 @@ import { ProjectProfitabilityPanel } from '@/features/finances/project-profitabi
 import { TemplateUpdateBanner } from '@/features/projects/template-update/template-update-banner';
 import { useSession } from '@/features/session/session-provider';
 import { daysBetween, todayIn } from '@/lib/format/dates';
-import {
-  OverviewBlockers,
-  OverviewRisks,
-  TeamAllocation,
-  UpcomingDeadlines,
-} from './overview-panels';
+import { OverviewBlockers, TeamAllocation, UpcomingDeadlines } from './overview-panels';
+import { OverviewRiskCards } from './overview-risk-cards';
 import { useProject, useProjectTasks } from './use-project-room';
 
 const OPEN = new Set([
@@ -72,6 +68,7 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
           detail={`of ${health.completedTaskCount + health.openTaskCount} tasks`}
         />
       </div>
+      <OverviewRiskCards projectId={projectId} today={today} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
           <Card>
@@ -109,7 +106,6 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
           <ProjectProfitabilityPanel project={project} today={today} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
-          <OverviewRisks project={project} today={today} />
           <OverviewBlockers projectId={projectId} />
           <TeamAllocation members={project.members} openTasks={openTasks} />
         </div>

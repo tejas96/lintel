@@ -21,6 +21,9 @@ export const NOTIFICATION_KINDS = [
   'priority_changed',
   'reassignment_requested',
   'reassignment_decided',
+  'task_late_start',
+  'date_change_requested',
+  'date_change_decided',
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -53,6 +56,9 @@ export const NOTIFICATION_URGENCY: Readonly<Record<NotificationKind, Notificatio
   priority_changed: 'normal',
   reassignment_requested: 'normal',
   reassignment_decided: 'normal',
+  task_late_start: 'normal',
+  date_change_requested: 'normal',
+  date_change_decided: 'normal',
 };
 
 /**

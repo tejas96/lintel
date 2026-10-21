@@ -1,7 +1,9 @@
 import type { Type } from '@nestjs/common';
+import { DateChangesModule } from './date-changes/date-changes.module';
 import { DeliverablesModule } from './deliverables/deliverables.module';
 import { DocumentsModule } from './documents/documents.module';
 import { FinancesModule } from './finances/finances.module';
+import { InsightsModule } from './insights/insights.module';
 import { LeaveModule } from './leave/leave.module';
 import { LeavePoliciesModule } from './leave-policies/leave-policies.module';
 import { OperationsModule } from './operations/operations.module';
@@ -39,4 +41,6 @@ export const FEATURE_MODULES: Type[] = [
   DocumentsModule,
   ReassignmentsModule,
   TemplateUpdatesModule,
+  InsightsModule,
+  DateChangesModule,
 ];

@@ -1,4 +1,5 @@
 import {
+  DATE_CHANGE_STATUSES,
   DAY_PORTIONS,
   DELIVERABLE_STATUSES,
   DOCUMENT_FOLDERS,
@@ -110,3 +111,4 @@ export const sessionClientEnum = pgEnum('session_client', ['web', 'mobile']);
 export const priorityConflictStatusEnum = pgEnum('priority_conflict_status', ['open', 'resolved']);
 export const documentFolderEnum = pgEnum('document_folder', DOCUMENT_FOLDERS);
 export const reassignmentStatusEnum = pgEnum('reassignment_status', REASSIGNMENT_STATUSES);
+export const dateChangeStatusEnum = pgEnum('date_change_status', DATE_CHANGE_STATUSES);

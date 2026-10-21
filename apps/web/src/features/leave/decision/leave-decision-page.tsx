@@ -4,7 +4,7 @@ import type { LeaveRequestDetail } from '@lintel/api-contracts';
 import { ErrorState, pageEnter, Skeleton, SkeletonGroup } from '@lintel/design-system/web';
 import { TriangleAlert } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { StaleVersionNotice, useStaleVersion } from '@/features/common/stale-version-notice';
 import { useSession } from '@/features/session/session-provider';
 import { describeError } from '@/lib/api/describe-error';
@@ -13,6 +13,7 @@ import { useLeaveRequest } from '../use-leave';
 import { AbsenceChart } from './absence-chart';
 import { ApprovalSteps } from './approval-steps';
 import { CancelLeaveButton } from './cancel-leave-button';
+import { CoverSuggestions } from './cover-suggestions';
 import { InfoResponseForm } from './info-response-form';
 import { LeaveConflicts } from './leave-conflicts';
 import { LeaveDecisionPanel } from './leave-decision-panel';
@@ -34,6 +35,15 @@ export function LeaveDecisionPage({ requestId }: { readonly requestId: string })
   const staleness = useStaleVersion();
   const mutations = useLeaveDecisionMutations(requestId, staleness.catchStale);
   const refresh = () => void detail.refetch().then(() => staleness.clear());
+  const [coverChoice, setCoverChoice] = useState<Record<string, string>>({});
+  const chooseCover = (taskId: string, userId: string) => {
+    setCoverChoice((current) => ({ ...current, [taskId]: userId }));
+    window.requestAnimationFrame(() =>
+      document
+        .getElementById(`handover-${taskId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+    );
+  };
 
   if (detail.isPending) return <LeaveDecisionSkeleton />;
   if (detail.isError) {
@@ -79,6 +89,7 @@ export function LeaveDecisionPage({ requestId }: { readonly requestId: string })
             <LeaveConflicts conflicts={request.impact.conflicts} />
             <ImpactNotes impact={request.impact} />
           </Section>
+          <CoverSuggestions leaveRequestId={request.id} today={today} onChoose={chooseCover} />
           <Section
             title="Handovers"
             description="Proposed by the person going on leave. Nothing is reassigned until a project manager hands it over."
@@ -91,6 +102,7 @@ export function LeaveDecisionPage({ requestId }: { readonly requestId: string })
               today={today}
               mutation={mutations.handover}
               urgent={request.isUrgentAbsence}
+              coverChoice={coverChoice}
             />
           </Section>
         </div>

@@ -1,5 +1,6 @@
-import { addDays, type CalendarDate, zonedTimeToInstant } from '@lintel/shared';
-import { addWorkingDays, isWorkingDay, type WorkingCalendar } from '../calendar/working-calendar';
+import { type CalendarDate, zonedTimeToInstant } from '@lintel/shared';
+import { addWorkingDays, type WorkingCalendar } from '../calendar/working-calendar';
+import { previousWorkingDay } from '../calendar/working-moments';
 import type { ProjectCriticality } from '../projects/project-status';
 import type { TaskPriority } from '../tasks/task-status';
 import type { NotificationKind } from './notification-kinds';
@@ -76,10 +77,4 @@ export function planDeadlineEscalation(input: DeadlineEscalationInput): Escalati
     });
   }
   return steps.sort((left, right) => left.at.getTime() - right.at.getTime());
-}
-
-function previousWorkingDay(calendar: WorkingCalendar, date: CalendarDate): CalendarDate {
-  let candidate = addDays(date, -1);
-  while (!isWorkingDay(calendar, candidate)) candidate = addDays(candidate, -1);
-  return candidate;
 }

@@ -100,6 +100,19 @@ compatible with the new schema for one release.
   commands; switching it off ends running sessions.
 - `tasks.escalate_after_overdue_days` is editable per task by its project manager.
 
+## Risk intelligence tables (migration `0006_risk_intelligence`)
+
+- `task_date_change_requests`: a new-date request (previous and proposed start and due
+  dates, reason, status `open | accepted | declined | withdrawn`, decision note, `version`).
+  A partial unique index keeps one open request per task; CHECKs refuse a self-decided
+  request and a proposed start after the proposed due date.
+- `task_schedule_changes.date_change_request_id` links the history row an accepted request
+  wrote (no foreign key, like `scope_change_id`).
+- `business_health_snapshots`: one business health reading per `scope_key` (`studio` or
+  `manager:<userId>`) and `recorded_on` day (unique), with the formula name, the score and
+  the five measured parts as JSON, so a past score can always be explained.
+- `notification_kind` gains `task_late_start`, `date_change_requested`, `date_change_decided`.
+
 ## Integration tests
 
 A second database `lintel_test` is created by `infrastructure/docker/postgres-init`.

@@ -1,7 +1,9 @@
 import { commonErrorResponses } from '../common/errors';
 import { authContract } from './auth.contract';
+import { dateChangesContract } from './date-changes.contract';
 import { deliverablesContract } from './deliverables.contract';
 import { documentsContract } from './documents.contract';
+import { insightsContract } from './insights.contract';
 import { leaveContract } from './leave.contract';
 import { leavePoliciesContract } from './leave-policies.contract';
 import { operationsContract } from './operations.contract';
@@ -42,6 +44,8 @@ export type ApiRouterDefinition = {
   readonly documents: typeof documentsContract;
   readonly reassignments: typeof reassignmentsContract;
   readonly templateUpdates: typeof templateUpdatesContract;
+  readonly insights: typeof insightsContract;
+  readonly dateChanges: typeof dateChangesContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -63,6 +67,8 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   documents: documentsContract,
   reassignments: reassignmentsContract,
   templateUpdates: templateUpdatesContract,
+  insights: insightsContract,
+  dateChanges: dateChangesContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -73,8 +79,10 @@ export const apiContractOptions = {
 } as const;
 
 export { authContract } from './auth.contract';
+export { dateChangesContract } from './date-changes.contract';
 export { deliverablesContract } from './deliverables.contract';
 export { documentsContract } from './documents.contract';
+export { insightsContract } from './insights.contract';
 export { leaveContract, leavePeriodSchema } from './leave.contract';
 export { leavePoliciesContract } from './leave-policies.contract';
 export { operationsContract } from './operations.contract';

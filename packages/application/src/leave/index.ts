@@ -1,4 +1,5 @@
 export * from './cancel-leave-request.command';
+export * from './cover-suggestions.query';
 export * from './decide-handover.command';
 export * from './decide-leave-request.command';
 export * from './leave.queries';

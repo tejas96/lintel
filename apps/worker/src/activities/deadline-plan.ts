@@ -30,10 +30,21 @@ export function deadlineStepKey(step: Pick<EscalationStep, 'audience' | 'kind'>)
   return `${step.kind}.${step.audience}`;
 }
 
+/** The late-start step names its planned start, so a new start date makes a new step. */
+export function lateStartStepKey(plannedStartDate: string): string {
+  return `task_late_start.task_owner@${plannedStartDate}`;
+}
+
+/** The planned start a late-start step was planned for (null for any other step). */
+export function plannedStartOfStep(key: string): string | null {
+  return key.startsWith('task_late_start.') ? (key.split('@')[1] ?? null) : null;
+}
+
 /** Converts the domain timeline into workflow steps relative to `now`. */
 export function toDeadlinePlanSteps(
   steps: readonly EscalationStep[],
   now: Date,
+  plannedStartDate: string | null = null,
 ): DeadlinePlanStep[] {
   const ordered = [...steps].sort((left, right) => left.at.getTime() - right.at.getTime());
   const latestDueIndex = new Map<EscalationAudience, number>();
@@ -43,7 +54,10 @@ export function toDeadlinePlanSteps(
   return ordered.map((step, index) => {
     const due = step.at.getTime() <= now.getTime();
     return {
-      key: deadlineStepKey(step),
+      key:
+        step.kind === 'task_late_start' && plannedStartDate
+          ? lateStartStepKey(plannedStartDate)
+          : deadlineStepKey(step),
       audience: step.audience,
       kind: step.kind,
       label: step.label,

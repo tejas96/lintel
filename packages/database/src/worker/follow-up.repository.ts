@@ -7,7 +7,7 @@ import type {
 } from '@lintel/application';
 import type { Capability } from '@lintel/domain';
 import type { CalendarDate } from '@lintel/shared';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, notInArray } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import {
   deliverables,
@@ -15,6 +15,7 @@ import {
   projects,
   roleCapabilities,
   taskBlockers,
+  taskDependencies,
   tasks,
   users,
 } from '../schema';
@@ -41,12 +42,22 @@ export class FollowUpRepository implements FollowUpStore {
       .where(eq(tasks.id, taskId));
     if (!row) return null;
     const { task } = row;
+    const [open] = await this.db
+      .select({ id: taskDependencies.dependsOnTaskId })
+      .from(taskDependencies)
+      .innerJoin(tasks, eq(tasks.id, taskDependencies.dependsOnTaskId))
+      .where(
+        and(eq(taskDependencies.taskId, taskId), notInArray(tasks.status, ['done', 'cancelled'])),
+      )
+      .limit(1);
     return {
       taskId: task.id,
       title: task.title,
       status: task.status,
       priority: task.priority,
+      plannedStartDate: task.plannedStartDate as CalendarDate | null,
       dueDate: task.dueDate as CalendarDate | null,
+      prerequisitesDone: open === undefined,
       escalateAfterOverdueDays: task.escalateAfterOverdueDays,
       ownerUserId: task.ownerUserId,
       ownerName: row.ownerName,

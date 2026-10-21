@@ -22,11 +22,14 @@ export interface TaskDeadlineFacts {
   readonly title: string;
   readonly status: TaskStatus;
   readonly priority: TaskPriority;
+  readonly plannedStartDate: CalendarDate | null;
   readonly dueDate: CalendarDate | null;
   readonly escalateAfterOverdueDays: number;
   readonly ownerUserId: string | null;
   readonly ownerName: string | null;
   readonly archived: boolean;
+  /** Every prerequisite is done or cancelled (true when there are none). */
+  readonly prerequisitesDone: boolean;
   readonly project: FollowUpProjectFacts;
 }
 

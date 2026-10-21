@@ -43,6 +43,13 @@
       "when": 1792557575434,
       "tag": "0005_project_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792571900854,
+      "tag": "0006_risk_intelligence",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,10 @@
 import type { FollowUpStore, TaskDeadlineFacts } from '@lintel/application';
-import { isOpenTaskStatus, planDeadlineEscalation } from '@lintel/domain';
+import {
+  type EscalationStep,
+  isOpenTaskStatus,
+  planDeadlineEscalation,
+  planLateStartNudge,
+} from '@lintel/domain';
 import {
   type ActivityDependencies,
   calendarFor,
@@ -8,9 +13,20 @@ import {
   withNotifier,
 } from './activity-dependencies';
 import { deadlineNotification } from './deadline-messages';
-import { type DeadlinePlan, type DeadlineStepRef, toDeadlinePlanSteps } from './deadline-plan';
+import {
+  type DeadlinePlan,
+  type DeadlineStepRef,
+  plannedStartOfStep,
+  toDeadlinePlanSteps,
+} from './deadline-plan';
 
-export type DeadlineStepResult = 'sent' | 'no_recipient' | 'task_closed' | 'due_date_changed';
+/** `not_needed`: a late-start nudge whose task started (or cannot start) meanwhile. */
+export type DeadlineStepResult =
+  | 'sent'
+  | 'no_recipient'
+  | 'not_needed'
+  | 'task_closed'
+  | 'due_date_changed';
 
 function isStillOpen(task: TaskDeadlineFacts): boolean {
   return !task.archived && isOpenTaskStatus(task.status);
@@ -33,6 +49,22 @@ async function recipientsFor(
   }
 }
 
+/**
+ * A late-start nudge is re-checked right before it goes out: a moved start
+ * re-plans (like a moved due date); work that started, or can no longer
+ * start, needs no nudge.
+ */
+function lateStartCheck(
+  task: TaskDeadlineFacts,
+  step: DeadlineStepRef,
+): 'due_date_changed' | 'not_needed' | null {
+  const plannedStart = plannedStartOfStep(step.key);
+  if (step.kind !== 'task_late_start') return null;
+  if (plannedStart !== task.plannedStartDate) return 'due_date_changed';
+  if (task.status !== 'ready' || !task.prerequisitesDone) return 'not_needed';
+  return null;
+}
+
 /** Activities of `taskDeadlineWorkflow`. Both are read-mostly and safe to retry. */
 export function createDeadlineActivities(deps: ActivityDependencies) {
   return {
@@ -51,7 +83,7 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
         deps.organization.settings(),
         calendarFor(stores, task.ownerUserId),
       ]);
-      const steps = planDeadlineEscalation({
+      const steps: EscalationStep[] = planDeadlineEscalation({
         dueDate: task.dueDate,
         priority: task.priority,
         projectCriticality: task.project.criticality,
@@ -59,10 +91,23 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
         calendar,
         reminderTime: settings.deadlineReminderTime,
       });
+      const nudge = planLateStartNudge({
+        ...task,
+        calendar,
+        reminderTime: settings.deadlineReminderTime,
+      });
+      if (nudge) {
+        steps.push({
+          at: nudge.at,
+          audience: 'task_owner',
+          kind: 'task_late_start',
+          label: 'Late-start nudge the working day after the planned start',
+        });
+      }
       return {
         open: true,
         dueDate: task.dueDate,
-        steps: toDeadlinePlanSteps(steps, deps.clock.now()),
+        steps: toDeadlinePlanSteps(steps, deps.clock.now(), nudge?.plannedStartDate ?? null),
       };
     },
 
@@ -80,6 +125,8 @@ export function createDeadlineActivities(deps: ActivityDependencies) {
         const task = await followUps.taskDeadline(taskId);
         if (!task || !isStillOpen(task)) return 'task_closed';
         if (task.dueDate !== dueDate) return 'due_date_changed';
+        const lateStart = lateStartCheck(task, step);
+        if (lateStart) return lateStart;
         const recipients = await recipientsFor(followUps, task, step);
         if (recipients.length === 0) return 'no_recipient';
         await notifyEach(

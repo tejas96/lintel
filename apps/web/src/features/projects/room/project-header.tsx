@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { swatchClass } from '@/features/tasks/task-presentation';
 import { daysBetween, formatCalendarDate } from '@/lib/format/dates';
 import { HealthPill, PROJECT_STATUS_LABELS } from '../project-presentation';
+import { useProjectRisks } from './use-project-room';
 
 function Cell({
   label,
@@ -37,7 +38,9 @@ export function ProjectHeader({
   readonly project: ProjectDetail;
   readonly today: string;
 }) {
-  const forecast = project.health.forecastEndDate;
+  // The risk cards' forecast (plan, late starts, blockers, prerequisites) when loaded.
+  const risks = useProjectRisks(project.id);
+  const forecast = risks.data?.delivery?.forecastDate ?? project.health.forecastEndDate;
   const slip = forecast ? daysBetween(project.baselineEndDate, forecast) : 0;
   const stages = [...project.stages]
     .sort((left, right) => left.position - right.position)

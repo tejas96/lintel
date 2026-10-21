@@ -92,6 +92,26 @@ A review against the original requirements found gaps; all were built, merged an
 - ✅ SMS and email notifications (with daily digest) and web push, behind ports with development adapters.
 - 🟡 Live SMS, email and web push not tried: no MSG91 SMS template, SMTP server or Firebase web app yet.
 
+## Stage 10 — Risk intelligence (21 Oct, evening) ✅
+
+The system now explains problems and drives the next action (`PRODUCT_REQUIREMENTS.md` §15).
+
+- ✅ Business health score (0–100, formula `health-v1`) with band, three biggest contributors
+  linking to their cause, the formula, and a daily recorded trend (worker step).
+- ✅ Risk cards per at-risk milestone or delivery date: what is happening, forecast slip in
+  working days, next action, who acts, when it escalates; one card per cause. Command center
+  and project control room.
+- ✅ Command center: deadlines in the next 7 days, performance highlights, owner intervention needed.
+- ✅ Late-start nudge in the deadline workflow; new-date requests (ask, accept or decline,
+  withdraw) with schedule history, approvals queue and task page.
+- ✅ Cover suggestions for leave and urgent absences; a choice opens the handover or the new
+  Change owner sheet with the person picked.
+- ✅ Screens checked in a browser at 1440 and 390 px, light and dark (screenshots 111–127 in
+  `docs/screenshots/web/`); two browser journeys with axe checks added (`risk-intelligence.spec.ts`,
+  33 end-to-end tests in all).
+- 🟡 The phone app lists new-date requests in Approvals and shows the new notification kinds,
+  but has no screen yet to ask for a new date or to decide one (the web does both).
+
 ## Known external blockers
 
 | Item | Needs |

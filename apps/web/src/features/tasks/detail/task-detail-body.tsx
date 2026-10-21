@@ -6,14 +6,18 @@ import { useState } from 'react';
 import { TaskDeliverables } from '@/features/deliverables/task-deliverables';
 import { EditTaskButton } from '../edit/edit-task-sheet';
 import { ReportBlockerSheet } from '../report-blocker-sheet';
+import { AssignTaskButton } from './assign-task-sheet';
 import { DetailSection } from './detail-section';
+import { LateStartCallout } from './late-start-callout';
 import { TaskAttachments } from './task-attachments';
 import { TaskChecklist } from './task-checklist';
 import { ScheduleHistory, TaskComments } from './task-comments';
+import { TaskDateChanges } from './task-date-changes';
 import { TaskFacts } from './task-header';
 import { TaskReassignment } from './task-reassignment';
 import { TaskBlockers, TaskDependencies } from './task-relations';
 import { TaskTransitions } from './task-transitions';
+import { useTaskDateChanges } from './use-date-changes';
 
 function Brief({ task }: { readonly task: TaskDetail }) {
   if (!task.description && !task.completionCriteria) return null;
@@ -62,7 +66,31 @@ export function TaskDetailBody({
   readonly layout: 'page' | 'drawer';
 }) {
   const [blocking, setBlocking] = useState(false);
+  const [askingDate, setAskingDate] = useState(false);
+  const dateChanges = useTaskDateChanges(task.id);
   const report = () => setBlocking(true);
+  const callout = (
+    <LateStartCallout
+      task={task}
+      today={today}
+      canAskForDate={dateChanges.data?.viewerCanRequest ?? false}
+      askedFor={
+        dateChanges.data?.requests.find((request) => request.status === 'open')?.proposedDueDate ??
+        null
+      }
+      onReportBlocker={report}
+      onAskForDate={() => setAskingDate(true)}
+    />
+  );
+  const facts = (
+    <div className="flex flex-col gap-3">
+      <TaskFacts task={task} today={today} />
+      <div className="flex flex-wrap gap-2">
+        <EditTaskButton task={task} today={today} />
+        <AssignTaskButton task={task} />
+      </div>
+    </div>
+  );
   const main = (
     <>
       <Brief task={task} />
@@ -75,6 +103,12 @@ export function TaskDetailBody({
   const side = (
     <>
       <TaskBlockers task={task} onReport={report} />
+      <TaskDateChanges
+        task={task}
+        today={today}
+        asking={askingDate}
+        onAskingChange={setAskingDate}
+      />
       <TaskReassignment task={task} />
       <TaskDependencies task={task} today={today} />
       <Collaborators task={task} />
@@ -85,24 +119,20 @@ export function TaskDetailBody({
     <>
       {layout === 'drawer' ? (
         <div className="flex flex-col gap-8 p-5 sm:p-6">
+          {callout}
           <TaskTransitions task={task} onReportBlocker={report} />
-          <div className="flex flex-col gap-3">
-            <TaskFacts task={task} today={today} />
-            <EditTaskButton task={task} today={today} />
-          </div>
+          {facts}
           {side}
           {main}
         </div>
       ) : (
         <div className="flex flex-col gap-8">
+          {callout}
           <TaskTransitions task={task} onReportBlocker={report} />
           <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="flex min-w-0 flex-col gap-10">{main}</div>
             <aside aria-label="Task details" className="flex flex-col gap-8 xl:sticky xl:top-6">
-              <Card className="flex flex-col gap-4 p-5">
-                <TaskFacts task={task} today={today} />
-                <EditTaskButton task={task} today={today} />
-              </Card>
+              <Card className="flex flex-col gap-4 p-5">{facts}</Card>
               {side}
             </aside>
           </div>

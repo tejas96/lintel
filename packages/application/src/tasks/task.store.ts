@@ -96,6 +96,8 @@ export interface ScheduleChangeInput {
   readonly newDueDate: string | null;
   readonly reason: string;
   readonly changedByUserId: string;
+  /** Set when an accepted new-date request moved the task. */
+  readonly dateChangeRequestId?: string | null;
 }
 
 export interface ProjectReferences {

@@ -20,6 +20,10 @@ export interface DeadlineHealSummary {
   readonly started: number;
 }
 
+export interface HealthSnapshotSummary {
+  readonly recorded: number;
+}
+
 /** Open tasks re-armed per daily run; the rest follow on the next run. */
 const HEAL_BATCH_SIZE = 200;
 
@@ -90,6 +94,21 @@ export function createDailyOperationsActivities(deps: ActivityDependencies) {
         milestoneChanges,
       });
       return { projectsChecked: projects.length, projectsNotified, milestoneChanges };
+    },
+
+    /**
+     * Records today's business health score for the studio and for each
+     * project manager (the command center trend). Rerunning on the same day
+     * replaces the day's reading, so retries are safe.
+     */
+    async recordBusinessHealth(): Promise<HealthSnapshotSummary> {
+      const today = await deps.organization.today();
+      const result = await deps.uow.stores.background.insights.recordBusinessHealth(
+        today,
+        deps.clock.now(),
+      );
+      deps.logger.info('Business health recorded', { scopes: result.recorded });
+      return { recorded: result.recorded };
     },
 
     /** Self-heal: starts a deadline workflow for open tasks that never had one. */

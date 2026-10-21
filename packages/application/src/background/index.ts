@@ -2,6 +2,7 @@ export * from './background.stores';
 export * from './daily-operations.store';
 export * from './email-digest.store';
 export * from './follow-up.store';
+export * from './insight-snapshot.store';
 export * from './leave-impact.store';
 export * from './message-delivery.store';
 export * from './outbox-relay.store';
