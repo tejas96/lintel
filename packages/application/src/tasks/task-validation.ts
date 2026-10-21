@@ -1,3 +1,4 @@
+import { validateEscalationDelay } from '@lintel/domain';
 import { PreconditionFailedError, ValidationFailedError } from '@lintel/shared';
 import type { OperationsStores } from './operations-context';
 import type { ProjectReferences, TaskRecord } from './task.store';
@@ -58,6 +59,16 @@ export function assertDateOrder(plannedStartDate: string | null, dueDate: string
   if (plannedStartDate && dueDate && plannedStartDate > dueDate) {
     throw new ValidationFailedError('The planned start must be on or before the due date.', [
       { field: 'plannedStartDate', message: 'Start on or before the due date.' },
+    ]);
+  }
+}
+
+/** Working days overdue before the project manager is alerted. */
+export function assertEscalationDelay(workingDays: number): void {
+  const problem = validateEscalationDelay(workingDays);
+  if (problem) {
+    throw new ValidationFailedError(problem, [
+      { field: 'escalateAfterOverdueDays', message: problem },
     ]);
   }
 }

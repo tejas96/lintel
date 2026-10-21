@@ -2,6 +2,7 @@ import type { WorkQueue, WorkQueueItem } from '@lintel/api-contracts';
 import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Section } from '@/components/section';
+import { canStartFrom } from '@/features/tasks/task-affordances';
 import { SPACE } from '@/theme/layout';
 import { layoutTransition, listEntrance } from '@/theme/motion';
 import { QueueRow } from './queue-row';
@@ -47,7 +48,10 @@ export function QueueSections({ queue, onStart }: QueueSectionsProps) {
                   <QueueRow
                     item={item}
                     today={queue.today}
-                    canStart={WORKABLE.has(bucket)}
+                    canStart={
+                      WORKABLE.has(bucket) &&
+                      (queue.workTrackingEnabled || canStartFrom(item.task.status))
+                    }
                     onStart={onStart}
                   />
                 </Animated.View>

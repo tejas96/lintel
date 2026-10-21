@@ -34,12 +34,14 @@ export class TaskDetailPresenter {
       const fileFacts = facts.get(file.id);
       return fileFacts !== undefined && canReadFile(fileFacts, actor, access);
     });
+    const { workTrackingEnabled } = await this.business.settings();
     return {
       ...view,
       attachments,
       transitions: state.transitions,
       viewerCanManage: state.viewerCanManage,
       viewerCanEdit: state.viewerCanEdit,
+      workTrackingEnabled,
     };
   }
 }

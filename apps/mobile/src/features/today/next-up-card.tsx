@@ -6,11 +6,12 @@ import { errorMessage } from '@/api/api-error';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { canStartFrom } from '@/features/tasks/task-affordances';
 import { TaskContextLine, TaskFacts } from '@/features/tasks/task-meta';
 import { useToast } from '@/feedback/toast';
 import { formatElapsed } from '@/formatting/quantities';
 import { useTask } from '@/queries/task-queries';
-import { usePauseWork, useStartWork } from '@/queries/work-queries';
+import { usePauseWork, useStartTask, useStartWork } from '@/queries/work-queries';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
 import { listEntrance } from '@/theme/motion';
@@ -23,9 +24,12 @@ import { useElapsedSeconds } from './use-elapsed-seconds';
 export function NextUpCard({
   item,
   today,
+  workTracking,
 }: {
   readonly item: WorkQueueItem;
   readonly today: string;
+  /** False when the studio does not track working time (no timer, no pause). */
+  readonly workTracking: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -33,15 +37,27 @@ export function NextUpCard({
   const detail = useTask(item.task.id);
   const startWork = useStartWork();
   const pauseWork = usePauseWork();
-  const activeSince = detail.data?.activeWorkSessionStartedAt ?? null;
+  const startTask = useStartTask();
+  const tracking = detail.data?.workTrackingEnabled ?? workTracking;
+  const activeSince = tracking ? (detail.data?.activeWorkSessionStartedAt ?? null) : null;
   const elapsed = useElapsedSeconds(activeSince);
-  const busy = startWork.isPending || pauseWork.isPending;
+  const busy = startWork.isPending || pauseWork.isPending || startTask.isPending;
+  const showStart = tracking || canStartFrom(item.task.status);
 
-  const start = () =>
+  const start = () => {
+    const onError = (error: unknown) => toast.show(errorMessage(error), 'error');
+    if (!tracking) {
+      startTask.mutate(
+        { taskId: item.task.id, version: detail.data?.version ?? item.task.version },
+        { onSuccess: () => toast.show('Started. It is now in progress.', 'success'), onError },
+      );
+      return;
+    }
     startWork.mutate(item.task.id, {
       onSuccess: () => toast.show('Work started. The timer is running.', 'success'),
-      onError: (error) => toast.show(errorMessage(error), 'error'),
+      onError,
     });
+  };
   const pause = () =>
     pauseWork.mutate(item.task.id, {
       onSuccess: () => toast.show('Paused. Your time so far is saved.', 'success'),
@@ -94,9 +110,15 @@ export function NextUpCard({
               loading={busy}
               fill
             />
-          ) : (
-            <Button label="Start work" icon="play" onPress={start} loading={busy} fill />
-          )}
+          ) : showStart ? (
+            <Button
+              label={tracking ? 'Start work' : 'Start task'}
+              icon="play"
+              onPress={start}
+              loading={busy}
+              fill
+            />
+          ) : null}
           <Button
             label="Open"
             variant="secondary"

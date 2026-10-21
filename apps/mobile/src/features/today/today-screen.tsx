@@ -7,7 +7,7 @@ import { SkeletonBlock, SkeletonGroup, SkeletonList } from '@/components/skeleto
 import { EmptyState, ErrorState } from '@/components/state-views';
 import { useToast } from '@/feedback/toast';
 import { formatLongDate, greetingFor } from '@/formatting/dates';
-import { useStartWork, useWorkQueue } from '@/queries/work-queries';
+import { useStartTask, useStartWork, useWorkQueue } from '@/queries/work-queries';
 import { useCurrentUser } from '@/session/session-provider';
 import { SPACE } from '@/theme/layout';
 import { NextUpCard } from './next-up-card';
@@ -22,14 +22,23 @@ export function TodayScreen() {
   const toast = useToast();
   const queue = useWorkQueue();
   const startWork = useStartWork();
+  const startTask = useStartTask();
   const firstName = user.fullName.split(' ')[0] ?? user.fullName;
   const today = queue.data?.today ?? calendarDateInTimeZone(new Date(), user.timeZone);
 
-  const start = (taskId: string) =>
-    startWork.mutate(taskId, {
-      onSuccess: (task) => toast.show(`Started “${task.title}”.`, 'success'),
-      onError: (error) => toast.show(errorMessage(error), 'error'),
-    });
+  const notify = {
+    onSuccess: (task: { title: string }) => toast.show(`Started “${task.title}”.`, 'success'),
+    onError: (error: unknown) => toast.show(errorMessage(error), 'error'),
+  };
+  const start = (taskId: string) => {
+    const item = queue.data?.items.find((candidate) => candidate.task.id === taskId);
+    // Without time tracking, starting is a plain status move.
+    if (queue.data?.workTrackingEnabled === false) {
+      if (item) startTask.mutate({ taskId, version: item.task.version }, notify);
+      return;
+    }
+    startWork.mutate(taskId, notify);
+  };
 
   return (
     <ScreenScroll edge="tab" onRefresh={() => queue.refetch()}>
@@ -61,7 +70,11 @@ export function TodayScreen() {
         <>
           <WorkloadStrip workload={queue.data.workload} />
           {queue.data.next ? (
-            <NextUpCard item={queue.data.next} today={queue.data.today} />
+            <NextUpCard
+              item={queue.data.next}
+              today={queue.data.today}
+              workTracking={queue.data.workTrackingEnabled}
+            />
           ) : (
             <EmptyState
               icon="done"

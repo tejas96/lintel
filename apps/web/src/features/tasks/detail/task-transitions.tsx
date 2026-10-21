@@ -27,7 +27,8 @@ export function TaskTransitions({ task, onReportBlocker }: TaskTransitionsProps)
   const allowed = task.transitions.filter((option) => option.allowed && option.to !== 'blocked');
   const canBlock = task.transitions.some((option) => option.allowed && option.to === 'blocked');
   const refused = task.transitions.filter((option) => !option.allowed && option.reasons.length > 0);
-  const workable = ['ready', 'in_progress', 'changes_requested'].includes(task.status);
+  const workable =
+    task.workTrackingEnabled && ['ready', 'in_progress', 'changes_requested'].includes(task.status);
 
   const move = (option: TransitionOption, withNote: string | null) =>
     actions.transition.mutate(
@@ -54,7 +55,7 @@ export function TaskTransitions({ task, onReportBlocker }: TaskTransitionsProps)
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        {task.activeWorkSessionStartedAt ? (
+        {task.workTrackingEnabled && task.activeWorkSessionStartedAt ? (
           <Button
             variant="secondary"
             leadingIcon={<Pause aria-hidden />}

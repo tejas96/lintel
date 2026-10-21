@@ -16,6 +16,7 @@ import { notifyAboutTask, quoted, recordTaskChange } from './task-records';
 import {
   assertActivePeople,
   assertDateOrder,
+  assertEscalationDelay,
   assertReferencesInProject,
   assertReviewerIsNotOwner,
 } from './task-validation';
@@ -32,6 +33,8 @@ export interface EditableTaskFields {
   readonly completionCriteria: string | null;
   readonly milestoneId: string | null;
   readonly stageId: string | null;
+  /** Working days overdue before the project manager is alerted. */
+  readonly escalateAfterOverdueDays: number;
 }
 
 export interface UpdateTaskInput {
@@ -48,6 +51,13 @@ const MANAGER_FIELDS: readonly (keyof EditableTaskFields)[] = [
   'requiresReview',
   'milestoneId',
   'stageId',
+  'escalateAfterOverdueDays',
+];
+
+/** Changes the deadline workflow must re-plan for (it re-reads the task when signalled). */
+const DEADLINE_PLAN_FIELDS: readonly (keyof EditableTaskFields)[] = [
+  'priority',
+  'escalateAfterOverdueDays',
 ];
 
 function changedFields(task: TaskRecord, changes: Partial<EditableTaskFields>): TaskChanges {
@@ -67,6 +77,17 @@ function assertEditRights(relation: TaskActorRelation, changes: TaskChanges): vo
   }
 }
 
+/** Asks the deadline workflow to reload its plan from the task as it is now. */
+async function enqueueDeadlineReload(stores: OperationsStores, after: TaskRecord): Promise<void> {
+  await stores.records.enqueueEvent(
+    domainEvent('TaskScheduleChanged', 'task', after.id, {
+      taskId: after.id,
+      projectId: after.projectId,
+      dueDate: after.dueDate,
+    }),
+  );
+}
+
 /** History row plus outbox event; the baseline due date never changes. */
 async function recordScheduleChange(
   stores: OperationsStores,
@@ -82,13 +103,7 @@ async function recordScheduleChange(
     reason,
     changedByUserId: context.actor.userId,
   });
-  await stores.records.enqueueEvent(
-    domainEvent('TaskScheduleChanged', 'task', before.id, {
-      taskId: before.id,
-      projectId: before.projectId,
-      dueDate: after.dueDate,
-    }),
-  );
+  await enqueueDeadlineReload(stores, after);
 }
 
 /** Edits task details. Moving a committed due date needs a manager and a recorded reason. */
@@ -117,6 +132,8 @@ export class UpdateTaskCommand {
       if (!after) throw new StaleVersionError('This task');
       if (dueDateMoves) {
         await recordScheduleChange(stores, context, task, after, input.scheduleChangeReason ?? '');
+      } else if (DEADLINE_PLAN_FIELDS.some((field) => field in changes)) {
+        await enqueueDeadlineReload(stores, after);
       }
       await recordTaskChange(stores.records, context, after, {
         action: 'task.updated',
@@ -167,6 +184,9 @@ export class UpdateTaskCommand {
       ]);
     }
     assertReviewerIsNotOwner(task.ownerUserId, changes.reviewerUserId ?? task.reviewerUserId);
+    if (changes.escalateAfterOverdueDays !== undefined) {
+      assertEscalationDelay(changes.escalateAfterOverdueDays);
+    }
     assertDateOrder(
       changes.plannedStartDate !== undefined ? changes.plannedStartDate : task.plannedStartDate,
       changes.dueDate !== undefined ? changes.dueDate : task.dueDate,

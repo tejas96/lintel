@@ -1,5 +1,6 @@
 import { CAPABILITIES, type Capability, type Role } from '@lintel/domain';
 import {
+  type Clock,
   ForbiddenError,
   isCalendarDate,
   isValidTimeZone,
@@ -9,9 +10,19 @@ import {
 import { requireCapability } from '../common/capability-guard';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
+import { closeAllWorkSessions } from '../work/work-tracking';
 import type { HolidayRecord, OrganizationSettings } from './settings.store';
 
-type SettingsStores = Pick<ApplicationStores, 'settings' | 'records'>;
+/** The studio form; the leave threshold is optional because the leave rules screen owns it. */
+export type OrganizationSettingsInput = Omit<
+  OrganizationSettings,
+  'leaveSecondApprovalAboveHalfDays' | 'profitabilityEnabled'
+> & {
+  readonly leaveSecondApprovalAboveHalfDays?: number | undefined;
+  readonly profitabilityEnabled?: boolean | undefined;
+};
+
+type SettingsStores = Pick<ApplicationStores, 'settings' | 'records' | 'workSessions' | 'tasks'>;
 
 /** Keeps the order of the domain list so stored grants are stable and readable. */
 function orderedCapabilities(granted: Iterable<Capability>): Capability[] {
@@ -21,22 +32,23 @@ function orderedCapabilities(granted: Iterable<Capability>): Capability[] {
 
 /** Studio settings, role grants and the holiday calendar. Every change is audited. */
 export class ManageSettingsCommands {
-  constructor(private readonly uow: UnitOfWork<SettingsStores>) {}
+  constructor(
+    private readonly uow: UnitOfWork<SettingsStores>,
+    private readonly clock: Clock,
+  ) {}
 
-  /** `profitabilityEnabled` may be left out, which keeps the current value. */
+  /** `profitabilityEnabled` and the leave threshold may be left out; both keep their current value. */
   async updateOrganization(
     context: RequestContext,
-    input: Omit<OrganizationSettings, 'profitabilityEnabled'> & {
-      readonly profitabilityEnabled?: boolean | undefined;
-    },
+    input: OrganizationSettingsInput,
   ): Promise<OrganizationSettings> {
     const { profitabilityEnabled, ...settings } = input;
     requireCapability(context, 'organization.manage_settings');
     const issues = [
-      ...(isValidTimeZone(settings.timeZone)
+      ...(isValidTimeZone(input.timeZone)
         ? []
         : [{ field: 'timeZone', message: 'Use an IANA timezone such as Asia/Kolkata.' }]),
-      ...(/^[A-Z]{3}$/.test(settings.currency)
+      ...(/^[A-Z]{3}$/.test(input.currency)
         ? []
         : [{ field: 'currency', message: 'Use a three-letter ISO currency code such as INR.' }]),
     ];
@@ -46,14 +58,20 @@ export class ManageSettingsCommands {
       const after = await stores.settings.updateOrganization({
         ...settings,
         profitabilityEnabled: profitabilityEnabled ?? before.profitabilityEnabled,
+        leaveSecondApprovalAboveHalfDays:
+          input.leaveSecondApprovalAboveHalfDays ?? before.leaveSecondApprovalAboveHalfDays,
       });
+      const trackingStops = before.workTrackingEnabled && !after.workTrackingEnabled;
+      const closedWorkSessions = trackingStops
+        ? await closeAllWorkSessions(stores, this.clock.now())
+        : 0;
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
         action: 'organization.updated',
         entityType: 'organization',
         entityId: null,
         before: { ...before },
-        after: { ...after },
+        after: { ...after, ...(trackingStops ? { closedWorkSessions } : {}) },
         requestId: context.requestId,
       });
       return after;

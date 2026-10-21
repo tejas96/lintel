@@ -34,3 +34,27 @@ export function usePeopleSearch(search: string, enabled = true) {
     staleTime: 5 * 60_000,
   });
 }
+
+/** The signed-in person's own profile, with the version an edit must send. */
+export function useOwnProfile() {
+  return useQuery({
+    queryKey: queryKeys.ownProfile,
+    queryFn: ({ signal }) => unwrap(api.profile.getMyProfile({ fetchOptions: { signal } })),
+  });
+}
+
+export interface OwnProfileChanges {
+  readonly fullName?: string;
+  readonly email?: string | null;
+  readonly designation?: string | null;
+}
+
+/** Name, email and designation only; the server refuses anything else. */
+export function useUpdateOwnProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { changes: OwnProfileChanges; version: number }) =>
+      unwrap(api.profile.updateMyProfile({ body: { ...input.changes, version: input.version } })),
+    onSuccess: (profile) => queryClient.setQueryData(queryKeys.ownProfile, profile),
+  });
+}

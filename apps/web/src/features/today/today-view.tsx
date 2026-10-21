@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
 import { ReportBlockerSheet } from '@/features/tasks/report-blocker-sheet';
+import { WorkTrackingProvider } from '@/features/tasks/work-tracking';
 import { describeError } from '@/lib/api/describe-error';
 import { formatLongDate, greetingFor, todayIn } from '@/lib/format/dates';
 import { NextPriorityHero } from './next-priority-hero';
@@ -60,7 +61,7 @@ export function TodayView() {
         />
       )}
       {view && (
-        <>
+        <WorkTrackingProvider enabled={view.queue.workTrackingEnabled}>
           <NextPriorityHero
             item={view.next}
             today={today}
@@ -87,7 +88,7 @@ export function TodayView() {
               <RecentlyCompleted tasks={view.queue.recentlyCompleted} />
             </aside>
           </div>
-        </>
+        </WorkTrackingProvider>
       )}
       <ReportBlockerSheet task={blockerTask} onClose={() => setBlockerTask(null)} />
     </div>

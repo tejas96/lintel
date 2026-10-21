@@ -37,6 +37,8 @@ export const directoryEntryObject = userSummaryObject.extend({
   capacityPercent: z.number().int(),
   lastActiveAt: instantSchema.nullable(),
   version: z.number().int(),
+  /** The person's working week; null follows the studio week. */
+  workingCalendarId: idSchema.nullable(),
 });
 export type DirectoryEntry = z.infer<typeof directoryEntryObject>;
 export const directoryEntrySchema: ResponseSchema<DirectoryEntry> = directoryEntryObject;

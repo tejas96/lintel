@@ -5,6 +5,7 @@ export * from './finance.schema';
 export * from './leave.schema';
 export * from './notification.schema';
 export * from './people.schema';
+export * from './profile.schema';
 export * from './project.schema';
 export * from './report.schema';
 export * from './reward.schema';

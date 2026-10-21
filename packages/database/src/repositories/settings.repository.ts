@@ -40,7 +40,7 @@ export class SettingsRepository implements SettingsStore {
       .from(workingCalendars)
       .where(eq(workingCalendars.isDefault, true));
     if (!calendar) throw new Error('No default working calendar is configured.');
-    return { id: calendar.id, ...(await this.toWorkingCalendar(calendar)) };
+    return { id: calendar.id, ...(await this.toWorkingCalendar(calendar, calendar.id)) };
   }
 
   async calendarsForUsers(userIds: readonly string[]): Promise<Map<string, WorkingCalendar>> {
@@ -61,7 +61,7 @@ export class SettingsRepository implements SettingsStore {
       }
       let resolved = cache.get(calendar.id);
       if (!resolved) {
-        resolved = await this.toWorkingCalendar(calendar);
+        resolved = await this.toWorkingCalendar(calendar, fallback.id);
         cache.set(calendar.id, resolved);
       }
       result.set(row.userId, resolved);
@@ -124,13 +124,15 @@ export class SettingsRepository implements SettingsStore {
     }
   }
 
+  /** Studio holidays (kept on the default calendar) apply to every working week. */
   private async toWorkingCalendar(
     calendar: typeof workingCalendars.$inferSelect,
+    studioCalendarId: string,
   ): Promise<WorkingCalendar> {
     const holidays = await this.db
       .select({ date: calendarHolidays.date })
       .from(calendarHolidays)
-      .where(eq(calendarHolidays.calendarId, calendar.id));
+      .where(inArray(calendarHolidays.calendarId, [...new Set([calendar.id, studioCalendarId])]));
     return {
       timeZone: calendar.timeZone,
       workingWeekdays: calendar.workingWeekdays,

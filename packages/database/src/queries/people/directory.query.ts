@@ -14,6 +14,8 @@ export interface DirectoryEntryView extends UserSummaryView {
   readonly capacityPercent: number;
   readonly lastActiveAt: string | null;
   readonly version: number;
+  /** null follows the studio week. */
+  readonly workingCalendarId: string | null;
 }
 
 export interface DirectoryFilter {
@@ -102,5 +104,6 @@ async function toDirectoryEntries(
     capacityPercent: user.capacityPercent,
     lastActiveAt: user.lastActiveAt?.toISOString() ?? null,
     version: user.version,
+    workingCalendarId: user.workingCalendarId,
   }));
 }

@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { DropdownMenu } from 'radix-ui';
 import type { ReactNode } from 'react';
 import { useTaskActions } from '@/features/tasks/use-task-actions';
+import { useWorkTracking } from '@/features/tasks/work-tracking';
 
 interface QuickActionProps {
   readonly task: TaskSummary;
@@ -26,6 +27,7 @@ interface QuickActionProps {
 /** The one obvious next step for a task, chosen from its status. */
 export function TaskQuickAction({ task, onBeforeChange, onReportBlocker }: QuickActionProps) {
   const actions = useTaskActions();
+  const tracking = useWorkTracking();
   const finishTo = task.requiresReview ? 'in_review' : 'done';
   const pending =
     (actions.startWork.isPending && actions.startWork.variables === task.id) ||
@@ -43,7 +45,16 @@ export function TaskQuickAction({ task, onBeforeChange, onReportBlocker }: Quick
     primary = {
       label: 'Start',
       icon: <Play aria-hidden />,
-      run: () => actions.startWork.mutate(task.id),
+      // Without time tracking, starting is a plain status move.
+      run: tracking
+        ? () => actions.startWork.mutate(task.id)
+        : () =>
+            actions.transition.mutate({
+              taskId: task.id,
+              to: 'in_progress',
+              note: null,
+              version: task.version,
+            }),
     };
   } else if (task.status === 'in_progress') {
     primary = {
@@ -100,7 +111,7 @@ export function TaskQuickAction({ task, onBeforeChange, onReportBlocker }: Quick
                 Report a blocker
               </MenuItem>
             )}
-            {task.status === 'in_progress' && (
+            {task.status === 'in_progress' && tracking && (
               <MenuItem
                 icon={<OctagonPause aria-hidden />}
                 onSelect={() => {

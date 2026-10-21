@@ -35,7 +35,8 @@ export const platformContract = c.router({
       deadlineReminderTime: time,
       defaultQuietHoursStart: time,
       defaultQuietHoursEnd: time,
-      leaveSecondApprovalAboveHalfDays: z.number().int().min(1).max(120),
+      /** Optional: kept as it is when left out (it is edited with the leave rules). */
+      leaveSecondApprovalAboveHalfDays: z.number().int().min(1).max(120).optional(),
       /** Optional so older clients keep the current value. */
       profitabilityEnabled: z.boolean().optional(),
     }),

@@ -13,6 +13,11 @@ export function canBeginWork(task: TaskDetail, viewerId: string): boolean {
   return task.owner?.id === viewerId || task.collaborators.some((person) => person.id === viewerId);
 }
 
+/** Statuses from which "Start" moves a task to in progress. */
+export function canStartFrom(status: TaskDetail['status']): boolean {
+  return status === 'ready' || status === 'changes_requested';
+}
+
 export function isClosed(task: Pick<TaskDetail, 'status'>): boolean {
   return task.status === 'done' || task.status === 'cancelled';
 }

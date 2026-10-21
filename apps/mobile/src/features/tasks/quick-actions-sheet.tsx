@@ -49,8 +49,9 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
     if (router.canGoBack()) router.back();
   };
   const transition = useRunTransition(task);
-  const active = task.activeWorkSessionStartedAt !== null;
-  const canStart = canBeginWork(task, user.id);
+  const tracking = task.workTrackingEnabled;
+  const active = tracking && task.activeWorkSessionStartedAt !== null;
+  const canStart = tracking && canBeginWork(task, user.id);
   const notify = { onError: (error: unknown) => toast.show(errorMessage(error), 'error') };
 
   return (
@@ -92,7 +93,11 @@ function LoadedQuickActions({ task }: { readonly task: TaskDetail }) {
         ) : null}
         {task.transitions
           .filter(
-            (option) => option.allowed && option.to !== 'in_progress' && option.to !== 'blocked',
+            // With time tracking, "Start work" above covers the move to in progress.
+            (option) =>
+              option.allowed &&
+              option.to !== 'blocked' &&
+              !(tracking && option.to === 'in_progress'),
           )
           .map((option) => (
             <Button

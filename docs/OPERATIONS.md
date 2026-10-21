@@ -60,8 +60,34 @@ Steps:
    (see the checklist in `SECURITY.md`). `NODE_ENV=production`.
 3. `docker compose -f infrastructure/docker/compose.production.yaml --env-file /opt/lintel/.env up -d --build`
 4. The `migrate` job applies migrations before the API and worker start.
-5. Create the owner account once (SQL insert or a one-off admin script), then add
-   everyone else from **People**.
+5. Set up the studio once, with the migrate image (it holds the setup command):
+
+   ```bash
+   docker compose -f infrastructure/docker/compose.production.yaml --env-file /opt/lintel/.env \
+     run --rm migrate node dist/setup/setup-studio.cli.js \
+     --studio-name "Aranya Design Studio" --owner-name "Aarav Mehta" \
+     --owner-phone "+91 98765 43210" --timezone Asia/Kolkata --currency INR
+   ```
+
+   In one transaction it creates the organisation settings, the studio week
+   (Monday to Saturday, 09:30 to 18:30, 8 hours of work), the default role access
+   and the owner account. It creates no demo data: no people, teams, leave types,
+   holidays, templates or projects. Optional: `--owner-email`,
+   `--owner-country-code` (default 91), `--reference-prefix` (default: the studio
+   name's initials). Every option can also be passed as an environment variable
+   (`-e LINTEL_STUDIO_NAME=…`, `LINTEL_OWNER_NAME`, `LINTEL_OWNER_PHONE`,
+   `LINTEL_OWNER_EMAIL`, `LINTEL_OWNER_COUNTRY_CODE`, `LINTEL_TIMEZONE`,
+   `LINTEL_CURRENCY`, `LINTEL_REFERENCE_PREFIX`). `--help` prints the options.
+   The phone number is normalised exactly as at sign-in.
+
+   It is safe to run again: once settings, an owner or a default calendar exist it
+   refuses and changes nothing. Exit codes: `0` set up, `1` invalid input or a
+   failure, `2` already set up. It prints the next steps: sign in as the owner,
+   check Settings (Studio, Holidays, Working week), add leave types under
+   Settings, Leave, add people under People, and start templates from Lintel's
+   starting point. Locally the same command is
+   `pnpm --filter @lintel/database setup:studio -- --studio-name … ` (after
+   `pnpm build`, with `DATABASE_URL` set); it runs with `NODE_ENV=production`.
 6. Verify: `/api/v1/health/ready` reports `ready`; sign in; Temporal UI (bind to
    localhost and reach it through an SSH tunnel only).
 

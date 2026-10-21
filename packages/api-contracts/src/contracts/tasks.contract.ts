@@ -92,6 +92,8 @@ export const tasksContract = c.router({
         completionCriteria: z.string().max(2000).nullable(),
         milestoneId: idSchema.nullable(),
         stageId: idSchema.nullable(),
+        /** Working days overdue before the project manager is alerted (manager only). */
+        escalateAfterOverdueDays: z.number().int().min(1).max(30),
       })
       .partial()
       .extend({

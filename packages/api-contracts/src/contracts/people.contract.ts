@@ -22,6 +22,8 @@ const personInput = z.object({
   teamId: idSchema.nullable(),
   reportsToUserId: idSchema.nullable(),
   capacityPercent: z.number().int().min(10).max(100),
+  /** The person's working week; null or left out follows the studio week. */
+  workingCalendarId: idSchema.nullable().optional(),
 });
 
 export const peopleContract = c.router({

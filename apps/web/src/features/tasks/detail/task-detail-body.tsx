@@ -4,6 +4,7 @@ import type { TaskDetail } from '@lintel/api-contracts';
 import { AvatarStack, Card } from '@lintel/design-system/web';
 import { useState } from 'react';
 import { TaskDeliverables } from '@/features/deliverables/task-deliverables';
+import { EditTaskButton } from '../edit/edit-task-sheet';
 import { ReportBlockerSheet } from '../report-blocker-sheet';
 import { DetailSection } from './detail-section';
 import { TaskAttachments } from './task-attachments';
@@ -83,7 +84,10 @@ export function TaskDetailBody({
       {layout === 'drawer' ? (
         <div className="flex flex-col gap-8 p-5 sm:p-6">
           <TaskTransitions task={task} onReportBlocker={report} />
-          <TaskFacts task={task} today={today} />
+          <div className="flex flex-col gap-3">
+            <TaskFacts task={task} today={today} />
+            <EditTaskButton task={task} today={today} />
+          </div>
           {side}
           {main}
         </div>
@@ -93,8 +97,9 @@ export function TaskDetailBody({
           <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="flex min-w-0 flex-col gap-10">{main}</div>
             <aside aria-label="Task details" className="flex flex-col gap-8 xl:sticky xl:top-6">
-              <Card className="p-5">
+              <Card className="flex flex-col gap-4 p-5">
                 <TaskFacts task={task} today={today} />
+                <EditTaskButton task={task} today={today} />
               </Card>
               {side}
             </aside>

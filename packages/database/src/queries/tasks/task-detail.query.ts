@@ -35,6 +35,7 @@ export interface TaskDetailView extends TaskSummaryView {
   readonly attachments: FileSummaryView[];
   readonly scheduleChanges: ScheduleChangeView[];
   readonly activeWorkSessionStartedAt: string | null;
+  readonly escalateAfterOverdueDays: number;
 }
 
 /** One task with everything the detail screen shows. Access is checked by the caller. */
@@ -108,5 +109,6 @@ export async function loadTaskDetail(
     attachments,
     scheduleChanges,
     activeWorkSessionStartedAt,
+    escalateAfterOverdueDays: row.escalateAfterOverdueDays,
   };
 }

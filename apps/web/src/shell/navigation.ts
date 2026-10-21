@@ -113,7 +113,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Settings',
     href: '/settings',
     icon: SlidersHorizontal,
-    requires: ['organization.manage_settings', 'roles.manage'],
+    requires: ['organization.manage_settings', 'roles.manage', 'leave.manage_policies'],
     built: true,
   },
   {

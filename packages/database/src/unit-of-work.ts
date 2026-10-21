@@ -4,6 +4,7 @@ import { CapacityReadRepository } from './repositories/capacity-read.repository'
 import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { LeaveRepository } from './repositories/leave.repository';
+import { LeaveTypeRepository } from './repositories/leave-type.repository';
 import { NotificationRepository } from './repositories/notification.repository';
 import { NotificationInboxRepository } from './repositories/notification-inbox.repository';
 import { PeopleRepository } from './repositories/people.repository';
@@ -18,6 +19,7 @@ import { TaskRepository } from './repositories/task.repository';
 import { TaskItemRepository } from './repositories/task-item.repository';
 import { TemplateRepository } from './repositories/template.repository';
 import { WorkSessionRepository } from './repositories/work-session.repository';
+import { WorkingCalendarRepository } from './repositories/working-calendar.repository';
 import { createBackgroundStores } from './worker/background-stores';
 
 /** Builds every repository on top of one executor (the pool or a transaction). */
@@ -42,6 +44,8 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     workSessions: new WorkSessionRepository(executor),
     deliverables: new DeliverableRepository(executor),
     costs: new ProjectCostRepository(executor),
+    leaveTypes: new LeaveTypeRepository(executor),
+    calendars: new WorkingCalendarRepository(executor),
   };
 }
 

@@ -36,7 +36,7 @@ export function OrganizationForm() {
     if (organization.data) setDraft(organization.data);
   }, [organization.data]);
   const save = useMutation({
-    mutationFn: (body: Organization) =>
+    mutationFn: (body: Omit<Organization, 'leaveSecondApprovalAboveHalfDays'>) =>
       expectStatus(api.platform.updateOrganization({ body }), 200),
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.organization, saved);
@@ -66,7 +66,9 @@ export function OrganizationForm() {
   const update = (patch: Partial<Organization>) => setDraft({ ...draft, ...patch });
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    save.mutate({ ...draft, projectReferencePrefix: draft.projectReferencePrefix.toUpperCase() });
+    // The leave approval threshold is edited under Settings, Leave; leaving it out keeps it.
+    const { leaveSecondApprovalAboveHalfDays: _threshold, ...studio } = draft;
+    save.mutate({ ...studio, projectReferencePrefix: draft.projectReferencePrefix.toUpperCase() });
   };
 
   return (
@@ -129,24 +131,9 @@ export function OrganizationForm() {
         </Field>
       </section>
       <section className="grid gap-5 sm:grid-cols-2">
-        <Field
-          label="Second leave approval above"
-          hint="Half-days. Longer requests need a second approver."
-          error={errors.leaveSecondApprovalAboveHalfDays}
-        >
-          <Input
-            type="number"
-            min={1}
-            max={120}
-            value={draft.leaveSecondApprovalAboveHalfDays}
-            onChange={(event) =>
-              update({ leaveSecondApprovalAboveHalfDays: Number(event.target.value) || 1 })
-            }
-          />
-        </Field>
         <Switch
           label="Track working time"
-          description="People start and pause work sessions on their tasks."
+          description="People start and pause work sessions on their tasks. Switching it off ends running sessions and keeps their time."
           checked={draft.workTrackingEnabled}
           onCheckedChange={(workTrackingEnabled) => update({ workTrackingEnabled })}
         />

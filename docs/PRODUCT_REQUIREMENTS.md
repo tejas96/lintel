@@ -43,6 +43,11 @@ records both answer **404** so IDs cannot be probed.
 - Sessions are opaque 256-bit tokens; only their hash is stored. Web: HttpOnly
   `SameSite=Lax` cookie + double-submit CSRF token. Mobile: bearer token in the OS
   secure store. Web sessions last 30 days, mobile 90; deactivation revokes all.
+- People edit their own name, email and designation (Account, web and mobile;
+  `PATCH /v1/me/profile` with the version). Role, phone number, status, team, manager
+  and capacity stay with administrators; the API refuses those fields outright.
+- A new installation is set up once with `setup:studio` (settings, studio week, role
+  access, owner; no demo data), see `OPERATIONS.md`.
 
 ## 3. Projects, templates and workflows (FR-PRJ)
 
@@ -79,7 +84,12 @@ requested and Cancelled. Legal moves are in `task-status.ts`; each move is guard
 | → Cancelled, reopen Done | manager | a note |
 
 The API returns every possible move with `allowed` and the reasons, so the apps
-can disable actions and explain why. Completing a task never approves its
+can disable actions and explain why.
+
+Work sessions (start, pause) exist only while the studio tracks working time
+(Settings, Studio). When it is switched off, running sessions end (their minutes are
+kept), start and pause answer 422 with an explanation, and the apps show Start as a
+plain move to In progress with no timer. Completing a task never approves its
 deliverables, and approving a deliverable never completes its task.
 
 Dependencies are finish-to-start inside a project; loops are refused.
@@ -119,7 +129,11 @@ strategy is replaceable.
 ## 7. Capacity (FR-CAP)
 
 Available minutes per day = calendar working minutes × capacity % − approved
-leave (half days count half). Pending leave is shown, not subtracted. Each open
+leave (half days count half). The calendar is the person's working week: the studio
+week (Settings, Working week: working days, start and end of the day, working
+minutes) or another week assigned under People (part-timers, a site team). Studio
+holidays apply to every week. Capacity, plans, leave days and reminders read the
+calendar when they run, so edits apply from then on; dates already planned stay. Pending leave is shown, not subtracted. Each open
 task's remaining effort (estimate − logged minutes; 120 min assumed and flagged
 when missing) is spread evenly over the person's working days from today (or its
 start) to its due date; overdue work lands on today. Draft tasks are tentative;
@@ -140,7 +154,13 @@ blocked work is shown separately. Load ≥85 % = stretched, >105 % = overloaded.
   tasks are **never reassigned automatically** — handovers are proposed,
   accepted, then applied by a manager with an audit record.
 - Leave types and allowances are configurable examples; statutory entitlements
-  must be verified by the studio for its jurisdiction.
+  must be verified by the studio for its jurisdiction. Holders of
+  `leave.manage_policies` manage them in Settings, Leave: name, description, colour,
+  needs a reason, half days allowed, minimum notice (0–90 days, a warning only),
+  yearly allowance (half a day to 365 days) or none, and the second-approval
+  threshold. Types are retired, never deleted: a retired type cannot be chosen for new
+  requests, while requests already made with it are decided, answered and cancelled
+  as usual. At least one type always stays offered.
 
 ## 9. Deliverables and approvals (FR-DLV)
 
@@ -169,7 +189,8 @@ defer non-urgent push. Every notification has a dedupe key, so retries never spa
 Sensitive kinds (rewards, leave decisions) use a generic lock-screen preview.
 Deadline timeline per task: reminder on the working day before (10:00), overdue
 at the end of the due day, project manager after N working days overdue (template
-setting, default 1), business owner two working days later for urgent work or
+setting, default 1; the project manager can change it per task, 1–30, and the
+deadline workflow re-plans at once), business owner two working days later for urgent work or
 critical projects. Durable timers run in Temporal; the database stays the source of truth.
 
 ## 12. Command center (FR-CMD)

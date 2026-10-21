@@ -2,14 +2,17 @@ import type { Type } from '@nestjs/common';
 import { DeliverablesModule } from './deliverables/deliverables.module';
 import { FinancesModule } from './finances/finances.module';
 import { LeaveModule } from './leave/leave.module';
+import { LeavePoliciesModule } from './leave-policies/leave-policies.module';
 import { OperationsModule } from './operations/operations.module';
 import { PeopleModule } from './people/people.module';
+import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TemplatesModule } from './templates/templates.module';
 import { WorkModule } from './work/work.module';
+import { WorkingCalendarsModule } from './working-calendars/working-calendars.module';
 
 /**
  * Business modules registered with the application. Each feature module owns
@@ -27,4 +30,7 @@ export const FEATURE_MODULES: Type[] = [
   OperationsModule,
   ReportsModule,
   FinancesModule,
+  ProfileModule,
+  LeavePoliciesModule,
+  WorkingCalendarsModule,
 ];

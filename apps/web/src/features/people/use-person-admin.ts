@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { queryKeys } from '@/lib/query/query-keys';
 import { NO_TEAM, type PersonFormValues } from './person-fields';
+import { workingCalendarIdOf } from './working-week-select';
 
 /** Only the fields that changed, so a save never overwrites someone else's edit by accident. */
 function changesOf(person: DirectoryEntry, values: PersonFormValues) {
@@ -25,6 +26,9 @@ function changesOf(person: DirectoryEntry, values: PersonFormValues) {
       ? { reportsToUserId: values.reportsTo }
       : {}),
     ...(capacityPercent !== person.capacityPercent ? { capacityPercent } : {}),
+    ...(workingCalendarIdOf(values.workingCalendarId) !== person.workingCalendarId
+      ? { workingCalendarId: workingCalendarIdOf(values.workingCalendarId) }
+      : {}),
   };
 }
 

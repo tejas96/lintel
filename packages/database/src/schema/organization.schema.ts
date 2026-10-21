@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, date, integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core';
-import { createdAt, primaryId, updatedAt } from './columns';
+import { createdAt, primaryId, updatedAt, version } from './columns';
 
 /** One row: this deployment serves a single studio (see docs/DECISIONS/0003). */
 export const organizationSettings = pgTable(
@@ -34,7 +34,9 @@ export const workingCalendars = pgTable('working_calendars', {
   dayStartTime: text('day_start_time').notNull(),
   dayEndTime: text('day_end_time').notNull(),
   workingMinutesPerDay: integer('working_minutes_per_day').notNull(),
+  /** The studio week. People without a calendar of their own follow it. */
   isDefault: boolean('is_default').notNull().default(false),
+  version: version(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

@@ -15,6 +15,7 @@ import {
   PersonFields,
   type PersonFormValues,
 } from './person-fields';
+import { workingCalendarIdOf } from './working-week-select';
 
 interface AddPersonDialogProps {
   readonly open: boolean;
@@ -44,6 +45,7 @@ export function AddPersonDialog({ open, onOpenChange, teams }: AddPersonDialogPr
             teamId: values.teamId === NO_TEAM ? null : values.teamId,
             reportsToUserId: values.reportsTo,
             capacityPercent: Number(values.capacityPercent),
+            workingCalendarId: workingCalendarIdOf(values.workingCalendarId),
           },
         }),
         201,
