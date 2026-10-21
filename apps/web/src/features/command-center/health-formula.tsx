@@ -18,7 +18,7 @@ export function HealthFormula({ health }: { readonly health: CommandCenterBriefi
       trigger={
         <button
           type="button"
-          className="inline-flex min-h-8 items-center gap-1.5 rounded-sm px-1.5 type-body-sm text-ink-muted hover:text-ink pointer-coarse:min-h-11"
+          className="-ml-1.5 inline-flex min-h-8 items-center gap-1.5 rounded-sm px-1.5 type-body-sm sm:ml-0 text-ink-muted hover:text-ink pointer-coarse:min-h-11"
         >
           <Info aria-hidden className="size-4" />
           How it’s scored

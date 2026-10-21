@@ -238,8 +238,9 @@ In-app always; push (FCM) when a device is registered and the person allows it;
 SMS only for urgent kinds when explicitly enabled. Quiet hours (default 21:00–08:00)
 defer non-urgent push. Every notification has a dedupe key, so retries never spam.
 Sensitive kinds (rewards, leave decisions) use a generic lock-screen preview.
-Deadline timeline per task: reminder on the working day before (10:00), overdue
-at the end of the due day, project manager after N working days overdue (template
+Deadline timeline per task: a late-start nudge the working day after the planned
+start while the task is still Ready (§15.4), reminder on the working day before
+(10:00), overdue at the end of the due day, project manager after N working days overdue (template
 setting, default 1; the project manager can change it per task, 1–30, and the
 deadline workflow re-plans at once), business owner two working days later for urgent work or
 critical projects. Durable timers run in Temporal; the database stays the source of truth.
@@ -252,7 +253,9 @@ pending approvals, on-time delivery rate (with sample size and previous period;
 projects needing attention, upcoming milestones, critical tasks today, blockers,
 approvals, team availability and overload, leave and scope decisions waiting,
 8-week delivery trend (ending with the period's last week, or this week when the
-period runs to today), reward summary (restricted). Filters: date range, project,
+period runs to today), reward summary (restricted), and the briefing of §15: the
+business health score with its contributors and trend, risk cards, deadlines in the
+next 7 days, performance highlights and owner intervention needed. Filters: date range, project,
 manager, team. Every item links to its record.
 
 The web filters live in the URL (`?from=&to=&project=&manager=&team=`), so a view
@@ -378,6 +381,152 @@ profitability endpoint answers 404 and nothing appears in the apps.
 - **Command center:** budget, recorded cost and remaining budget over the projects
   in view whose budgets the person may see (totals count only projects with a
   budget), with each project's bar and indicator, most attention first.
+
+## 15. Risk intelligence: explain and drive the next action (FR-RSK)
+
+Lintel does not only report problems: it says what is happening, what it does to the
+dates, what to do next, who does it and when it escalates if nobody does. Every rule
+below is plain code in `packages/domain/src/insights/` (unit-tested), works on live
+records, and is applied by the read models in `packages/database/src/queries/insights/`.
+`GET /v1/dashboard/briefing` (same access and filters as the command center) and
+`GET /v1/projects/:id/risks` (404 when the project is hidden) serve them.
+
+### 15.1 Business health score (formula `health-v1`)
+
+**Score = 100 − five penalties**, rounded to a whole number and kept between 0 and 100.
+Each penalty grows in a straight line with what it measures, up to its weight:
+
+| Part | Measure (live records, in the view's scope) | Weight | Full weight at |
+|---|---|---|---|
+| Delivery risk | (off-track projects + ½ × at-risk projects) ÷ active projects (project health, §6) | 30 | 50 % |
+| Overdue work | open tasks past their due date ÷ open tasks | 25 | 20 % |
+| Blocked work | open tasks blocked (status or an open blocker) ÷ open tasks | 15 | 10 % |
+| Decisions waiting | task reviews and deliverable versions in review, proposed scope changes, open handover and new-date requests on scoped projects, and pending leave of people in scope, waiting **more than 48 hours** | 15 | 5 decisions |
+| Capacity strain | people above 105 % of their available time for the rest of this week (§7) ÷ people in view | 15 | 25 % |
+
+Example: 10 active projects with 1 off track and 2 at risk (0.2 → −12), 6 of 60 open
+tasks overdue (0.1 → −12.5), 3 blocked (0.05 → −7.5), 2 stale decisions (−6), 1 of 8
+people overloaded (0.125 → −7.5): 100 − 45.5 = **55**. With nothing to measure (no
+projects, tasks or people) a part takes nothing.
+
+- **Bands** (status colour + glyph + word): 80–100 *Healthy*, 60–79 *Watch*, 40–59
+  *At risk*, 0–39 *Critical*.
+- **Biggest contributors**: the three parts taking the most points (ties keep the table's
+  order), each with the sentence behind it and a link to the record that explains it best:
+  the most urgent project needing attention, the most overdue task, the oldest open blocker,
+  the approvals queue, or Capacity.
+- **Trend**: the worker's daily run (08:30, `dailyOperationsWorkflow`) records one reading
+  per scope and day in `business_health_snapshots` (the studio, and each project manager's
+  live projects); a rerun the same day replaces it. The command center shows the readings of
+  the last 56 days plus today's live score, and the change against the reading a week ago
+  (or the earliest one since). A project or team filter has no recorded trend; the live
+  score still follows every filter. The date range does not change the score: it measures now.
+
+### 15.2 Schedule forecast and risk cards
+
+**Forecast** (`forecastSchedule`, working days on the studio calendar): a task's duration
+is the working days from its planned start to its due date (one day without a start).
+Started work finishes on its due date, or today at the earliest when it is overdue; blocked
+work cannot finish today (the next working day at the earliest). Work not started starts on
+its planned start, but never before today and never before the working day after each open
+prerequisite's forecast finish, and keeps its duration. Done and cancelled tasks never delay
+anything. A commitment's forecast is the latest forecast finish of its open tasks; its
+**slip** is the working days from its due date to that forecast.
+
+**Which commitments get a card**: every pending milestone that is at risk or missed (§6) or
+whose forecast passes its date, and the planned delivery date when the forecast passes it or
+the project is at risk or off track. Cards with the same cause (the same rule on the same
+task) are merged: the earliest commitment keeps the card and lists the others it **also
+delays** with their slip.
+
+**The task that explains it**: when the commitment slips, the task where the delay starts,
+followed upstream through prerequisites. Otherwise the linked open task with the most
+pressing problem, in this order: blocked, overdue, a new date waiting for a decision, a late
+start, the owner away, a review waiting (earliest due date first).
+
+**Rules** (first match wins for that task):
+
+| Rule | When | Next action | Responsible | Escalation if nobody acts |
+|---|---|---|---|---|
+| New date asked | an open new-date request | Accept or decline the new date | project manager | none (it waits in their approvals) |
+| Blocked | blocked status or an open blocker | chase the client / supplier, make the decision, get the information, unblock the work, or clear the blocker (by category) | the person it waits on; else the manager for a manager decision; else the task owner | the blocker follow-up: project manager 1 working day after it was raised, studio owner after 3 |
+| Review waiting | in review | Review the task | reviewer (else project manager) | review follow-up: reviewer after 1 working day, project manager after 3 |
+| Owner away | approved leave of the owner between today and the due date | Choose who covers (links to the leave request, §15.5) | project manager | none |
+| Overdue | due date before today | Finish it or ask for a new date | task owner | the deadline timeline: project manager after N working days overdue, studio owner 2 working days later for urgent work or critical projects |
+| Late start | Ready or Draft, planned start before today | Start, report a blocker or ask for a new date | task owner | the same deadline timeline |
+| Planned too late | due after the commitment, nothing else wrong | Re-plan the task or move the commitment | project manager | the deadline timeline, when it reaches the owner |
+| Not closed | missed milestone with no open work | Mark it complete or agree a new date | project manager | none |
+
+"When it escalates" is the next alert in that timeline addressed to someone above the
+responsible person ("The studio owner is alerted on Thursday 22 October at 09:30 if it is
+still blocked."). When every alert has gone, the last one is shown as already sent. The
+timelines are the same functions the worker sleeps on, so the card and the alert agree.
+
+**Severity**: *Slipping* (critical, forecast late), *Critical* (missed, or an off-track
+project without a slip yet) or *At risk*. Order: critical first, larger slip, earlier date.
+The command center shows the six most pressing cards in view; the project control room shows
+all of the project's cards.
+
+### 15.3 Command center additions
+
+- **Deadlines in the next 7 days**: open, non-archived tasks due from tomorrow to a week from
+  today (today has its own count), soonest first (10 listed, the count is complete), plus the
+  number of pending milestones due in the same days.
+- **Performance highlights**: milestones completed on or before their due date in the period,
+  credited to everyone who owned one of their finished tasks; most milestones first, then the
+  most recent. Every milestone counts as important (each is a client-facing commitment).
+- **Owner intervention needed**: what the timelines have already escalated to the studio owner
+  and is still unresolved, oldest escalation first: overdue urgent work or work on critical
+  projects past the owner alert (§11), and blockers open for three working days.
+
+### 15.4 Late-start nudge and new-date requests
+
+- **Late-start nudge** (a step of the deadline workflow): on the working day after a task's
+  planned start, at the studio reminder time, the owner of a task that is still Ready is
+  asked to start it, report a blocker or ask for a new date (in-app and push through the
+  Notifier, so quiet hours apply; kind `task_late_start`, linking to the task with the three
+  actions). No nudge for drafts, work already started, a task without an owner or planned
+  start, while a prerequisite is open (the delay belongs to that task), or when the nudge
+  would come after the due date (the overdue alert covers it). The step is keyed by the
+  planned start, so a new start re-plans it, and it is checked again right before sending.
+- **New-date request** (`task_date_change_requests`): the owner or a collaborator asks for a
+  new due date (and optionally a new start) with a reason, for open work not in review. One
+  open request per task (partial unique index); the deciders are the same as for handover
+  requests (the project manager; the project owner when the manager asks; studio-wide
+  managers when nobody on the project can), and nobody decides their own (database CHECK).
+  Accepting moves the task's dates (the start is kept unless it would fall after the new due
+  date), writes `task_schedule_changes` with the reason and the request, re-plans the
+  reminders through the outbox, and leaves later tasks and the baseline due date as they were
+  (a scope change moves them). Declining needs a note. Every step writes activity and audit;
+  the person who asked (and the owner, when someone else asked) is told. Requests appear in
+  the approvals queue (urgent when the task is due by today or the request is three or more
+  days old, like other approvals) and on the task.
+
+### 15.5 Cover suggestions for absences (strategy `cover-v1`)
+
+For a leave request waiting for a decision or approved, and for an urgent absence, each
+affected task (§8 conflicts) on a project the viewer manages gets up to three suggestions.
+Only people who fit are considered: the same role on the task's project as the absent owner,
+a member of that project, or the same designation (case-insensitive; Lintel has no skills
+list in Phase 1, so the designation stands for it). Left out: the absent person, the task's
+reviewer, anyone with leave (approved or pending) in the cover days, and anyone not working
+then.
+
+- **Cover days**: from the later of the leave's start, today and the task's planned start,
+  to the earlier of the leave's end and the due date (overdue work: the first day away).
+- **Need**: the task's remaining effort (estimate − logged, 120 minutes without an estimate)
+  spread over the owner's working days to its due date, counted on the cover days.
+- **Free time**: available minus confirmed and blocked work on those days (§7).
+- **Points**: same project role 40 (or member of the project 20), same designation 25, room
+  up to 30 (free ÷ need, capped at 1). People with any free time come first, then points, then
+  free time. Each suggestion lists its reasons ("Designer on this project · 8 h free in those
+  days").
+
+Nothing is reassigned by a suggestion. Choosing one opens the existing flow with the person
+picked: the leave handover when one is proposed for the task (a project manager hands it
+over), otherwise the task's Change owner sheet (`POST /v1/tasks/:id/assign`, audited).
+`GET /v1/leave/requests/:id/cover-suggestions` answers 404 to people who cannot see the
+request and lists no tasks to people who manage none of them.
 
 ## Non-functional requirements
 

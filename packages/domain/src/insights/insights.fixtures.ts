@@ -1,6 +1,12 @@
 import { type CalendarDate, toCalendarDate } from '@lintel/shared';
 import type { WorkingCalendar } from '../calendar/working-calendar';
-import type { RiskContext, RiskTaskFacts } from './risk-card.types';
+import { assessMilestoneRisk } from '../projects/milestone-risk';
+import type {
+  RiskCommitment,
+  RiskContext,
+  RiskProjectFacts,
+  RiskTaskFacts,
+} from './risk-card.types';
 
 /** Monday to Friday, 09:30–18:30 in India (UTC+05:30), no holidays. */
 export const WEEKDAY_CALENDAR: WorkingCalendar = {
@@ -37,6 +43,48 @@ export function riskTask(id: string, overrides: Partial<RiskTaskFacts> = {}): Ri
     openBlocker: null,
     openDateRequest: null,
     ownerAway: null,
+    ...overrides,
+  };
+}
+
+export function riskMilestone(
+  dueDate: string,
+  tasks: readonly RiskTaskFacts[],
+  linked: readonly string[] = tasks.map((task) => task.id),
+): RiskCommitment {
+  const assessment = assessMilestoneRisk(
+    {
+      name: 'Concept approved',
+      status: 'pending',
+      dueDate: date(dueDate),
+      tasks: tasks
+        .filter((task) => linked.includes(task.id))
+        .map((task) => ({ title: task.title, status: task.status, dueDate: task.dueDate })),
+    },
+    RISK_CONTEXT.today,
+  );
+  return {
+    kind: 'milestone',
+    id: 'm1',
+    name: 'Concept approved',
+    dueDate: date(dueDate),
+    health: assessment.health,
+    taskIds: linked,
+  };
+}
+
+export function riskProject(
+  tasks: readonly RiskTaskFacts[],
+  commitments: readonly RiskCommitment[],
+  overrides: Partial<RiskProjectFacts> = {},
+): RiskProjectFacts {
+  return {
+    id: 'p1',
+    criticality: 'normal',
+    managerUserId: 'pm',
+    commitments,
+    tasks,
+    dependencies: [],
     ...overrides,
   };
 }

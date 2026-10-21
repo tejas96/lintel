@@ -71,8 +71,6 @@ describe('owner intervention needed', () => {
       context,
     );
     expect(items.map((item) => item.subjectId)).toEqual(['b1', 't1']);
-    expect(items[0]?.summary).toBe(
-      'Blocked since 2026-10-14: Supplier out of stock',
-    );
+    expect(items[0]?.summary).toBe('Blocked since 2026-10-14: Supplier out of stock');
   });
 });

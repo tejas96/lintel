@@ -67,7 +67,7 @@ Turborepo builds dependencies first (`dependsOn: ["^build"]`).
 | **Builder** | `ProjectWorkflowPlanBuilder` (domain/workflows) | Plans have optional stages, role→person mapping and a calendar; a fluent builder keeps creation readable and testable. |
 | **Factory** | `createWorkflowTemplatePreset` (domain); `adapterFactory` (api/infrastructure) | Creation varies by project type / by configuration (MSG91 vs local OTP, FCM vs log push, fixed vs random codes). |
 | **Command** | `*.command.ts` in application (RequestOtpCommand, VerifyOtpCommand, ManagePeopleCommands, …) | Each business operation is an explicit object with validation, authorisation and one transaction. |
-| **Strategy** | `TaskPriorityStrategy`, `ProjectHealthCalculator`, `LeaveApprovalPolicy`, reward criteria evaluation | Policies a studio may tune or replace without touching callers. |
+| **Strategy** | `TaskPriorityStrategy`, `ProjectHealthCalculator`, `LeaveApprovalPolicy`, reward criteria evaluation, business health score (`health-v1`), risk card rules, cover suggestions (`cover-v1`) | Policies a studio may tune or replace without touching callers. |
 | **Observer / domain events** | `DomainEvent` → `outbox_events` → worker → Temporal | Decoupled reactions (reminders, escalations, push) that must survive crashes; no in-memory event bus for critical work. |
 | **Transactional outbox** | `RecordStore.enqueueEvent` + worker relay | Business change and its event commit together; the relay delivers at least once. |
 | **Repository / Unit of Work** | store ports + `DrizzleUnitOfWork` | Use cases see narrow ports; one transaction spans several stores. |

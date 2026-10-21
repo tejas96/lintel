@@ -78,17 +78,17 @@ export function BusinessHealthCard({
   const shown = useCountUp(health.score);
   return (
     <Card className="flex flex-col">
-      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-7 sm:p-6">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-5 gap-y-4 p-5 sm:gap-x-7 sm:p-6">
         <ProgressRing
           value={health.score / 100}
           label={`Business health ${health.score} out of 100, ${band.label.toLowerCase()}`}
-          size={132}
+          size={120}
           thickness={9}
           toneClassName={band.ring}
-          className="shrink-0 self-center sm:self-auto"
+          className="shrink-0 sm:row-span-3"
         >
           <span className="flex flex-col items-center leading-none">
-            <span aria-hidden className="font-display text-[2.75rem] text-ink tabular-nums">
+            <span aria-hidden className="font-display text-[2.5rem] text-ink tabular-nums">
               {Math.round(shown)}
             </span>
             <span aria-hidden className="mt-1 font-mono text-[0.75rem] text-ink-faint">
@@ -96,16 +96,16 @@ export function BusinessHealthCard({
             </span>
           </span>
         </ProgressRing>
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h2 className="type-title-lg text-ink">Business health</h2>
-            <StatusPill tone={band.tone} glyph={band.glyph} label={band.label} />
-            <HealthFormula health={health} />
-          </div>
-          <p className="max-w-prose type-body-sm text-ink-muted">
-            Delivery risk, overdue and blocked work, decisions waiting and people overloaded,
-            counted from live records. 100 means nothing in view needs attention.
-          </p>
+        <div className="flex min-w-0 flex-col items-start gap-x-3 gap-y-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <h2 className="type-title-lg text-ink">Business health</h2>
+          <StatusPill tone={band.tone} glyph={band.glyph} label={band.label} />
+          <HealthFormula health={health} />
+        </div>
+        <p className="col-span-2 max-w-prose type-body-sm text-ink-muted sm:col-span-1">
+          Delivery risk, overdue and blocked work, decisions waiting and people overloaded, counted
+          from live records. 100 means nothing in view needs attention.
+        </p>
+        <div className="col-span-2 sm:col-span-1">
           <TrendLine trend={health.trend} today={today} />
         </div>
       </div>

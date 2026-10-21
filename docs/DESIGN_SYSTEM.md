@@ -165,3 +165,13 @@ tokens at AA contrast on every surface of their theme.
   hatched overflow past the budget; the indicator is always a `StatusPill` (colour,
   glyph, word). Money is Indian-grouped (`₹43,68,000`), whole rupees drop the paise.
   The cost ledger never edits: voided entries stay, struck through, with who and why.
+- **Risk intelligence** (`features/risks/`, `features/command-center/`): a risk card reads top
+  to bottom as the owner thinks: the rule (overline) and severity pill, the commitment and its
+  date, one sentence of what is happening, the impact box (the slip as a display-serif number,
+  "+2 working days late"), the next action as the one Cyanotype-tinted link, then who acts and
+  when it escalates (a bell in the overdue colour once the last alert has gone). The business
+  health score is a `ProgressRing` in the band's status colour with the number in the display
+  serif; the pill beside it carries the band's word and glyph, and "How it's scored" opens the
+  whole formula with a bar per part. Server sentences carry ISO dates; `withReadableDates()`
+  turns them into words.
+
