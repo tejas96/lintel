@@ -48,6 +48,7 @@ formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
   intervention needed.
 - **Late start**: the owner is nudged the working day after a missed start; they can start,
   report a blocker, or ask for a new date, which the project manager accepts or declines.
+  This works on the web and in the phone app (mobile screenshots 128–138).
 - **Cover for absences**: the leave page suggests who could take each affected task; one
   click opens the handover or the new "Change owner" sheet. Nothing moves on its own.
 

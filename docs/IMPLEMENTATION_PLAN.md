@@ -108,8 +108,11 @@ The system now explains problems and drives the next action (`PRODUCT_REQUIREMEN
   Change owner sheet with the person picked.
 - ✅ Screens checked in a browser at 1440 and 390 px, light and dark (screenshots 111–127 in
   `docs/screenshots/web/`).
-- 🟡 The phone app lists new-date requests in Approvals and shows the new notification kinds,
-  but has no screen yet to ask for a new date or to decide one (the web does both).
+- ✅ Phone app: the task screen has the late-start callout (Start, Report a blocker, Ask for a
+  new date), the "Ask for a new date" sheet and the "New date" section (accept, decline with a
+  note, withdraw, earlier requests). The late-start push (`?nudge=late-start`) rings the
+  callout; approval and notification links (`?dateRequest=`) scroll to the request. Checked on
+  the iOS simulator, light and dark (screenshots 128–138 in `docs/screenshots/mobile/`).
 
 ## Known external blockers
 
