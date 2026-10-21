@@ -8,7 +8,7 @@ import {
   planTemplateUpdate,
   presentTemplateUpdatePlan,
 } from './template-update.diff';
-import { NEW_VERSION, PROJECT, UPDATE_INPUT } from './template-update.fixtures';
+import { NEW_VERSION, PROJECT, templateTask, UPDATE_INPUT } from './template-update.fixtures';
 import type { TemplateItemChange } from './template-update.types';
 
 const plan = planTemplateUpdate(UPDATE_INPUT);
@@ -111,6 +111,42 @@ describe('template update preview: removed items', () => {
 
   it('counts what stays the same', () => {
     expect(plan.unchanged).toEqual({ stages: 1, milestones: 0, tasks: 0 });
+  });
+});
+
+describe('moves into a stage or milestone the update cannot add', () => {
+  // Kick-off cannot be added (Concept has started), yet this version moves work into it.
+  const moved = {
+    ...NEW_VERSION,
+    stages: NEW_VERSION.stages.map((stage) =>
+      stage.key === 'kickoff'
+        ? {
+            ...stage,
+            milestones: [
+              { key: 'kickoff-ok', name: 'Kick-off done', requiresClientApproval: false },
+            ],
+            tasks: [
+              ...stage.tasks,
+              templateTask('specs', 'Specifications', { milestoneKey: 'kickoff-ok' }),
+              templateTask('lighting', 'Lighting plan'),
+            ],
+          }
+        : stage,
+    ),
+  };
+  const movedPlan = planTemplateUpdate({ ...UPDATE_INPUT, to: moved });
+  const find = (key: string) => movedPlan.items.find((candidate) => candidate.key === key);
+
+  it('never applies them, even when ticked, and asks for no tick', () => {
+    const specs = find('task:specs');
+    expect(specs?.fields.map((field) => [field.field, field.outcome])).toEqual([
+      ['stage', 'unavailable'],
+      ['milestone', 'unavailable'],
+    ]);
+    expect(specs && itemWillApply(specs, new Set(['task:specs']))).toBe(false);
+    const lighting = find('task:lighting');
+    expect(lighting).toMatchObject({ optIn: null, blocked: null });
+    expect(lighting && fieldsToApply(lighting, new Set(['task:lighting']))).toEqual([]);
   });
 });
 

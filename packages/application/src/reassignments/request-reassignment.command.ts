@@ -7,6 +7,7 @@ import { loadTaskForActor } from '../tasks/task-loader';
 import { quoted } from '../tasks/task-records';
 import { assertActivePeople } from '../tasks/task-validation';
 import type { ReassignmentRequestRecord } from './reassignment.store';
+import { type ReassignmentProjectFacts, reassignmentDeciders } from './reassignment-deciders';
 import {
   type ReassignmentDependencies,
   recordReassignmentStep,
@@ -17,18 +18,6 @@ import { assertReassignmentAllowed } from './reassignment-errors';
 export interface ReassignmentAskInput {
   readonly reason: string;
   readonly suggestedUserId: string | null;
-}
-
-/**
- * Who decides: the project manager, or the project's owner when the manager
- * is the one asking. Nobody is asked to decide their own request.
- */
-export function reassignmentDeciders(
-  facts: { readonly managerUserId: string | null; readonly ownerUserId: string | null },
-  requesterUserId: string,
-): string[] {
-  const first = facts.managerUserId !== requesterUserId ? facts.managerUserId : facts.ownerUserId;
-  return first && first !== requesterUserId ? [first] : [];
 }
 
 /** The owner or a collaborator asks for a task to move to someone else; they may withdraw it. */
@@ -114,10 +103,15 @@ export class RequestReassignmentCommands {
     context: RequestContext,
     request: ReassignmentRequestRecord,
     taskTitle: string,
-    facts: { readonly managerUserId: string | null; readonly ownerUserId: string | null },
+    facts: ReassignmentProjectFacts,
   ): Promise<void> {
-    const deciders = reassignmentDeciders(facts, context.actor.userId);
-    if (deciders.length === 0) return;
+    const onProject = reassignmentDeciders(facts, context.actor.userId);
+    const deciders =
+      onProject.length > 0
+        ? onProject
+        : (await stores.reassignments.activeUserIdsWithCapability('projects.manage_any')).filter(
+            (userId) => userId !== context.actor.userId,
+          );
     const names = await stores.projects.userNames([context.actor.userId]);
     const requester = names.get(context.actor.userId) ?? 'A team member';
     const notifier = await this.deps.operations.notifierFor(stores);

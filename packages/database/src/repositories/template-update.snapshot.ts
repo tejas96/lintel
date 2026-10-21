@@ -25,28 +25,26 @@ function groupBy<T>(rows: readonly T[], key: (row: T) => string, value: (row: T)
  * The project's workflow as a template update sees it: stages, milestones
  * and live tasks with their checklist labels, deliverable names and
  * prerequisites. Queries run one after another (they may share a transaction).
+ * With `lock`, the task, milestone and stage rows stay locked until the
+ * transaction ends (in that order, the order task changes take them), so
+ * nothing the plan was worked out from can change before it is written.
  */
 export async function loadWorkflowSnapshot(
   db: DatabaseExecutor,
   projectId: string,
+  lock: boolean,
 ): Promise<ProjectWorkflowSnapshot> {
   const [project] = await db
     .select({ templateOptions: projects.templateOptions })
     .from(projects)
     .where(eq(projects.id, projectId));
-  const stageRows = await db
-    .select({
-      id: projectStages.id,
-      templateKey: projectStages.templateKey,
-      name: projectStages.name,
-      description: projectStages.description,
-      status: projectStages.status,
-      position: projectStages.position,
-    })
-    .from(projectStages)
-    .where(eq(projectStages.projectId, projectId))
-    .orderBy(asc(projectStages.position));
-  const milestoneRows = await db
+  const taskQuery = db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.projectId, projectId), isNull(tasks.archivedAt)))
+    .orderBy(asc(tasks.number));
+  const taskRows = lock ? await taskQuery.for('update') : await taskQuery;
+  const milestoneQuery = db
     .select({
       id: milestones.id,
       templateKey: milestones.templateKey,
@@ -58,11 +56,20 @@ export async function loadWorkflowSnapshot(
     .from(milestones)
     .where(eq(milestones.projectId, projectId))
     .orderBy(asc(milestones.position));
-  const taskRows = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.projectId, projectId), isNull(tasks.archivedAt)))
-    .orderBy(asc(tasks.number));
+  const milestoneRows = lock ? await milestoneQuery.for('update') : await milestoneQuery;
+  const stageQuery = db
+    .select({
+      id: projectStages.id,
+      templateKey: projectStages.templateKey,
+      name: projectStages.name,
+      description: projectStages.description,
+      status: projectStages.status,
+      position: projectStages.position,
+    })
+    .from(projectStages)
+    .where(eq(projectStages.projectId, projectId))
+    .orderBy(asc(projectStages.position));
+  const stageRows = lock ? await stageQuery.for('update') : await stageQuery;
   const ids = taskRows.map((task) => task.id);
   const checklist =
     ids.length === 0

@@ -165,7 +165,7 @@ export async function loadApprovalQueue(
     can('scope_changes.approve') ? scopeChangeApprovals(db, today) : none,
     can('rewards.decide') ? rewardApprovals(db) : none,
     priorityConflictReviews(db, viewer.userId),
-    reassignmentApprovals(db, viewer.userId, today),
+    reassignmentApprovals(db, viewer, today),
   ]);
   const drafts = sources
     .flat()

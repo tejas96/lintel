@@ -8,18 +8,26 @@ import {
   templateTasksByKey,
   wouldCreateDependencyCycle,
 } from '@lintel/domain';
+import { StaleVersionError } from '@lintel/shared';
+import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
+import { cancelSubtasksByDecision, cancelTaskByDecision } from '../tasks/cancel-task-by-decision';
 import type { UpdateIds } from './template-structure.writer';
 import type { TemplateUpdateContext } from './template-update.loader';
 import type { TemplateTaskChanges } from './template-update.store';
 
-type Stores = Pick<ApplicationStores, 'templateUpdates' | 'tasks' | 'taskItems' | 'records'>;
+type Stores = Pick<
+  ApplicationStores,
+  'templateUpdates' | 'tasks' | 'taskItems' | 'records' | 'workSessions'
+>;
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 export interface ChangeActor {
   readonly userId: string;
   /** Why, for schedule history and cancellations ("Template updated to v3"). */
   readonly reason: string;
+  readonly context: RequestContext;
+  readonly at: Date;
 }
 
 type ScalarWriter = (task: TemplateTask, stageKey: string, ids: UpdateIds) => TemplateTaskChanges;
@@ -34,10 +42,16 @@ const SCALAR_WRITERS: Partial<Record<TemplateFieldChange['field'], ScalarWriter>
   escalateAfterOverdueDays: (task) => ({
     escalateAfterOverdueDays: task.escalateAfterOverdueDays ?? 1,
   }),
-  stage: (_task, stageKey, ids) => ({ stageId: ids.stages.get(stageKey) ?? null }),
-  milestone: (task, _stageKey, ids) => ({
-    milestoneId: task.milestoneKey ? (ids.milestones.get(task.milestoneKey) ?? null) : null,
-  }),
+  // A stage or milestone the update did not create leaves the task where it is.
+  stage: (_task, stageKey, ids) => {
+    const stageId = ids.stages.get(stageKey);
+    return stageId ? { stageId } : {};
+  },
+  milestone: (task, _stageKey, ids) => {
+    if (!task.milestoneKey) return { milestoneId: null };
+    const milestoneId = ids.milestones.get(task.milestoneKey);
+    return milestoneId ? { milestoneId } : {};
+  },
 };
 
 function scalarChanges(
@@ -187,21 +201,21 @@ export async function cancelRemovedTasks(
   const items = context.plan.items.filter(
     (item) => item.kind === 'task' && item.change === 'removed' && itemWillApply(item, ticked),
   );
+  const cancellation = {
+    context: actor.context,
+    reason: actor.reason,
+    at: actor.at,
+    source: { templateVersionId: context.target.id },
+  };
   for (const item of items) {
     if (!item.itemId) continue;
-    const cancel = { status: 'cancelled' as const, cancelledReason: actor.reason };
-    await stores.templateUpdates.updateTask(item.itemId, cancel);
-    for (const subtaskId of await stores.templateUpdates.unstartedSubtaskIds(item.itemId)) {
-      await stores.templateUpdates.updateTask(subtaskId, cancel);
+    // The snapshot locked these rows, so a miss means the plan no longer holds.
+    const task = await stores.tasks.findForUpdate(item.itemId);
+    if (!task || !(await cancelTaskByDecision(stores, task, cancellation))) {
+      throw new StaleVersionError('A task in this project');
     }
-    await stores.records.appendActivity({
-      projectId: context.project.id,
-      taskId: item.itemId,
-      actorUserId: actor.userId,
-      type: 'task.cancelled',
-      summary: `Cancelled “${item.name}”: ${actor.reason}`,
-      payload: { templateVersionId: context.target.id },
-    });
+    const subtaskIds = await stores.templateUpdates.unstartedSubtaskIds(item.itemId);
+    await cancelSubtasksByDecision(stores, subtaskIds, cancellation);
   }
   return items;
 }

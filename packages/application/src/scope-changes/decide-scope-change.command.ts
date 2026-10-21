@@ -65,6 +65,7 @@ export class DecideScopeChangeCommand {
         note: input.note,
         decidedByUserId: context.actor.userId,
         at: decidedAt,
+        context,
       };
       const moves = approved ? await applyApprovedSchedule(stores, approval) : [];
       const additions = approved ? await applyScopeAdditions(stores, approval) : NOTHING_ADDED;

@@ -64,8 +64,10 @@ records both answer **404** so IDs cannot be probed.
   delays on to the tasks that follow them. Approval moves the dates, creates the new
   tasks (ready when they have an owner and a due date) and cancels the others in one
   transaction; a task that closed or went to review since the proposal is left as
-  it was and the reason is kept. Nobody decides a change they proposed (the studio
-  owner excepted, as before).
+  it was and the reason is kept. If a new task's stage closed since the proposal,
+  approval is refused (reject and propose again). Cancelling stops running timers on
+  the task, cancels its unstarted subtasks and is audited per task. Nobody decides a
+  change they proposed (the studio owner excepted, as before).
 - **Template updates.** When a newer version of a project's template is published,
   the project manager sees a dry run: what would be added, changed and removed, and
   what will not change and why. Rules: new stages go after the nearest earlier stage
@@ -75,9 +77,12 @@ records both answer **404** so IDs cannot be probed.
   template, project) so a value the project changed itself is kept; started work,
   committed dates and the planned end change only when the manager ticks them;
   finished work, closed stages and anything in review never change; removed tasks
-  are cancelled (never deleted) only when not started. Applying records the update
+  are cancelled (never deleted) only when not started; a move into a new stage or
+  milestone that cannot be added here is shown but never applies. Applying locks the
+  project's tasks, milestones and stages, records the update
   (`project_template_updates`), schedule history for new and moved tasks, activity
-  and audit, and points the project at the new version.
+  and audit (one audit row per cancelled task, running timers stopped), and points
+  the project at the new version.
 
 ### Project documents (FR-DOC)
 
@@ -98,8 +103,9 @@ records both answer **404** so IDs cannot be probed.
 - The owner of a task, or a collaborator, asks the project manager to give it to
   someone else, with a reason and an optional suggested person. One open request per
   task (also enforced by a partial unique index).
-- The project manager (or the project owner when the manager is the one asking)
-  sees it in the approvals queue and on the task. Accepting reassigns through the
+- The project manager (or the project owner when the manager is the one asking;
+  studio-wide project managers when nobody on the project can) sees it in the
+  approvals queue and on the task, and may decide it. Accepting reassigns through the
   normal assignment path (audited, new owner notified, reminders restarted);
   declining needs a note. The person who asked hears either way and may withdraw an
   open request. Nobody decides their own request (also a database CHECK).

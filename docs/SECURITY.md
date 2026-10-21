@@ -35,7 +35,8 @@ reviewer can check each one.
 - Separation of duties: nobody reviews their own deliverable; only the owner can
   grant the owner role; the owner account cannot be deactivated; nobody decides a
   task handover (reassignment) request they made (domain rule plus a database
-  CHECK), and handovers are accepted only by someone who manages the project.
+  CHECK), and handovers are decided only by someone who manages the project (or
+  the project's owner when its manager is the one asking).
 - Confidential project documents: filtered in SQL before anything leaves the
   database (lists, counts, single reads), named only as "a confidential document"
   in the project activity feed, and audited without their title. Only people who

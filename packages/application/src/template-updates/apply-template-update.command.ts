@@ -65,7 +65,12 @@ export class ApplyTemplateUpdateCommand {
         ),
       );
       const label = `“${loaded.template.name}” v${loaded.target.versionNumber}`;
-      const actor = { userId: context.actor.userId, reason: `Template updated to ${label}.` };
+      const actor = {
+        userId: context.actor.userId,
+        reason: `Template updated to ${label}.`,
+        context,
+        at: this.deps.clock.now(),
+      };
       const ids = existingIds(loaded);
       await applyStages(stores, loaded, ticked, ids);
       await applyMilestones(stores, loaded, ticked, ids);

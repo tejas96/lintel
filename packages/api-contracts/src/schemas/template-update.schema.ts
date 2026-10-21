@@ -30,8 +30,11 @@ const fieldChangeObject = z.object({
   to: z.string().nullable(),
   added: z.array(z.string()),
   removed: z.array(z.string()),
-  /** apply: changes. held: changes only when ticked. kept: this project changed it itself. */
-  outcome: z.enum(['apply', 'held', 'kept']),
+  /**
+   * apply: changes. held: changes only when ticked. kept: this project changed it itself.
+   * unavailable: a move to a stage or milestone the update cannot add here; never applies.
+   */
+  outcome: z.enum(['apply', 'held', 'kept', 'unavailable']),
 });
 
 export const templateUpdateItemObject = z.object({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { mayDecideReassignment, reassignmentDeciders } from './reassignment-deciders';
 import { withReassignmentActions } from './reassignment-viewer.query';
-import { reassignmentDeciders } from './request-reassignment.command';
 
 describe('who decides a reassignment request', () => {
   it('asks the project manager', () => {
@@ -21,6 +21,7 @@ describe('who decides a reassignment request', () => {
 });
 
 describe('what a viewer may do with each request', () => {
+  const project = { managerUserId: 'pm', ownerUserId: 'owner' };
   const requests = [
     { id: 'r1', status: 'open' as const, requestedBy: { id: 'meera' } },
     { id: 'r2', status: 'declined' as const, requestedBy: { id: 'kabir' } },
@@ -30,18 +31,41 @@ describe('what a viewer may do with each request', () => {
     const [open, closed] = withReassignmentActions(requests, {
       userId: 'pm',
       managesProject: true,
+      ...project,
     });
     expect(open).toMatchObject({ viewerCanDecide: true, viewerCanWithdraw: false });
     expect(closed).toMatchObject({ viewerCanDecide: false, viewerCanWithdraw: false });
   });
 
   it('lets the requester withdraw but never decide their own request', () => {
-    const [own] = withReassignmentActions(requests, { userId: 'meera', managesProject: true });
+    const [own] = withReassignmentActions(requests, {
+      userId: 'meera',
+      managesProject: true,
+      ...project,
+    });
     expect(own).toMatchObject({ viewerCanDecide: false, viewerCanWithdraw: true });
   });
 
   it('gives people who do not manage the project nothing to decide', () => {
-    const [open] = withReassignmentActions(requests, { userId: 'kabir', managesProject: false });
+    const [open] = withReassignmentActions(requests, {
+      userId: 'kabir',
+      managesProject: false,
+      ...project,
+    });
     expect(open).toMatchObject({ viewerCanDecide: false, viewerCanWithdraw: false });
+  });
+});
+
+describe('who may decide a reassignment request', () => {
+  const facts = { managerUserId: 'pm', ownerUserId: 'owner' };
+
+  it('lets the project owner decide only when the manager is the one asking', () => {
+    const owner = { ...facts, canManage: false };
+    expect(mayDecideReassignment(owner, 'owner', 'pm')).toBe(true);
+    expect(mayDecideReassignment(owner, 'owner', 'meera')).toBe(false);
+  });
+
+  it('lets anyone who manages the project decide', () => {
+    expect(mayDecideReassignment({ ...facts, canManage: true }, 'admin', 'pm')).toBe(true);
   });
 });

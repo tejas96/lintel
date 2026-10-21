@@ -85,9 +85,10 @@ export type TemplateField =
 /**
  * apply: changes by default. held: changes only when the manager ticks the
  * item. kept: this project already changed the field itself, so its own
- * version stays.
+ * version stays. unavailable: a move to a stage or milestone the update
+ * cannot add here, so it never applies.
  */
-export type FieldOutcome = 'apply' | 'held' | 'kept';
+export type FieldOutcome = 'apply' | 'held' | 'kept' | 'unavailable';
 
 export interface TemplateFieldChange {
   readonly field: TemplateField;

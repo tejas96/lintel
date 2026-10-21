@@ -3,10 +3,11 @@ import { NotFoundError } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { ApplicationStores } from '../common/unit-of-work';
 import { loadTaskForActor } from '../tasks/task-loader';
+import { mayDecideReassignment, type ReassignmentProjectFacts } from './reassignment-deciders';
 
 type Stores = Pick<ApplicationStores, 'access' | 'tasks' | 'reassignments'>;
 
-export interface ReassignmentViewerState {
+export interface ReassignmentViewerState extends ReassignmentProjectFacts {
   readonly userId: string;
   /** May ask for this task to be reassigned right now. */
   readonly canRequest: boolean;
@@ -25,14 +26,19 @@ interface RequestLike {
 /** Adds what this viewer may do with each request: decide (never their own) or withdraw. */
 export function withReassignmentActions<T extends RequestLike>(
   views: readonly T[],
-  viewer: Pick<ReassignmentViewerState, 'userId' | 'managesProject'>,
+  viewer: Pick<
+    ReassignmentViewerState,
+    'userId' | 'managesProject' | 'managerUserId' | 'ownerUserId'
+  >,
 ): (T & { viewerCanDecide: boolean; viewerCanWithdraw: boolean })[] {
+  const project = { ...viewer, canManage: viewer.managesProject };
   return views.map((view) => {
     const open = view.status === 'open';
     const own = view.requestedBy.id === viewer.userId;
     return {
       ...view,
-      viewerCanDecide: open && !own && viewer.managesProject,
+      viewerCanDecide:
+        open && !own && mayDecideReassignment(project, viewer.userId, view.requestedBy.id),
       viewerCanWithdraw: open && own,
     };
   });
@@ -60,6 +66,8 @@ export class ReassignmentViewerQuery {
       requestUnavailableReason:
         check.allowed || check.problem === 'forbidden' ? null : check.reason,
       managesProject: loaded.access.canManage,
+      managerUserId: loaded.access.managerUserId,
+      ownerUserId: loaded.access.ownerUserId,
     };
   }
 

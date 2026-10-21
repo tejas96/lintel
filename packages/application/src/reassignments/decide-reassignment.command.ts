@@ -6,6 +6,7 @@ import { assignTaskOwner } from '../tasks/assign-task.command';
 import { loadTaskForActor } from '../tasks/task-loader';
 import { quoted } from '../tasks/task-records';
 import type { ReassignmentRequestRecord } from './reassignment.store';
+import { mayDecideReassignment } from './reassignment-deciders';
 import {
   type ReassignmentDependencies,
   recordReassignmentStep,
@@ -57,7 +58,11 @@ export class DecideReassignmentCommand {
           },
           {
             deciderUserId: context.actor.userId,
-            deciderManagesProject: loaded.access.canManage,
+            deciderManagesProject: mayDecideReassignment(
+              loaded.access,
+              context.actor.userId,
+              request.requestedByUserId,
+            ),
             decision: input.decision,
             newOwnerUserId,
             note,

@@ -1,4 +1,4 @@
-import type { ReassignmentStatus } from '@lintel/domain';
+import type { Capability, ReassignmentStatus } from '@lintel/domain';
 
 export interface ReassignmentRequestRecord {
   readonly id: string;
@@ -40,6 +40,8 @@ export interface ReassignmentStore {
   /** Locks the request row until the transaction ends. */
   findForUpdate(requestId: string): Promise<ReassignmentRequestRecord | null>;
   openForTask(taskId: string): Promise<ReassignmentRequestRecord | null>;
+  /** Active people whose role holds the capability (asked when nobody on the project can decide). */
+  activeUserIdsWithCapability(capability: Capability): Promise<string[]>;
   /** Only an open request with the expected version moves; false otherwise. */
   resolve(
     requestId: string,

@@ -104,7 +104,7 @@ export async function loadTemplateUpdate(
       `Version ${versions.latest.versionNumber} is now the newest published version. Preview it again.`,
     );
   }
-  const snapshot = await stores.templateUpdates.snapshot(projectId);
+  const snapshot = await stores.templateUpdates.snapshot(projectId, lock);
   const input: TemplateUpdateInput = {
     project: snapshot,
     from: versions.current.definition,

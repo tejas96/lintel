@@ -54,8 +54,8 @@ export class TemplateUpdateRepository implements TemplateUpdateStore {
     return row ?? null;
   }
 
-  snapshot(projectId: string) {
-    return loadWorkflowSnapshot(this.db, projectId);
+  snapshot(projectId: string, lock: boolean) {
+    return loadWorkflowSnapshot(this.db, projectId, lock);
   }
 
   async nextTaskNumber(projectId: string) {

@@ -1,7 +1,8 @@
 import type { CalendarDate } from '@lintel/shared';
-import { and, asc, eq, ne, or } from 'drizzle-orm';
+import { and, asc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { projects, taskReassignmentRequests, tasks } from '../../schema';
+import type { ApprovalViewer } from './approval-queue.query';
 import {
   type ApprovalDraft,
   isStale,
@@ -13,16 +14,31 @@ function excerpt(reason: string): string {
   return reason.length > 110 ? `${reason.slice(0, 107)}…` : reason;
 }
 
+const requester = taskReassignmentRequests.requestedByUserId;
+
+/** Requests nobody on the project can decide: no manager, or the manager asked and owns it too. */
+function nobodyOnProjectDecides(): SQL | undefined {
+  return or(
+    isNull(projects.managerUserId),
+    and(
+      eq(requester, projects.managerUserId),
+      or(isNull(projects.ownerUserId), eq(projects.ownerUserId, requester)),
+    ),
+  );
+}
+
 /**
  * Open reassignment requests the viewer should decide: on projects they
  * manage, or, when the project manager is the one asking, on projects they
- * own. Never their own requests.
+ * own; studio-wide project managers also get those nobody on the project
+ * can decide. Never their own requests.
  */
 export async function reassignmentApprovals(
   db: DatabaseExecutor,
-  userId: string,
+  viewer: ApprovalViewer,
   today: CalendarDate,
 ): Promise<ApprovalDraft[]> {
+  const userId = viewer.userId;
   const rows = await db
     .select({
       request: taskReassignmentRequests,
@@ -37,13 +53,11 @@ export async function reassignmentApprovals(
     .where(
       and(
         eq(taskReassignmentRequests.status, 'open'),
-        ne(taskReassignmentRequests.requestedByUserId, userId),
+        ne(requester, userId),
         or(
           eq(projects.managerUserId, userId),
-          and(
-            eq(projects.ownerUserId, userId),
-            eq(taskReassignmentRequests.requestedByUserId, projects.managerUserId),
-          ),
+          and(eq(projects.ownerUserId, userId), eq(requester, projects.managerUserId)),
+          viewer.capabilities.has('projects.manage_any') ? nobodyOnProjectDecides() : undefined,
         ),
       ),
     )

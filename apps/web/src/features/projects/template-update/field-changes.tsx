@@ -56,6 +56,8 @@ function Outcome({ shown }: { readonly shown: Shown }) {
   }
   if (shown === 'kept')
     return <span className="text-ink-faint">Kept: this project changed it</span>;
+  if (shown === 'unavailable')
+    return <span className="text-ink-faint">Stays: that one is not added to this project</span>;
   return null;
 }
 

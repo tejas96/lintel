@@ -158,4 +158,37 @@ describe('scope changes that add and cancel tasks', () => {
       'cancelled',
     );
   });
+
+  it('stops the running timer and audits a started task it cancels', async () => {
+    const brief = (await tasksByTitle()).get('Capture the client brief');
+    await as.designer.post(`/v1/tasks/${brief?.id}/work/start`).expect(200);
+    const proposed = await as.pm
+      .post(`/v1/projects/${projectId}/scope-changes`, {
+        taskShifts: [],
+        newTasks: [],
+        cancelTaskIds: [brief?.id],
+        title: 'The client wrote their own brief',
+        description: 'They sent a full written brief, so the capture session is not needed.',
+      })
+      .expect(201);
+    const decided = await as.admin
+      .post(`/v1/scope-changes/${proposed.body.id}/decision`, {
+        decision: 'approved',
+        note: 'Agreed',
+        version: proposed.body.version,
+      })
+      .expect(200);
+    expect(decided.body.cancellations[0]).toMatchObject({ outcome: 'cancelled' });
+    const { pool } = testApp.database;
+    const running = await pool.query(
+      'SELECT id FROM work_sessions WHERE task_id = $1 AND ended_at IS NULL',
+      [brief?.id],
+    );
+    expect(running.rows).toHaveLength(0);
+    const audited = await pool.query(
+      "SELECT after FROM audit_log WHERE action = 'task.cancelled' AND entity_id = $1",
+      [brief?.id],
+    );
+    expect(audited.rows[0]?.after).toMatchObject({ scopeChangeId: proposed.body.id });
+  });
 });

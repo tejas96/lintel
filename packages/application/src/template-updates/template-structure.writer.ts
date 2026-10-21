@@ -194,7 +194,8 @@ function milestoneChanges(
     if (field.field === 'requiresClientApproval') {
       changes.requiresClientApproval = entry.milestone.requiresClientApproval;
     }
-    if (field.field === 'stage') changes.stageId = stageId;
+    // A stage the update did not create leaves the milestone where it is.
+    if (field.field === 'stage' && stageId) changes.stageId = stageId;
   }
   return changes;
 }

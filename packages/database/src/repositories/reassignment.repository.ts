@@ -4,9 +4,10 @@ import type {
   ReassignmentResolution,
   ReassignmentStore,
 } from '@lintel/application';
+import type { Capability } from '@lintel/domain';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
-import { taskReassignmentRequests } from '../schema';
+import { roleCapabilities, taskReassignmentRequests, users } from '../schema';
 
 const requestColumns = {
   id: taskReassignmentRequests.id,
@@ -66,6 +67,15 @@ export class ReassignmentRepository implements ReassignmentStore {
       .orderBy(desc(taskReassignmentRequests.createdAt))
       .limit(1);
     return row ?? null;
+  }
+
+  async activeUserIdsWithCapability(capability: Capability): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .innerJoin(roleCapabilities, eq(roleCapabilities.role, users.role))
+      .where(and(eq(roleCapabilities.capability, capability), eq(users.status, 'active')));
+    return rows.map((row) => row.id);
   }
 
   async resolve(requestId: string, expectedVersion: number, resolution: ReassignmentResolution) {

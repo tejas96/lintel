@@ -67,6 +67,36 @@ function present(
   }
 }
 
+interface UncreatedTargets {
+  /** Stages and milestones the new version adds but this update cannot create here. */
+  readonly stages: ReadonlySet<string>;
+  readonly milestones: ReadonlySet<string>;
+}
+
+/**
+ * A move into a stage or milestone that will not exist can never apply,
+ * ticked or not; an item left with nothing to tick no longer asks for one.
+ */
+function withoutUncreatedMoves(
+  item: TemplateItemChange,
+  targets: UncreatedTargets,
+): TemplateItemChange {
+  if (item.change !== 'changed') return item;
+  const fields = item.fields.map((field) => {
+    const missing =
+      field.field === 'stage'
+        ? targets.stages
+        : field.field === 'milestone'
+          ? targets.milestones
+          : null;
+    return missing && field.to !== null && missing.has(field.to)
+      ? { ...field, outcome: 'unavailable' as const }
+      : field;
+  });
+  const stillHeld = fields.some((field) => field.outcome === 'held');
+  return { ...item, fields, optIn: stillHeld ? item.optIn : null };
+}
+
 /**
  * Compares a running project with a newer version of its template: what the
  * update would add, change and remove, and which of those changes are held
@@ -83,8 +113,18 @@ export function planTemplateUpdate(input: TemplateUpdateInput): TemplateUpdatePl
   }
   const milestones = diffMilestones(input, closedStageKeys);
   const tasks = diffTasks(input, closedStageKeys);
+  const targets = {
+    stages: stages.blockedStageKeys,
+    milestones: new Set(
+      milestones.items
+        .filter((item) => item.change === 'added' && item.blocked !== null)
+        .map((item) => item.templateKey),
+    ),
+  };
   return {
-    items: [...stages.items, ...milestones.items, ...tasks.items],
+    items: [...stages.items, ...milestones.items, ...tasks.items].map((item) =>
+      withoutUncreatedMoves(item, targets),
+    ),
     unchanged: {
       stages: stages.unchanged,
       milestones: milestones.unchanged,

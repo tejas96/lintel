@@ -115,7 +115,8 @@ export interface TemplateUpdateStore {
   project(projectId: string): Promise<TemplateUpdateProject | null>;
   /** Locks the project row until the transaction ends. */
   projectForUpdate(projectId: string): Promise<TemplateUpdateProject | null>;
-  snapshot(projectId: string): Promise<ProjectWorkflowSnapshot>;
+  /** With `lock`, its task, milestone and stage rows stay locked until the transaction ends. */
+  snapshot(projectId: string, lock: boolean): Promise<ProjectWorkflowSnapshot>;
   nextTaskNumber(projectId: string): Promise<number>;
   insertStage(projectId: string, stage: NewStageRow): Promise<string>;
   updateStage(stageId: string, changes: StageRowChanges): Promise<void>;
