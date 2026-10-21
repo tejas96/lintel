@@ -1,5 +1,6 @@
 import { ROLE_LABELS } from '@lintel/domain';
 import * as Application from 'expo-application';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
@@ -18,6 +19,7 @@ import { SessionsList } from './sessions-list';
 export function AccountScreen() {
   const user = useCurrentUser();
   const { signOut, refreshUser } = useSession();
+  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const versionLine = `Lintel ${Application.nativeApplicationVersion ?? ''} (${Application.nativeBuildVersion ?? 'dev'}) · ${ROLE_LABELS[user.role]}`;
   const confirmSignOut = () =>
@@ -51,6 +53,13 @@ export function AccountScreen() {
           </AppText>
         </View>
       </Card>
+      <Button
+        label="Edit profile"
+        variant="secondary"
+        icon="edit"
+        onPress={() => router.push('/profile')}
+        accessibilityHint="Change your name, email or designation"
+      />
       <Section title="Notifications">
         <Card style={styles.group}>
           <PushSettings />

@@ -62,6 +62,15 @@ export default function SignedInLayout() {
         }}
       />
       <Stack.Screen name="account" options={{ title: 'Account' }} />
+      <Stack.Screen
+        name="profile"
+        options={{
+          presentation: 'modal',
+          title: 'Edit profile',
+          headerShown: true,
+          headerLeft: () => <HeaderCloseButton />,
+        }}
+      />
     </Stack>
   );
 }

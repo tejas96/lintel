@@ -4,6 +4,7 @@ export * from './deliverable.schema';
 export * from './leave.schema';
 export * from './notification.schema';
 export * from './people.schema';
+export * from './profile.schema';
 export * from './project.schema';
 export * from './reward.schema';
 export * from './task.schema';

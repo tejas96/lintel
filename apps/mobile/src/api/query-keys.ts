@@ -22,4 +22,5 @@ export const queryKeys = {
   people: (search: string) => ['people', search] as const,
   notifications: ['notifications'] as const,
   notificationPreferences: ['notifications', 'preferences'] as const,
+  ownProfile: ['account', 'profile'] as const,
 } as const;

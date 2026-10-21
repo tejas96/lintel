@@ -26,6 +26,7 @@ const ICONS = {
   device: { ios: 'iphone', android: 'smartphone' },
   document: { ios: 'doc.text', android: 'description' },
   done: { ios: 'checkmark.circle', android: 'task_alt' },
+  edit: { ios: 'pencil', android: 'edit' },
   error: { ios: 'exclamationmark.triangle', android: 'warning' },
   flag: { ios: 'flag', android: 'flag' },
   inbox: { ios: 'tray', android: 'inbox' },
