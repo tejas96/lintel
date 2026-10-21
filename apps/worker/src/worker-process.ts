@@ -6,6 +6,7 @@ import { Client, Connection } from '@temporalio/client';
 import { NativeConnection, Runtime, Worker } from '@temporalio/worker';
 import { createActivities, OrganizationContext } from './activities';
 import { createMaintenanceDependencies } from './maintenance.factory';
+import { createMessageChannels } from './message-channels.factory';
 import { describeError, type WorkerLogger } from './observability/worker-logger';
 import { createPushProvider } from './push-provider.factory';
 import { OutboxRelay } from './relay/outbox-relay';
@@ -15,6 +16,10 @@ import {
   PERIODIC_REWARDS_SCHEDULE_ID,
   scheduleIdFor,
 } from './schedules/daily-operations.schedule';
+import {
+  EMAIL_DIGEST_SCHEDULE_ID,
+  ensureEmailDigestSchedule,
+} from './schedules/email-digest.schedule';
 import { ensurePeriodicRewardsSchedule } from './schedules/periodic-rewards.schedule';
 import { temporalSdkLogger } from './temporal-logging';
 import { workflowSource } from './workflow-source';
@@ -52,10 +57,13 @@ export async function startWorkerProcess(
   const scheduler = new TemporalWorkflowScheduler(temporal);
   const organization = new OrganizationContext(uow.stores.settings, systemClock, {
     smsConfigured: env.SMS_NOTIFICATIONS_ENABLED,
+    emailConfigured: env.EMAIL_NOTIFICATIONS_ENABLED,
   });
+  const channels = createMessageChannels(env, logger);
   const activities = createActivities(
     { uow, clock: systemClock, push, scheduler, organization, logger },
     createMaintenanceDependencies({ database, uow, clock: systemClock, logger, organization }),
+    channels,
   );
 
   const nativeConnection = await NativeConnection.connect({ address: temporal.address });
@@ -79,7 +87,18 @@ export async function startWorkerProcess(
     taskQueue: temporal.taskQueue,
     timeZone,
   });
-  logger.info('Schedules ready', { daily: schedule, periodicRewards: rewardsSchedule, timeZone });
+  const digestSchedule = await ensureEmailDigestSchedule(client, {
+    scheduleId: scheduleIdFor(EMAIL_DIGEST_SCHEDULE_ID, temporal.taskQueue),
+    taskQueue: temporal.taskQueue,
+    timeZone,
+    time: env.EMAIL_DIGEST_TIME,
+  });
+  logger.info('Schedules ready', {
+    daily: schedule,
+    periodicRewards: rewardsSchedule,
+    emailDigest: digestSchedule,
+    timeZone,
+  });
 
   const relay = new OutboxRelay({ uow, scheduler, clock: systemClock, logger });
   const workerRun = worker.run();
@@ -88,6 +107,8 @@ export async function startWorkerProcess(
     taskQueue: temporal.taskQueue,
     namespace: temporal.namespace,
     pushProvider: push.name,
+    smsSender: channels.sms.name,
+    emailSender: channels.email.name,
   });
 
   let stopping: Promise<void> | null = null;
@@ -107,6 +128,7 @@ export async function startWorkerProcess(
         clientConnection.close(),
         nativeConnection.close(),
         push.close?.(),
+        channels.close(),
       ]);
       await database.close();
       logger.info('Worker stopped');

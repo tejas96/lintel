@@ -58,6 +58,9 @@ export async function queryNotifications(
 export interface NotificationPreferencesView {
   readonly quietHours: { start: string; end: string } | null;
   readonly channels: { kind: NotificationKind; channel: NotificationChannel; enabled: boolean }[];
+  readonly emailDigest: 'off' | 'daily';
+  /** Whether an email address is on file (the address itself is not part of this view). */
+  readonly hasEmailAddress: boolean;
 }
 
 /** Every kind × channel with the stored choice, or the default when never chosen. */
@@ -67,7 +70,12 @@ export async function loadNotificationPreferences(
 ): Promise<NotificationPreferencesView> {
   const [[user], stored] = await Promise.all([
     db
-      .select({ start: users.quietHoursStart, end: users.quietHoursEnd })
+      .select({
+        start: users.quietHoursStart,
+        end: users.quietHoursEnd,
+        email: users.email,
+        emailDigest: users.emailDigestEnabled,
+      })
       .from(users)
       .where(eq(users.id, userId)),
     db
@@ -89,5 +97,7 @@ export async function loadNotificationPreferences(
         enabled: chosen.get(`${kind}:${channel}`) ?? defaultChannelPreference(channel),
       })),
     ),
+    emailDigest: user?.emailDigest ? 'daily' : 'off',
+    hasEmailAddress: Boolean(user?.email?.trim()),
   };
 }

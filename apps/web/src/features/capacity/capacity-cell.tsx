@@ -35,11 +35,7 @@ export function CapacityCell({ day, dateLabel, past, compact }: CapacityCellProp
       {!closed && (
         <div
           aria-hidden
-          className={cn(
-            'flex h-full flex-col justify-between gap-1.5',
-            compact ? 'p-1.5' : 'p-2',
-            past && 'opacity-55',
-          )}
+          className={cn('flex h-full flex-col justify-between gap-1.5', compact ? 'p-1.5' : 'p-2')}
         >
           <div className="flex items-start justify-between gap-1">
             {fullLeave ? (
@@ -48,7 +44,8 @@ export function CapacityCell({ day, dateLabel, past, compact }: CapacityCellProp
               <span
                 className={cn(
                   'text-[0.8125rem] leading-4 tabular-nums',
-                  booked === 0 ? 'text-ink-faint' : 'font-medium text-ink',
+                  // Past days are quieter through colour, never opacity (text contrast).
+                  booked === 0 || past ? 'text-ink-faint' : 'font-medium text-ink',
                 )}
               >
                 {formatHoursShort(day.confirmedMinutes)}
@@ -67,7 +64,11 @@ export function CapacityCell({ day, dateLabel, past, compact }: CapacityCellProp
           {day.leave === 'pending' && (
             <span className="text-[0.6875rem] leading-3 text-ink-muted">Leave asked</span>
           )}
-          {!fullLeave && <LoadBar day={day} />}
+          {!fullLeave && (
+            <div className={past ? 'opacity-55' : undefined}>
+              <LoadBar day={day} />
+            </div>
+          )}
         </div>
       )}
       {day.leave === 'pending' && (

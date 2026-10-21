@@ -12,19 +12,42 @@ interface NotificationMatrixProps {
   readonly onChange: (preferences: NotificationPreferences) => void;
 }
 
-const COLUMNS = [
-  { channel: 'in_app', label: 'In Lintel', hint: 'Always kept' },
-  { channel: 'push', label: 'Push', hint: 'To your phone' },
-  { channel: 'sms', label: 'SMS', hint: 'Urgent only' },
+const ALL_COLUMNS = [
+  { channel: 'in_app', label: 'In Lintel', hint: 'Always kept', spoken: 'in Lintel' },
+  { channel: 'push', label: 'Push', hint: 'Phone and browser', spoken: 'push' },
+  { channel: 'sms', label: 'SMS', hint: 'Urgent only', spoken: 'SMS' },
+  { channel: 'email', label: 'Email', hint: 'To your inbox', spoken: 'email' },
 ] as const;
+
+type Column = (typeof ALL_COLUMNS)[number];
+
+/** SMS and email appear only when the studio has switched them on. */
+function columnsFor(preferences: NotificationPreferences): readonly Column[] {
+  return ALL_COLUMNS.filter(
+    (column) =>
+      (column.channel !== 'sms' || preferences.delivery.sms) &&
+      (column.channel !== 'email' || preferences.delivery.email),
+  );
+}
+
+function Unavailable({ reason }: { readonly reason: string }) {
+  return (
+    <span className="text-ink-faint" title={reason}>
+      –<span className="sr-only">{reason}</span>
+    </span>
+  );
+}
 
 /**
  * Each kind of notification against each way it can reach you. The inbox
- * always keeps everything; SMS is only ever used for urgent alerts.
+ * always keeps everything; SMS is only ever used for urgent alerts; email
+ * needs an address on file.
  */
 export function NotificationMatrix({ preferences, onChange }: NotificationMatrixProps) {
-  const cell = (kind: NotificationKind, channel: (typeof COLUMNS)[number]['channel']) => {
-    const label = `${KIND_COPY[kind].label}: ${channel === 'in_app' ? 'in Lintel' : channel === 'push' ? 'push' : 'SMS'}`;
+  const columns = columnsFor(preferences);
+  const cell = (kind: NotificationKind, column: Column) => {
+    const { channel } = column;
+    const label = `${KIND_COPY[kind].label}: ${column.spoken}`;
     if (channel === 'in_app') {
       return (
         <Checkbox
@@ -38,11 +61,10 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
       );
     }
     if (channel === 'sms' && NOTIFICATION_URGENCY[kind] !== 'urgent') {
-      return (
-        <span className="text-ink-faint" title="Only urgent alerts are sent by SMS">
-          –<span className="sr-only">Not sent by SMS</span>
-        </span>
-      );
+      return <Unavailable reason="Only urgent alerts are sent by SMS" />;
+    }
+    if (channel === 'email' && !preferences.delivery.hasEmailAddress) {
+      return <Unavailable reason="No email address on file" />;
     }
     return (
       <Checkbox
@@ -56,7 +78,13 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
   };
   return (
     <div className="relative overflow-x-auto rounded-lg border border-hairline bg-raised">
-      <table className="w-full min-w-[22rem] border-separate border-spacing-0">
+      <table
+        className={
+          columns.length > 3
+            ? 'w-full min-w-[20rem] border-separate border-spacing-0'
+            : 'w-full min-w-[22rem] border-separate border-spacing-0'
+        }
+      >
         <caption className="sr-only">How each kind of notification reaches you</caption>
         <thead>
           <tr>
@@ -66,11 +94,15 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
             >
               Notification
             </th>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <th
                 key={column.channel}
                 scope="col"
-                className="w-16 border-b border-hairline px-1 py-3 text-center sm:w-28"
+                className={
+                  columns.length > 3
+                    ? 'w-12 border-b border-hairline px-0.5 py-3 text-center sm:w-28'
+                    : 'w-16 border-b border-hairline px-1 py-3 text-center sm:w-28'
+                }
               >
                 <span className="block type-label font-medium text-ink-muted">{column.label}</span>
                 <span className="hidden text-[0.6875rem] font-normal text-ink-faint sm:block">
@@ -85,7 +117,7 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
             <Fragment key={group.title}>
               <tr>
                 <th
-                  colSpan={4}
+                  colSpan={columns.length + 1}
                   scope="colgroup"
                   className="border-b border-hairline bg-surface px-4 pt-4 pb-2 text-left type-title-md font-semibold text-ink"
                 >
@@ -105,14 +137,12 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
                       {KIND_COPY[kind].explanation}
                     </span>
                   </th>
-                  {COLUMNS.map((column) => (
+                  {columns.map((column) => (
                     <td
                       key={column.channel}
                       className="border-b border-hairline px-1 text-center align-middle"
                     >
-                      <span className="inline-flex justify-center">
-                        {cell(kind, column.channel)}
-                      </span>
+                      <span className="inline-flex justify-center">{cell(kind, column)}</span>
                     </td>
                   ))}
                 </tr>

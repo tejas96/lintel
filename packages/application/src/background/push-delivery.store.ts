@@ -1,6 +1,8 @@
 import type { NotificationKind } from '@lintel/domain';
+import type { PushTokenType } from '../ports/push-provider.port';
 
-export type DeliveryStatus = 'pending' | 'deferred' | 'sent' | 'failed' | 'skipped';
+/** `digest`: an email held for the person's daily digest (never a push status). */
+export type DeliveryStatus = 'pending' | 'deferred' | 'digest' | 'sent' | 'failed' | 'skipped';
 
 export interface PushDeliveryFacts {
   readonly notificationId: string;
@@ -25,7 +27,7 @@ export interface PushDeliveryFacts {
 export interface PushDevice {
   readonly id: string;
   readonly token: string;
-  readonly tokenType: 'fcm' | 'apns';
+  readonly tokenType: PushTokenType;
 }
 
 export interface PushAttemptProgress {

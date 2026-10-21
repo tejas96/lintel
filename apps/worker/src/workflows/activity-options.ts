@@ -24,6 +24,20 @@ export const PUSH_ACTIVITY: ActivityOptions = {
   },
 };
 
+/**
+ * SMS and email sends: provider outages and rate limits back off for about
+ * ten minutes in total (six attempts), then the delivery is recorded as failed.
+ */
+export const MESSAGE_ACTIVITY: ActivityOptions = {
+  startToCloseTimeout: '2 minutes',
+  retry: {
+    initialInterval: '10 seconds',
+    backoffCoefficient: 2,
+    maximumInterval: '5 minutes',
+    maximumAttempts: 6,
+  },
+};
+
 /** Daily batch work over every active project. */
 export const BATCH_ACTIVITY: ActivityOptions = {
   startToCloseTimeout: '10 minutes',

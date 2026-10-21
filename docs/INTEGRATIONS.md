@@ -9,6 +9,9 @@ source links: `docs/research/INTEGRATION_RESEARCH_2026-10-21.md`.
 | SMS OTP | `OtpProvider` | `Msg91OtpProvider` | `LocalDevelopmentOtpProvider` (code in API log) | Adapter unit-tested against the documented contract; **not verified against the live MSG91 API** (needs credentials) |
 | Object storage | `ObjectStorage` | `RustFsObjectStorage` (S3 API) | same, local RustFS container | Verified locally (bucket, put, get, health) |
 | Push | `PushProvider` | `FirebasePushProvider` (firebase-admin) | `LogPushProvider` (records, reports `not_configured`) | FCM adapter compiled and unit-tested for error mapping; **not verified against real devices** (needs a Firebase project) |
+| Notification SMS | `SmsSender` | `Msg91SmsSender` (MSG91 Send SMS / flow API) | `DevelopmentSmsSender` (worker log, reports `not_configured`) | Unit-tested against the documented request with mocked HTTP; **not verified against the live MSG91 API** (needs credentials, a template and its DLT registration) |
+| Notification email | `EmailSender` | `SmtpEmailSender` (Nodemailer 10.1.7) | `DevelopmentEmailSender` (worker log, reports `not_configured`) | Unit-tested with a mocked transport; **not verified against a real SMTP server** |
+| Web push | `PushProvider` (web installations) | `FirebasePushProvider` → `fid` targets | — (hidden without `NEXT_PUBLIC_FIREBASE_*`) | Client unit-tested with a mocked Firebase SDK; **not verified with a real Firebase project and browser** |
 | Workflows | `WorkflowScheduler` | `TemporalWorkflowScheduler` | same, local Temporal dev server | Verified locally |
 | AI (Phase 2) | `AiAssistant` | — | `DisabledAiAssistant` | Disabled by design |
 
@@ -62,6 +65,118 @@ source links: `docs/research/INTEGRATION_RESEARCH_2026-10-21.md`.
   deliveries `skipped` with the reason, rather than claiming delivery.
 - Requires an Apple Developer Program membership for APNs keys and signing.
 
+## Notification channels (SMS, email, web push)
+
+Who gets what is decided by the domain policy (`packages/domain/src/notifications`):
+in-app always; push unless turned off (held during quiet hours unless urgent);
+**SMS only for urgent kinds** the person opted into, when `SMS_NOTIFICATIONS_ENABLED`;
+**email per kind** (opt-in) when `EMAIL_NOTIFICATIONS_ENABLED`, immediately or held for
+the person's **daily digest** (urgent kinds always go immediately; quiet hours never hold
+email). The Notifier writes one `notification_deliveries` row per channel and an outbox
+event per SMS/immediate email (`NotificationMessageQueued`); the worker relays it to
+`messageDeliveryWorkflow` (ID `notification:<id>:<sms|email>`), which sends with six
+retries and writes **one `notification_delivery_attempts` row per attempt** (written
+before the provider is called, finished after). Development senders record and report
+`not_configured`, so such deliveries are `skipped`, never `sent`.
+
+### MSG91 notification SMS
+
+- API: `POST https://control.msg91.com/api/v5/flow`, headers `authkey`,
+  `accept: application/json`, `content-type: application/json`; body
+  `{"template_id", "short_url": "0", "realTimeResponse": "1", "recipients": [{"mobiles": "91XXXXXXXXXX", "link": "https://…"}]}`.
+  Success is `{"type":"success","message":"<request id>"}`; like the OTP API the adapter
+  decides on `type`. `short_url` is "1 (On) or 0 (Off)" (we send our own link);
+  `realTimeResponse` "provides a real-time response … addressing most API error codes".
+  Template variables are case-sensitive (`##link##` ↔ `link`); `mobiles` is international
+  format without "+".
+- **Content:** never the notification's title or body. Register this generic text (one
+  variable) as the MSG91 template and on the DLT portal:
+  `Lintel: an urgent update is waiting for you. Open ##link## to see it.`
+  The link is `WEB_BASE_URL` + the notification's in-app path (re-checked on open).
+- **DLT:** the DLT template ID is attached to the MSG91 template when it is created
+  (`/api/v5/sms/addTemplate`, field `dlt_template_id`, "If you fall in the DLT criteria of
+  India, enter your DLT Template ID."). The flow API itself takes only `template_id`, so
+  Lintel requires `MSG91_SMS_DLT_TEMPLATE_ID` in configuration and records
+  `msg91: <template> (DLT <id>)` on every attempt row for audits.
+- Errors are mapped to safe text (auth key, DLT, template, number, balance, IP); HTTP
+  5xx/429 and network failures are retried, others fail the delivery. MSG91's error code
+  list: https://msg91.com/help/what-are-the-reason-for-error-codes-received-under-the-api-failed
+- Configuration: `SMS_NOTIFICATIONS_ENABLED=true`, `SMS_PROVIDER=msg91`, `MSG91_AUTH_KEY`,
+  `MSG91_SMS_TEMPLATE_ID`, `MSG91_SMS_DLT_TEMPLATE_ID` (numeric), shared `MSG91_BASE_URL`
+  and `MSG91_TIMEOUT_MS`.
+- Sources: https://docs.msg91.com/sms/send-sms.md · https://docs.msg91.com/sms/module.json
+  (Send SMS, Add Template) · the error-code article above.
+- **UNVERIFIED:** the exact error body of the flow API (assumed `{"type":"error","message"}`
+  as for OTP; any non-success `type` is treated as a failure); whether DLT rules require
+  the link's domain to be whitelisted with the operator (reported widely, not in MSG91's
+  docs); the optional tracking parameters (`clientId`, `CRQID`, `UUID`) the docs mention
+  are not sent because their placement is not documented.
+
+### Email (SMTP, Nodemailer 10.1.7)
+
+- Options used (checked against Nodemailer's shipped type definitions and
+  https://www.nodemailer.com/smtp): `host`, `port` (default 587), `secure` (TLS from the
+  first byte; Lintel defaults it to true only for port 465), `requireTLS` (refuse to send
+  unless STARTTLS succeeds; `SMTP_REQUIRE_TLS`, default true), `auth {user, pass}`,
+  `connectionTimeout`/`greetingTimeout`/`socketTimeout`, and `disableFileAccess` /
+  `disableUrlAccess` (Lintel only sends text it rendered).
+- Each email has a plain-text part and an HTML part (Linen & Cyanotype colours, system
+  fonts, `lang`, presentation tables, dark scheme via `prefers-color-scheme`), a
+  deterministic `Message-ID` (`<notification.<id>@<web host>>`, `<digest.<id>@…>`) so a
+  retried send is recognisable, and `Auto-Submitted: auto-generated` (RFC 3834) so mail
+  servers do not answer it with out-of-office replies. Sensitive kinds (rewards, leave
+  decisions) read "You have a private update" — details stay in the app.
+- Failures: 4xx replies and connection trouble are retried; credentials, TLS and 5xx
+  replies fail the delivery. Server text is never stored (it can contain the address).
+- **Daily digest:** the `lintel-email-digest` Temporal Schedule runs at
+  `EMAIL_DIGEST_TIME` (default 18:00) in the studio timezone. For each person with
+  emails held in delivery status `digest` it sends one email (sections in the account
+  page's order, most pressing first, at most 40 items plus "and N more"), records one
+  `email_digests` row per person and day (a re-run never sends twice) and marks the held
+  deliveries sent. **Nobody with nothing held gets an email.** A digest that keeps
+  failing is marked failed and its emails wait for the next day.
+- Configuration: `EMAIL_NOTIFICATIONS_ENABLED=true`, `EMAIL_PROVIDER=smtp`, `SMTP_HOST`,
+  `SMTP_PORT`, `SMTP_SECURE`, `SMTP_REQUIRE_TLS`, `SMTP_USER`/`SMTP_PASSWORD` (both or
+  neither), `SMTP_FROM` ("Name <address>"), `SMTP_TIMEOUT_MS`, `EMAIL_DIGEST_TIME`.
+  People need an email address on their profile (administrators add it).
+- **UNVERIFIED:** delivery and rendering with a real provider and real mail clients
+  (Gmail/Outlook dark-mode handling in particular).
+
+### Web push (Firebase Cloud Messaging for the web app)
+
+- Client: `firebase` 12.19.0 (`@firebase/messaging` 0.13.3, same as 13.0.0). Lintel uses
+  the recommended **Firebase Installation ID** API — `register(messaging, {vapidKey,
+  serviceWorkerRegistration})` plus `onRegistered` — not the deprecated `getToken()`; the
+  docs warn against mixing the two. The installation ID is stored through
+  `POST /v1/devices` with `platform: "web"`, `tokenType: "fcm_fid"`; the server sends to it
+  with `{fid}` (firebase-admin 14.5 `FidMessage`).
+- Permission is asked only when the person presses **Turn on in this browser** in
+  Account → Notifications. Signing out (and **Turn off**) deletes the device row, calls
+  `unregister()` and removes the service worker registration.
+- Service worker: `apps/web/service-worker/firebase-messaging-sw.ts`, bundled with esbuild
+  into `apps/web/public/firebase-messaging-sw.js` (git-ignored) on every web build. The
+  page registers it with the public web config in its URL and scope
+  `/firebase-cloud-messaging-push-scope`, so it never controls Lintel's pages. It is served
+  `no-store`, with its own CSP (`script-src 'self'`, `connect-src` Google APIs) and
+  outside the sign-in proxy.
+- Background messages with a `notification` payload are shown by the SDK; a click opens
+  `webpush.fcmOptions.link` ("Click actions support only secure HTTPS URLs"), which the
+  server sets to `WEB_BASE_URL` + the in-app path when that is https. While a Lintel tab
+  has focus the page receives the message and refreshes the inbox.
+- Configuration (public, inlined at build time): `NEXT_PUBLIC_FIREBASE_API_KEY`,
+  `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`,
+  `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_VAPID_KEY` (Firebase console →
+  Project settings → Cloud Messaging → Web Push certificates). When any is missing the
+  feature hides itself and Firebase is never downloaded. Docker builds take them as build
+  args. The server side needs `PUSH_PROVIDER=fcm` and the service account as before.
+- Sources: https://firebase.google.com/docs/cloud-messaging/js/client ·
+  https://firebase.google.com/docs/cloud-messaging/js/receive · the type definitions of
+  `@firebase/messaging` 0.13.3 and `firebase-admin` 14.5 (`WebpushConfig`,
+  `WebpushFcmOptions`, `FidMessage`).
+- **UNVERIFIED:** an end-to-end send to a real browser by installation ID (no Firebase
+  project); Safari/iOS web push (needs a home-screen web app with a manifest, which Lintel
+  does not ship yet).
+
 ## Temporal
 
 - SDK 1.24.0 (`@temporalio/*`), Node ≥ 20.3, glibc base image for production containers.
@@ -92,3 +207,7 @@ source links: `docs/research/INTEGRATION_RESEARCH_2026-10-21.md`.
 | Temporal SDK / server | 1.24.0 / 1.30.x | npm + local images |
 | firebase-admin | 14.5.0 | npm registry |
 | AWS SDK S3 | 3.1153.0 | used for RustFS |
+| Nodemailer | 10.1.7 | npm registry; ships its own types; 10.1.x carries the connection and parsing hardening |
+| Firebase JS SDK | 12.19.0 (`@firebase/messaging` 0.13.3) | npm registry; same messaging package as 13.0.0, without the new major |
+| esbuild | 0.28.2 | already in the lockfile (via tsx); bundles the web push service worker |
+| Playwright / @axe-core/playwright | 1.62.1 / 4.13.0 | 1.62.1 drives Chromium build 1234 (Chrome for Testing 151.0.7922.34), already cached locally; axe-core 4.13 |

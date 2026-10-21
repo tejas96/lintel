@@ -1,0 +1,18 @@
+{
+  "name": "@lintel/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Browser end-to-end and accessibility tests (Playwright + axe) for the web app against a freshly migrated and seeded database.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@lintel/database": "workspace:*",
+    "@lintel/tsconfig": "workspace:*",
+    "@playwright/test": "1.62.1",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -61,6 +61,13 @@ export class NotificationInboxRepository implements NotificationInboxStore {
       .where(eq(users.id, userId));
   }
 
+  async setEmailDigest(userId: string, daily: boolean) {
+    await this.db
+      .update(users)
+      .set({ emailDigestEnabled: daily, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
   async registerDevice(userId: string, device: DeviceRegistration, at: Date) {
     const [existing] = await this.db
       .select({ userId: deviceTokens.userId })

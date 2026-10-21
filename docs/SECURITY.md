@@ -59,6 +59,20 @@ reviewer can check each one.
 - Error responses never include stack traces or provider messages; unexpected
   errors return a generic message plus the request ID.
 - Push previews for sensitive kinds (rewards, leave decisions) are generic.
+- **SMS never carries notification content:** the `SmsSender` port only accepts a phone
+  number and a link; the text is one pre-approved generic template. Links are built from
+  `WEB_BASE_URL` and an in-app path only (`appLink` rejects `//host`, full URLs and
+  backslashes) and every opened record is re-authorised.
+- **Email** carries the inbox text except for sensitive kinds, which read "You have a
+  private update"; the digest applies the same rule. Every value placed in the HTML is
+  escaped. `Auto-Submitted: auto-generated` stops auto-replies; Nodemailer file and URL
+  access is disabled.
+- Logs and attempt rows hold masked recipients (`+91 •••••• 0005`, `t•••@domain`) and
+  mapped error text only — never provider bodies, full numbers or addresses.
+- **Web push:** the service worker is served `no-store` with its own CSP, never controls
+  application pages (Firebase's push scope), and FCM opens only same-origin https links.
+  The Firebase web config is public by design; the service-account key stays server-side.
+  Signing out unregisters the browser's installation and device row.
 
 ## Transport and headers
 
@@ -79,12 +93,19 @@ The API and worker refuse to start in production when: `SESSION_SECRET` is the
 development default, `OTP_PROVIDER` is not `msg91`, `OTP_DEVELOPMENT_CODE` is set,
 `STORAGE_SECRET_KEY` is the development default, `PUSH_PROVIDER` is `log`,
 `COOKIE_SECURE=false`, provider credentials are missing, or
-`AI_FEATURES_ENABLED=true`.
+`AI_FEATURES_ENABLED=true`. For notification channels it also refuses: SMS switched on
+with `SMS_PROVIDER` other than `msg91`; email switched on with `EMAIL_PROVIDER` other
+than `smtp`; SMTP without TLS (`SMTP_SECURE` or `SMTP_REQUIRE_TLS`); SMS or email with a
+non-https `WEB_BASE_URL`; `SMS_PROVIDER=msg91` without the SMS and DLT template IDs;
+`EMAIL_PROVIDER=smtp` without host and sender. The development SMS and email senders
+also refuse to be constructed in production.
 
 ## Pre-deployment security checklist
 
 - [ ] Fresh `SESSION_SECRET` (≥ 48 random bytes), storage keys, database password.
 - [ ] MSG91 auth key with IP allow-listing; DLT-approved template for +91 numbers.
+- [ ] If SMS/email are on: the generic SMS template registered with MSG91 and DLT; SMTP
+      credentials scoped to sending; SPF/DKIM/DMARC set up for the `SMTP_FROM` domain.
 - [ ] Firebase service account restricted to FCM; APNs key uploaded to Firebase.
 - [ ] HTTPS everywhere; API and web on the same site; `COOKIE_SECURE=true`.
 - [ ] `CORS_ALLOWED_ORIGINS` lists only the production web origin.
@@ -123,6 +144,9 @@ probed as a non-member returned 404. Findings and their status:
 - **CSRF token not bound to the session** (double-submit with an unbound token).
   Exploitation also needs cookie injection on the same site; SameSite=Lax, JSON-only
   bodies and the CORS allow-list remain. Planned: HMAC(session) tokens and `__Host-` cookies.
+- **SMS and email are at-least-once.** A worker that crashes after the provider accepted
+  a message but before the attempt is recorded will send it again on retry (the email
+  keeps its Message-ID; MSG91 drops identical SMS to the same number within 10 seconds).
 - **Push device tokens are not tied to sessions.** A token re-registered by another
   signed-in person moves to them (shared phones); revoking a session does not stop
   pushes until the app unregisters. Planned: link devices to sessions.

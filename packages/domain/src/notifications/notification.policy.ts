@@ -17,11 +17,22 @@ export interface ChannelPreference {
   readonly enabled: boolean;
 }
 
+/** What the email channel needs to know about the studio and the person. */
+export interface EmailChannelInput {
+  /** Email notifications are switched on for the studio and a sender is configured. */
+  readonly configured: boolean;
+  readonly hasAddress: boolean;
+  /** The person collects non-urgent emails into one email a day. */
+  readonly dailyDigest: boolean;
+}
+
 export interface DeliveryPlanInput {
   readonly kind: NotificationKind;
   readonly preferences: readonly ChannelPreference[];
   readonly hasActiveDevice: boolean;
   readonly smsConfigured: boolean;
+  /** Absent when the caller does not plan email at all (treated as not configured). */
+  readonly email?: EmailChannelInput;
   readonly quietHours: QuietHours | null;
   /** Local "HH:mm" in the business timezone at the moment of sending. */
   readonly localTime: string;
@@ -29,7 +40,8 @@ export interface DeliveryPlanInput {
 
 export interface ChannelDecision {
   readonly channel: NotificationChannel;
-  readonly deliver: 'now' | 'after_quiet_hours' | 'skip';
+  /** `digest`: held for the person's daily email digest. */
+  readonly deliver: 'now' | 'after_quiet_hours' | 'digest' | 'skip';
   readonly reason: string;
 }
 
@@ -52,38 +64,55 @@ function preferenceFor(input: DeliveryPlanInput, channel: NotificationChannel): 
   return match ? match.enabled : null;
 }
 
+function planPush(input: DeliveryPlanInput, urgent: boolean): ChannelDecision {
+  const pushPreference = preferenceFor(input, 'push') ?? true;
+  if (!input.hasActiveDevice) {
+    return { channel: 'push', deliver: 'skip', reason: 'No registered device.' };
+  }
+  if (!pushPreference) {
+    return { channel: 'push', deliver: 'skip', reason: 'Turned off by the person.' };
+  }
+  if (input.quietHours && !urgent && isWithinQuietHours(input.quietHours, input.localTime)) {
+    return { channel: 'push', deliver: 'after_quiet_hours', reason: 'Held until quiet hours end.' };
+  }
+  return { channel: 'push', deliver: 'now', reason: 'Push enabled.' };
+}
+
+/**
+ * Email is opt-in per kind. Quiet hours do not apply (nothing buzzes until
+ * the person opens their mail); a daily digest collects everything that is
+ * not urgent.
+ */
+function planEmail(input: DeliveryPlanInput, urgent: boolean): ChannelDecision | null {
+  const email = input.email;
+  if (!email?.configured || preferenceFor(input, 'email') !== true) return null;
+  if (!email.hasAddress) {
+    return { channel: 'email', deliver: 'skip', reason: 'No email address on file.' };
+  }
+  if (email.dailyDigest && !urgent) {
+    return { channel: 'email', deliver: 'digest', reason: 'Collected for the daily digest.' };
+  }
+  return { channel: 'email', deliver: 'now', reason: 'Email opted in.' };
+}
+
 /**
  * Decides which channels deliver a notification. In-app always records it;
  * push respects preferences and quiet hours (urgent items bypass quiet
- * hours); SMS is reserved for urgent items when the person opted in.
+ * hours); SMS is reserved for urgent items when the person opted in and SMS
+ * is switched on; email is opt-in per kind, immediate or in a daily digest.
  */
 export function planNotificationDelivery(input: DeliveryPlanInput): ChannelDecision[] {
-  const urgency = NOTIFICATION_URGENCY[input.kind];
+  const urgent = NOTIFICATION_URGENCY[input.kind] === 'urgent';
   const decisions: ChannelDecision[] = [
     { channel: 'in_app', deliver: 'now', reason: 'Always kept in the inbox.' },
+    planPush(input, urgent),
   ];
-  const pushPreference = preferenceFor(input, 'push') ?? true;
-  if (!input.hasActiveDevice) {
-    decisions.push({ channel: 'push', deliver: 'skip', reason: 'No registered device.' });
-  } else if (!pushPreference) {
-    decisions.push({ channel: 'push', deliver: 'skip', reason: 'Turned off by the person.' });
-  } else if (
-    input.quietHours &&
-    urgency !== 'urgent' &&
-    isWithinQuietHours(input.quietHours, input.localTime)
-  ) {
-    decisions.push({
-      channel: 'push',
-      deliver: 'after_quiet_hours',
-      reason: 'Held until quiet hours end.',
-    });
-  } else {
-    decisions.push({ channel: 'push', deliver: 'now', reason: 'Push enabled.' });
-  }
-  const smsWanted = preferenceFor(input, 'sms') === true && urgency === 'urgent';
+  const smsWanted = preferenceFor(input, 'sms') === true && urgent;
   if (smsWanted && input.smsConfigured) {
     decisions.push({ channel: 'sms', deliver: 'now', reason: 'Urgent and SMS opted in.' });
   }
+  const email = planEmail(input, urgent);
+  if (email) decisions.push(email);
   return decisions;
 }
 
@@ -97,6 +126,10 @@ export function notificationDedupeKey(input: {
   return [input.kind, input.recipientId, input.subjectId, input.window ?? 'once'].join(':');
 }
 
+/**
+ * What may appear on a lock screen: sensitive kinds get a generic sentence,
+ * the full text stays in the app.
+ */
 export function pushPreviewFor(
   kind: NotificationKind,
   title: string,
@@ -104,4 +137,20 @@ export function pushPreviewFor(
 ): { title: string; body: string } {
   if (!SENSITIVE_NOTIFICATION_KINDS.has(kind)) return { title, body };
   return { title: 'Lintel', body: 'You have a private update. Open the app to see it.' };
+}
+
+/**
+ * What may reach a mailbox (single emails and the daily digest): the same
+ * rule as push, worded for an email where "Lintel" alone would not be a title.
+ */
+export function messagePreviewFor(
+  kind: NotificationKind,
+  title: string,
+  body: string,
+): { title: string; body: string } {
+  if (!SENSITIVE_NOTIFICATION_KINDS.has(kind)) return { title, body };
+  return {
+    title: 'You have a private update',
+    body: 'Open Lintel to see it. The details stay in the app.',
+  };
 }

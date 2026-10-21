@@ -1,9 +1,10 @@
 import { isValidTimeZone } from '@lintel/shared';
 import { z } from 'zod';
-
-const booleanFlag = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((value) => value === 'true' || value === '1');
+import { booleanFlag } from './environment-primitives';
+import {
+  notificationChannelProblems,
+  notificationChannelVariables,
+} from './notification-channels.environment';
 
 const DEVELOPMENT_SECRET = 'local-development-secret-change-me-0000000000';
 
@@ -62,6 +63,7 @@ export const environmentSchema = z.object({
 
   SMS_NOTIFICATIONS_ENABLED: booleanFlag.default('false'),
   AI_FEATURES_ENABLED: booleanFlag.default('false'),
+  ...notificationChannelVariables,
 });
 
 export type Environment = z.infer<typeof environmentSchema>;
@@ -109,6 +111,7 @@ export function assertProductionSafety(env: Environment): void {
       : []),
     ...productionProblems(env),
     ...providerProblems(env),
+    ...notificationChannelProblems(env),
   ];
   if (problems.length > 0) throw new ConfigurationError(problems);
 }

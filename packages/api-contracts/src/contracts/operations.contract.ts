@@ -15,8 +15,10 @@ import { capacityOverviewSchema } from '../schemas/capacity.schema';
 import { commandCenterSchema } from '../schemas/dashboard.schema';
 import {
   deviceSchema,
+  notificationPreferencesInputSchema,
   notificationPreferencesSchema,
   notificationSchema,
+  pushTokenTypeSchema,
 } from '../schemas/notification.schema';
 import { userSummarySchema } from '../schemas/people.schema';
 import {
@@ -90,7 +92,7 @@ export const operationsContract = c.router({
   updateNotificationPreferences: {
     method: 'PUT',
     path: '/notifications/preferences',
-    body: notificationPreferencesSchema,
+    body: notificationPreferencesInputSchema,
     responses: { 200: notificationPreferencesSchema },
   },
   registerDevice: {
@@ -98,7 +100,7 @@ export const operationsContract = c.router({
     path: '/devices',
     body: z.object({
       platform: z.enum(['ios', 'android', 'web']),
-      tokenType: z.enum(['fcm', 'apns']),
+      tokenType: pushTokenTypeSchema,
       token: z.string().min(20).max(4096),
       appVersion: z.string().max(40).nullable(),
     }),

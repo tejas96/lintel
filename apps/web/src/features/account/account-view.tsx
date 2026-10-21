@@ -65,7 +65,7 @@ export function AccountView() {
       <AccountSection
         id="notifications"
         title="Notifications"
-        description="Everything stays in your inbox. Choose what also reaches your phone."
+        description="Everything stays in your inbox. Choose what also reaches your phone, this browser or your email."
       >
         <NotificationSettings />
       </AccountSection>

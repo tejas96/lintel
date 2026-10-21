@@ -24,6 +24,8 @@ export class NotificationRepository implements NotificationStore {
         status: users.status,
         start: users.quietHoursStart,
         end: users.quietHoursEnd,
+        email: users.email,
+        emailDigest: users.emailDigestEnabled,
       })
       .from(users)
       .where(eq(users.id, userId));
@@ -46,6 +48,7 @@ export class NotificationRepository implements NotificationStore {
       quietHoursStart: user.start,
       quietHoursEnd: user.end,
       hasActiveDevice: Boolean(device),
+      email: { hasAddress: Boolean(user.email?.trim()), dailyDigest: user.emailDigest },
       preferences,
     };
   }

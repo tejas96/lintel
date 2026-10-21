@@ -5,7 +5,12 @@ import type {
   WorkflowStartRequest,
 } from '@lintel/application';
 import { fixedClock } from '@lintel/shared';
-import { type ActivityDependencies, OrganizationContext, type WorkerStores } from '../activities';
+import {
+  type ActivityDependencies,
+  type MessageChannelDependencies,
+  OrganizationContext,
+  type WorkerStores,
+} from '../activities';
 import { silentLogger } from '../observability/worker-logger';
 import {
   FakeDailyOperationsStore,
@@ -14,6 +19,8 @@ import {
   FakeOutboxRelayStore,
   FakeWorkflowRunStore,
 } from './fake-background-stores';
+import { FakeEmailDigestStore } from './fake-email-digests';
+import { FakeMessageDeliveryStore, ScriptedEmailSender, ScriptedSmsSender } from './fake-messages';
 import {
   FakeNotificationStore,
   FakeRecordStore,
@@ -79,6 +86,8 @@ export function createFakeWorld(now = '2026-11-09T06:00:00.000Z') {
       leaveImpact: new FakeLeaveImpactStore(),
       pushDeliveries: new FakePushDeliveryStore(),
       operations: new FakeDailyOperationsStore(),
+      messageDeliveries: new FakeMessageDeliveryStore(),
+      emailDigests: new FakeEmailDigestStore(),
     },
   } satisfies WorkerStores;
   const uow = new FakeUnitOfWork(stores);
@@ -94,5 +103,12 @@ export function createFakeWorld(now = '2026-11-09T06:00:00.000Z') {
     organization,
     logger: silentLogger,
   };
-  return { stores, uow, clock, push, scheduler, deps };
+  const sms = new ScriptedSmsSender();
+  const email = new ScriptedEmailSender();
+  const channels: MessageChannelDependencies = {
+    sms,
+    email,
+    webBaseUrl: 'https://studio.example.com',
+  };
+  return { stores, uow, clock, push, scheduler, deps, sms, email, channels };
 }

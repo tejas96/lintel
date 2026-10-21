@@ -1,4 +1,9 @@
-import { NotificationSettingsCommands, type RequestContext } from '@lintel/application';
+import {
+  type FeatureFlags,
+  NotificationSettingsCommands,
+  type RequestContext,
+} from '@lintel/application';
+import type { Environment } from '@lintel/configuration';
 import {
   type DatabaseConnection,
   loadNotificationPreferences,
@@ -8,8 +13,9 @@ import { Controller, Inject } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
 import { Ctx } from '../../common/auth/auth.decorators';
 import { pageOf } from '../../common/http/access';
+import { ENVIRONMENT } from '../../config/configuration.module';
 import { apiContract } from '../../contract';
-import { DATABASE_CONNECTION } from '../../infrastructure/tokens';
+import { DATABASE_CONNECTION, FEATURE_FLAGS } from '../../infrastructure/tokens';
 
 const operations = apiContract.operations;
 const routes = {
@@ -28,7 +34,26 @@ export class NotificationsController {
   constructor(
     private readonly commands: NotificationSettingsCommands,
     @Inject(DATABASE_CONNECTION) private readonly database: DatabaseConnection,
+    @Inject(FEATURE_FLAGS) private readonly flags: FeatureFlags,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
   ) {}
+
+  /** The person's choices plus what the studio has switched on (never the address itself). */
+  private async preferences(userId: string) {
+    const { hasEmailAddress, ...choices } = await loadNotificationPreferences(
+      this.database.db,
+      userId,
+    );
+    return {
+      ...choices,
+      delivery: {
+        sms: this.flags.smsNotificationsEnabled,
+        email: this.flags.emailNotificationsEnabled,
+        hasEmailAddress,
+        emailDigestTime: this.env.EMAIL_DIGEST_TIME,
+      },
+    };
+  }
 
   @TsRestHandler(routes)
   handlers(@Ctx() context: RequestContext) {
@@ -55,11 +80,11 @@ export class NotificationsController {
       },
       getNotificationPreferences: async () => ({
         status: 200,
-        body: await loadNotificationPreferences(db, userId),
+        body: await this.preferences(userId),
       }),
       updateNotificationPreferences: async ({ body }) => {
         await this.commands.updatePreferences(context, body);
-        return { status: 200, body: await loadNotificationPreferences(db, userId) };
+        return { status: 200, body: await this.preferences(userId) };
       },
       registerDevice: async ({ body }) => {
         const device = await this.commands.registerDevice(context, body);

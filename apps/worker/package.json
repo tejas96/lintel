@@ -27,6 +27,7 @@
     "@temporalio/workflow": "catalog:"
   },
   "devDependencies": {
+    "@lintel/design-system": "workspace:*",
     "@lintel/tsconfig": "workspace:*",
     "@temporalio/testing": "catalog:",
     "@types/node": "catalog:",

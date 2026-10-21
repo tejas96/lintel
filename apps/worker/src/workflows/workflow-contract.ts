@@ -11,6 +11,8 @@ export const WORKFLOW_TYPES = {
   notificationDelivery: 'notificationDeliveryWorkflow',
   dailyOperations: 'dailyOperationsWorkflow',
   periodicRewards: 'periodicRewardEvaluationWorkflow',
+  messageDelivery: 'messageDeliveryWorkflow',
+  emailDigest: 'emailDigestWorkflow',
 } as const;
 
 export type WorkflowTypeName = (typeof WORKFLOW_TYPES)[keyof typeof WORKFLOW_TYPES];
@@ -35,7 +37,15 @@ export const WORKFLOW_IDS = {
   blocker: (blockerId: string) => `blocker:${blockerId}`,
   leave: (leaveRequestId: string) => `leave:${leaveRequestId}`,
   notification: (notificationId: string) => `notification:${notificationId}`,
+  notificationMessage: (notificationId: string, channel: 'sms' | 'email') =>
+    `notification:${notificationId}:${channel}`,
 } as const;
+
+/** One SMS or immediate email of one notification. */
+export interface MessageDeliveryRequest {
+  readonly notificationId: string;
+  readonly channel: 'sms' | 'email';
+}
 
 export interface ScheduleChangedSignal {
   readonly dueDate?: string | null;

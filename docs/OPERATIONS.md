@@ -35,6 +35,43 @@ native worker). Containers log through the `json-file` driver with rotation
 (10 MB × 3). Volumes: `lintel-pgdata`, `lintel-objects`, `lintel-temporal`.
 Other projects' containers and volumes on the machine are never touched.
 
+### Browser end-to-end and accessibility tests
+
+```bash
+pnpm infra:up && pnpm build        # the suite runs the built API and web app
+pnpm test:e2e                      # Playwright + axe, ~1 minute after the first web build
+```
+
+- Ports 4131 (API) and 3131 (web); database `E2E_DATABASE_URL` (default
+  `…/lintel_channels_e2e` locally, `…/lintel_e2e` in CI). The API's start command resets
+  that database (its name must contain `e2e`), migrates and seeds it, so each run starts
+  from the same demo studio. Object storage uses the local RustFS with bucket `lintel-e2e`.
+- The web build bakes the `/api` rewrite in: the suite rebuilds `apps/web` when it does
+  not point at port 4131 (set `E2E_REBUILD_WEB=1` after changing web code locally). Stop
+  any `next start` serving the same `apps/web/.next` first.
+- Browsers: CI runs `playwright install --with-deps chromium`. Locally the Chromium build
+  of the pinned Playwright (1234) is used when cached, or Google Chrome with
+  `E2E_BROWSER_CHANNEL=chrome`; the suite never downloads a browser itself.
+- Reports: `apps/e2e/playwright-report` (traces and screenshots on failure; minor axe
+  findings are attached to each test). Serious or critical axe violations fail the run.
+
+## Notification channels (SMS, email, web push)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `SMS_NOTIFICATIONS_ENABLED` | `false` | Plans SMS for urgent kinds people opted into |
+| `SMS_PROVIDER` | `log` | `msg91` sends; `log` records in the worker log (refused in production when SMS is on) |
+| `MSG91_SMS_TEMPLATE_ID` / `MSG91_SMS_DLT_TEMPLATE_ID` | — | Required with `SMS_PROVIDER=msg91` (see INTEGRATIONS.md) |
+| `EMAIL_NOTIFICATIONS_ENABLED` | `false` | Plans email per kind and the daily digest |
+| `EMAIL_PROVIDER` | `log` | `smtp` sends; `log` writes to the worker log (refused in production when email is on) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_REQUIRE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TIMEOUT_MS` | 587, TLS required | Production refuses SMTP without TLS |
+| `EMAIL_DIGEST_TIME` | `18:00` | Daily digest, studio timezone (`lintel-email-digest` Schedule, suffixed per task queue like the others) |
+| `NEXT_PUBLIC_FIREBASE_*` (5) | — | Web build only; web push hides itself without them |
+
+Production also refuses SMS or email when `WEB_BASE_URL` is not `https://` (messages
+carry links). After changing `EMAIL_DIGEST_TIME`, restart the worker: it updates the
+Schedule in place.
+
 ## Production deployment (single host, e.g. Oracle Cloud Mumbai)
 
 Target: 4 OCPU, ~22 GB RAM. Inspect the real disks first (`lsblk`, `df -h`) — the
@@ -127,7 +164,10 @@ worker's daily job re-creates missing deadline workflows from the database.
 - Temporal UI: failed workflows and activities with retry history.
 - Outbox backlog: `select count(*) from outbox_events where processed_at is null;`
   should stay near zero; rows with high `attempts` carry `last_error`.
-- Notification delivery: `notification_deliveries` grouped by `status`.
+- Notification delivery: `notification_deliveries` grouped by `channel` and `status`;
+  every SMS/email attempt is in `notification_delivery_attempts` (`outcome` null means
+  the attempt was interrupted, `error` is safe text); digests in `email_digests`
+  (one row per person and day). Emails waiting for a digest have status `digest`.
 
 ## Troubleshooting
 
@@ -137,4 +177,7 @@ worker's daily job re-creates missing deadline workflows from the database.
 | Readiness "degraded" | which check is false; container health; credentials |
 | Reminders not sent | worker running? outbox backlog? Temporal UI for failed activities |
 | Push "skipped" | `PUSH_PROVIDER=log` or iOS APNs token without Firebase iOS SDK (see `INTEGRATIONS.md`) |
+| SMS or email "skipped" | Development sender (`SMS_PROVIDER`/`EMAIL_PROVIDER=log`), or the person has no email address / is inactive; the attempt row says which |
+| No daily digest | Nothing was held for that person (empty digests are never sent), or the `lintel-email-digest` Schedule is paused (Temporal UI) |
+| No "this browser" card on Account | `NEXT_PUBLIC_FIREBASE_*` were not set when the web app was built |
 | 409 STALE_VERSION | someone else changed the record; refresh and retry (by design) |

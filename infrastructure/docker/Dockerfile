@@ -16,6 +16,13 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --offline -
 # Next.js bakes rewrites at build time: /api → the compose service "api".
 # (Behind Caddy, /api never reaches Next; this matters only without the proxy.)
 ARG API_INTERNAL_URL=http://api:4100
+# Optional web push: the public Firebase web config is inlined into the web bundle at
+# build time (empty values hide the feature). These are not secrets.
+ARG NEXT_PUBLIC_FIREBASE_API_KEY=""
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID=""
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
+ARG NEXT_PUBLIC_FIREBASE_APP_ID=""
+ARG NEXT_PUBLIC_FIREBASE_VAPID_KEY=""
 RUN NEXT_OUTPUT=standalone API_INTERNAL_URL=${API_INTERNAL_URL} pnpm turbo run build --filter=@lintel/api... --filter=@lintel/worker... --filter=@lintel/web...
 # Self-contained production folders with only runtime dependencies.
 RUN pnpm deploy --filter=@lintel/api --prod --legacy /out/api \

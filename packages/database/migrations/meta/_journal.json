@@ -29,6 +29,13 @@
       "when": 1792556047563,
       "tag": "0003_studio_administration",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792557087370,
+      "tag": "0004_notification_channels",
+      "breakpoints": true
     }
   ]
 }

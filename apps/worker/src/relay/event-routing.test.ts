@@ -92,6 +92,22 @@ describe('outbox event routing', () => {
       workflowId: 'notification:n1',
       args: ['n1'],
     });
+    expect(
+      command('NotificationMessageQueued', { notificationId: 'n1', channel: 'sms' }),
+    ).toMatchObject({
+      mode: 'start',
+      workflowType: 'messageDeliveryWorkflow',
+      workflowId: 'notification:n1:sms',
+      args: [{ notificationId: 'n1', channel: 'sms' }],
+    });
+    expect(
+      command('NotificationMessageQueued', { notificationId: 'n1', channel: 'email' }).workflowId,
+    ).toBe('notification:n1:email');
+    expect(() =>
+      routeOutboxEvent(
+        event('NotificationMessageQueued', { notificationId: 'n1', channel: 'fax' }),
+      ),
+    ).toThrow(/channel/);
   });
 
   it('marks rejected leave and unknown event types as handled without a workflow', () => {

@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { useWebPushLifecycle } from '@/features/push/use-web-push';
 import { useSession } from '@/features/session/session-provider';
 import { CommandPalette } from './command-palette';
 import { MobileTabBar, MobileTopBar } from './mobile-bars';
@@ -26,6 +27,7 @@ export function AppShell({
   const activeId = activeNavId(pathname, items);
   const [paletteOpen, setPaletteOpen] = useState(false);
   useHeartbeat();
+  useWebPushLifecycle();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

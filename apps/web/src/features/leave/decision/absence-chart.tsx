@@ -97,9 +97,11 @@ export function AbsenceChart({ request, today }: AbsenceChartProps) {
               <th
                 key={date}
                 scope="col"
+                // Days around the request are quieter through colour, not opacity, so their
+                // numbers still meet text contrast (WCAG 1.4.3).
                 className={cn(
                   'min-w-11 border-b border-l border-hairline px-1 py-2 text-center font-normal',
-                  !inside(date) && 'opacity-50',
+                  !inside(date) && 'bg-sunken/40',
                 )}
               >
                 <span className="block text-[0.6875rem] text-ink-faint">
@@ -108,7 +110,7 @@ export function AbsenceChart({ request, today }: AbsenceChartProps) {
                 <span
                   className={cn(
                     'font-display text-[1.0625rem] tabular-nums',
-                    date === today ? 'text-accent' : 'text-ink',
+                    date === today ? 'text-accent' : inside(date) ? 'text-ink' : 'text-ink-faint',
                   )}
                 >
                   {Number(date.slice(8))}
