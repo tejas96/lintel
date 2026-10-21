@@ -4,6 +4,7 @@ import type { TaskSummary } from '@lintel/api-contracts';
 import { ErrorState, pageEnter } from '@lintel/design-system/web';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import { WebPushPromptCard } from '@/features/push/web-push-prompt-card';
 import { useSession } from '@/features/session/session-provider';
 import { ReportBlockerSheet } from '@/features/tasks/report-blocker-sheet';
 import { WorkTrackingProvider } from '@/features/tasks/work-tracking';
@@ -70,6 +71,7 @@ export function TodayView() {
           />
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
             <div className="flex min-w-0 flex-col gap-8">
+              <WebPushPromptCard />
               <PriorityChangeNotice changes={view.changes} onApply={applyLatestOrder} />
               <QueueSections
                 items={view.items}

@@ -41,7 +41,10 @@ async function currentState(): Promise<WebPushState> {
   return Notification.permission === 'granted' && storedDeviceId() ? 'on' : 'off';
 }
 
-/** State and actions for "push to this browser" on the account page. */
+/** `declined`: the browser's permission was not granted; `failed`: an error toast was shown. */
+export type WebPushEnableOutcome = 'on' | 'declined' | 'failed';
+
+/** State and actions for "push to this browser" (Account page and the Today prompt). */
 export function useWebPush() {
   const toast = useToast();
   const [state, setState] = useState<WebPushState>('checking');
@@ -57,22 +60,24 @@ export function useWebPush() {
     };
   }, []);
 
-  const enable = useCallback(async () => {
+  const enable = useCallback(async (): Promise<WebPushEnableOutcome> => {
     setWorking(true);
     try {
       await enableWebPush(saveWebDevice);
       setState('on');
       toast({ tone: 'success', title: 'Notifications are on for this browser' });
+      return 'on';
     } catch (error) {
       if (error instanceof WebPushPermissionError) {
         setState(error.permission === 'denied' ? 'blocked' : 'off');
-        return;
+        return 'declined';
       }
       toast({
         tone: 'error',
         title: 'Could not turn on notifications',
         description: isApiError(error) ? error.message : 'Please try again in a moment.',
       });
+      return 'failed';
     } finally {
       setWorking(false);
     }

@@ -150,9 +150,11 @@ before the provider is called, finished after). Development senders record and r
   docs warn against mixing the two. The installation ID is stored through
   `POST /v1/devices` with `platform: "web"`, `tokenType: "fcm_fid"`; the server sends to it
   with `{fid}` (firebase-admin 14.5 `FidMessage`).
-- Permission is asked only when the person presses **Turn on in this browser** in
-  Account → Notifications. Signing out (and **Turn off**) deletes the device row, calls
-  `unregister()` and removes the service worker registration.
+- Permission is asked only after a press, never on page load: on **Today** a card offers
+  it once ("Hear about changes as they happen" → **Turn on** / **Not now**, like the phone
+  app; shown only while the browser has not been asked yet), and at any time with
+  **Turn on in this browser** in Account → Notifications. Signing out (and **Turn off**)
+  deletes the device row, calls `unregister()` and removes the service worker registration.
 - Service worker: `apps/web/service-worker/firebase-messaging-sw.ts`, bundled with esbuild
   into `apps/web/public/firebase-messaging-sw.js` (git-ignored) on every web build. The
   page registers it with the public web config in its URL and scope
