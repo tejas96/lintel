@@ -5,6 +5,7 @@ export const queryKeys = {
   workQueue: ['work', 'queue'] as const,
   task: (taskId: string) => ['tasks', taskId] as const,
   taskComments: (taskId: string) => ['tasks', taskId, 'comments'] as const,
+  taskDateChanges: (taskId: string) => ['tasks', taskId, 'date-changes'] as const,
   tasks: ['tasks'] as const,
   projects: (search: string) => ['projects', 'list', search] as const,
   projectList: ['projects', 'list'] as const,

@@ -15,11 +15,11 @@ impact, who may decide what — come from the server; the app only presents them
 | --- | --- |
 | Sign-in | Phone number → 6-digit code (SMS autofill, paste, auto-submit), resend countdown, rate-limit messages |
 | Today | Server-ordered queue: next-up hero with the server's headline and reasons, workload, buckets (overdue / today / coming up / waiting / blocked / in review / later), reviews waiting for you. Swipe right to start, swipe left for blocker / more, long-press for the action sheet |
-| Task | Server `transitions` as buttons (refused ones with the server's reasons), work session start/pause with live timer, checklist (instant ticks with rollback), blockers (report / resolve), deliverables, files (camera, photos, Files with upload progress), linked work, comments |
+| Task | Server `transitions` as buttons (refused ones with the server's reasons), work session start/pause with live timer, late-start callout (start / report a blocker / ask for a new date), checklist (instant ticks with rollback), blockers (report / resolve), new dates (ask with a reason; the project manager accepts or declines with a note; withdraw; history), deliverables, files (camera, photos, Files with upload progress), linked work, comments |
 | Projects | Search + list with health, stage and next milestone; project summary with stage tracker, health reasons, milestones, team, deliverables, site log |
 | Site | For site supervisors: pick a site, see its log, post photos + note + issue flag |
 | Leave | Balances, my requests / to decide, new request with range calendar, live impact preview (days, conflicts, overlaps, warnings, blocking problems) and handover proposals; request detail with approval chain, decide / ask for info / cancel / respond, handovers |
-| Approvals | `GET /me/approvals` grouped by kind; deliverable review (approve / request changes / reject), task review via the task's transitions, leave decisions |
+| Approvals | `GET /me/approvals` grouped by kind; deliverable review (approve / request changes / reject), task review via the task's transitions, leave decisions, new-date requests (open the task at the request) |
 | Inbox | Notifications with unread state, mark read / all read, deep links via `linkPath` |
 | Account | Profile, push permission, quiet hours, signed-in devices with revoke, sign out |
 
