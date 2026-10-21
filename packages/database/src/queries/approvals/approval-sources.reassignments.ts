@@ -9,6 +9,10 @@ import {
   SOURCE_LIMIT,
 } from './approval-sources.work';
 
+function excerpt(reason: string): string {
+  return reason.length > 110 ? `${reason.slice(0, 107)}…` : reason;
+}
+
 /**
  * Open reassignment requests the viewer should decide: on projects they
  * manage, or, when the project manager is the one asking, on projects they
@@ -49,7 +53,7 @@ export async function reassignmentApprovals(
     type: 'reassignment_request',
     id: request.id,
     title: taskTitle,
-    subtitle: `Reassignment request · ${project.reference} · #${taskNumber}`,
+    subtitle: `${project.name} · #${taskNumber}: “${excerpt(request.reason)}”`,
     requestedByUserId: request.requestedByUserId,
     requestedAt: request.createdAt,
     project,

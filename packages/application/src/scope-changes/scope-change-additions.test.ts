@@ -156,4 +156,29 @@ describe('scope changes that add and cancel tasks: impact', () => {
     ]);
     expect(result.forecastEndDate).toBe('2026-11-02');
   });
+
+  it('does not pass delays through a task that is being cancelled', () => {
+    const chain: ProjectScheduleFacts = {
+      ...facts,
+      tasks: [
+        ...facts.tasks,
+        {
+          id: 'e',
+          title: 'Snag list',
+          status: 'ready',
+          plannedStartDate: '2026-10-29',
+          dueDate: '2026-10-30',
+          ownerUserId: 'u1',
+          milestoneId: null,
+        },
+      ],
+      dependencies: [...facts.dependencies, { taskId: 'e', dependsOnTaskId: 'b' }],
+    };
+    const result = assessScopeChange(
+      chain,
+      request({ taskShifts: [{ taskId: 'a', shiftWorkingDays: 2 }], cancelTaskIds: ['b'] }),
+      DEFAULT_WORKING_CALENDAR,
+    );
+    expect(result.impacts.map((impact) => impact.taskId)).toEqual(['a']);
+  });
 });

@@ -156,7 +156,7 @@ describe('moving a project to a newer template version', () => {
       .expect(409);
     await as.designer.post(`/v1/projects/${projectId}/template-update`, body).expect(403);
     const applied = await as.pm.post(`/v1/projects/${projectId}/template-update`, body).expect(200);
-    expect(applied.body).toMatchObject({ toVersionNumber: 2, added: 2, cancelled: 1 });
+    expect(applied.body).toMatchObject({ toVersionNumber: 2, added: 4, cancelled: 1 });
 
     const after = await tasksByTitle();
     expect(after.get('Build the mood board and palette')?.status).toBe('ready');

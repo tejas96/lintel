@@ -107,7 +107,14 @@ export function assessScopeChange(
   calendar: WorkingCalendar,
 ): ScopeChangeImpactResult {
   const cancelled = new Set(request.cancelTaskIds);
-  const remaining = { ...facts, tasks: facts.tasks.filter((task) => !cancelled.has(task.id)) };
+  // A cancelled task no longer holds anything up, so delays do not travel through it.
+  const remaining = {
+    ...facts,
+    tasks: facts.tasks.filter((task) => !cancelled.has(task.id)),
+    dependencies: facts.dependencies.filter(
+      (edge) => !cancelled.has(edge.taskId) && !cancelled.has(edge.dependsOnTaskId),
+    ),
+  };
   const base = calculateScopeChangeImpact(remaining, request.taskShifts, calendar);
   let forecast = base.forecastEndDate;
   for (const task of request.newTasks) {

@@ -70,8 +70,8 @@ export class ApplyTemplateUpdateCommand {
       await applyStages(stores, loaded, ticked, ids);
       await applyMilestones(stores, loaded, ticked, ids);
       const added = await addTemplateTasks(stores, loaded, ticked, ids, actor);
-      const changed = await changeTemplateTasks(stores, loaded, ticked, ids, actor);
-      const cancelled = await cancelRemovedTasks(stores, loaded, ticked, actor);
+      await changeTemplateTasks(stores, loaded, ticked, ids, actor);
+      await cancelRemovedTasks(stores, loaded, ticked, actor);
       await this.skipEmptiedStages(stores, loaded, ticked);
       const forecast = forecastAfterUpdate(loaded, ticked);
       const extendTo =
@@ -85,12 +85,7 @@ export class ApplyTemplateUpdateCommand {
         extendTo,
       );
       if (!moved) throw new StaleVersionError('This project');
-      const summary = this.summarise(loaded, ticked, {
-        added: added.count,
-        changed: changed.changed,
-        cancelled: cancelled.length,
-        extendTo,
-      });
+      const summary = this.summarise(loaded, ticked, extendTo);
       await this.record(stores, context, loaded, summary, label);
       await announceNewAssignments(stores.records, await this.deps.notifierFor(stores), {
         actorUserId: context.actor.userId,
@@ -119,7 +114,7 @@ export class ApplyTemplateUpdateCommand {
   private summarise(
     loaded: TemplateUpdateContext,
     ticked: ReadonlySet<string>,
-    counts: { added: number; changed: number; cancelled: number; extendTo: string | null },
+    extendTo: string | null,
   ): TemplateUpdateSummary {
     const items = loaded.plan.items.map((item) => ({
       key: item.key,
@@ -127,13 +122,15 @@ export class ApplyTemplateUpdateCommand {
       name: item.name,
       applied: itemWillApply(item, ticked),
     }));
+    const applied = (change: 'added' | 'changed' | 'removed') =>
+      items.filter((item) => item.applied && item.change === change).length;
     return {
-      added: counts.added,
-      changed: counts.changed,
-      cancelled: counts.cancelled,
+      added: applied('added'),
+      changed: applied('changed'),
+      cancelled: applied('removed'),
       heldBack: items.filter((item) => !item.applied).length,
       ticked: [...ticked],
-      extendedPlannedEndTo: counts.extendTo,
+      extendedPlannedEndTo: extendTo,
       items,
     };
   }
