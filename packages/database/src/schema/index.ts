@@ -1,5 +1,6 @@
 export * from './audit.schema';
 export * from './deliverables.schema';
+export * from './documents.schema';
 export * from './enums';
 export * from './finances.schema';
 export * from './identity.schema';
@@ -8,7 +9,9 @@ export * from './notification-channels.schema';
 export * from './notifications.schema';
 export * from './organization.schema';
 export * from './projects.schema';
+export * from './reassignments.schema';
 export * from './rewards.schema';
 export * from './scope.schema';
 export * from './tasks.schema';
+export * from './template-updates.schema';
 export * from './templates.schema';

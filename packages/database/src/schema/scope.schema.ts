@@ -1,8 +1,8 @@
 import { boolean, date, index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core';
 import { createdAt, instant, primaryId, updatedAt, version } from './columns';
-import { scopeChangeStatusEnum } from './enums';
+import { scopeChangeStatusEnum, taskPriorityEnum, taskStatusEnum } from './enums';
 import { users } from './identity.schema';
-import { projects } from './projects.schema';
+import { projectStages, projects } from './projects.schema';
 import { tasks } from './tasks.schema';
 
 export const scopeChangeRequests = pgTable(
@@ -47,4 +47,43 @@ export const scopeChangeTaskImpacts = pgTable(
     isDownstream: boolean('is_downstream').notNull().default(false),
   },
   (table) => [index('scope_impacts_change_idx').on(table.scopeChangeId)],
+);
+
+/** A task the proposal adds. Created (and linked here) only when the change is approved. */
+export const scopeChangeNewTasks = pgTable(
+  'scope_change_new_tasks',
+  {
+    id: primaryId(),
+    scopeChangeId: uuid('scope_change_id')
+      .notNull()
+      .references(() => scopeChangeRequests.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull().default(0),
+    title: text('title').notNull(),
+    stageId: uuid('stage_id').references(() => projectStages.id, { onDelete: 'set null' }),
+    plannedStartDate: date('planned_start_date', { mode: 'string' }),
+    dueDate: date('due_date', { mode: 'string' }),
+    ownerUserId: uuid('owner_user_id').references(() => users.id),
+    priority: taskPriorityEnum('priority').notNull().default('medium'),
+    createdTaskId: uuid('created_task_id').references(() => tasks.id, { onDelete: 'set null' }),
+  },
+  (table) => [index('scope_new_tasks_change_idx').on(table.scopeChangeId, table.position)],
+);
+
+/** A task the proposal cancels. Applied on approval unless the task has closed meanwhile. */
+export const scopeChangeTaskCancellations = pgTable(
+  'scope_change_task_cancellations',
+  {
+    id: primaryId(),
+    scopeChangeId: uuid('scope_change_id')
+      .notNull()
+      .references(() => scopeChangeRequests.id, { onDelete: 'cascade' }),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    statusAtProposal: taskStatusEnum('status_at_proposal').notNull(),
+    appliedAt: instant('applied_at'),
+    /** Why approval left the task as it was (it closed or went to review meanwhile). */
+    skipReason: text('skip_reason'),
+  },
+  (table) => [index('scope_cancellations_change_idx').on(table.scopeChangeId)],
 );

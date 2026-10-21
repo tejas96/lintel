@@ -19,20 +19,26 @@ PostgreSQL 17, Drizzle ORM 0.45 and Drizzle Kit 0.31. Schema source:
 | Deletion | soft states (`archived_at`, `deactivated_at`, `status`) for business records; cascades only for owned children |
 | JSON | `jsonb` only for documents that are read and written whole (template definitions, reward evidence, conflict snapshots) |
 
-## Model overview (45 tables)
+## Model overview (55 tables)
 
 - **Organisation & identity:** `organization_settings` (single row), `working_calendars`,
   `calendar_holidays`, `teams`, `users`, `role_capabilities`, `otp_challenges`,
   `rate_limit_counters`, `sessions`.
 - **Templates:** `workflow_templates`, `workflow_template_versions` (immutable once published).
 - **Projects:** `projects`, `project_members`, `project_stages`, `milestones`,
-  `scope_change_requests`, `scope_change_task_impacts`.
+  `scope_change_requests`, `scope_change_task_impacts`, `scope_change_new_tasks`
+  (tasks a change adds; linked to the created task on approval),
+  `scope_change_task_cancellations` (applied or skipped with the reason),
+  `project_template_updates` (each move to a newer template version, with a JSON summary).
 - **Tasks:** `tasks` (with `parent_task_id`), `task_dependencies` (no self-loops by
   CHECK; cycles refused in the domain), `task_collaborators`, `task_checklist_items`,
   `task_comments`, `task_blockers`, `task_schedule_changes`, `work_sessions`,
-  `priority_conflicts`.
+  `priority_conflicts`, `task_reassignment_requests` (one open per task by partial
+  unique index; CHECK decided-by ≠ requested-by).
 - **Files & deliverables:** `files` (metadata only — bytes live in RustFS),
-  `task_attachments`, `deliverables`, `deliverable_versions`, `site_updates`, `site_update_photos`.
+  `task_attachments`, `deliverables`, `deliverable_versions`, `site_updates`, `site_update_photos`,
+  `project_documents` (the project library; visibility lives on the file row so the
+  content route enforces it; archived documents keep their row and object).
 - **Leave:** `leave_types`, `leave_requests` (CHECK end ≥ start), `leave_approval_steps`, `leave_handovers`.
 - **Rewards:** `reward_policies`, `reward_evaluations` (unique per policy + subject + period).
 - **Notifications:** `notifications` (unique per recipient + dedupe key),

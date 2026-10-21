@@ -23,4 +23,7 @@ export const queryKeys = {
   notifications: ['notifications'] as const,
   notificationPreferences: ['notifications', 'preferences'] as const,
   ownProfile: ['account', 'profile'] as const,
+  projectDocuments: (projectId: string, folder: string) =>
+    ['projects', projectId, 'documents', folder] as const,
+  document: (documentId: string) => ['documents', documentId] as const,
 } as const;

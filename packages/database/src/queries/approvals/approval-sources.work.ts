@@ -18,7 +18,8 @@ export interface ApprovalDraft {
     | 'leave_request'
     | 'scope_change'
     | 'reward_review'
-    | 'priority_conflict';
+    | 'priority_conflict'
+    | 'reassignment_request';
   readonly id: string;
   readonly title: string;
   readonly subtitle: string;

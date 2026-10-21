@@ -28,6 +28,8 @@ const KIND_ICON: Readonly<Record<NotificationItem['kind'], IconName>> = {
   scope_change_decided: 'projects',
   reward_updated: 'flag',
   priority_changed: 'flag',
+  reassignment_requested: 'person',
+  reassignment_decided: 'person',
 };
 
 export interface NotificationRowProps {

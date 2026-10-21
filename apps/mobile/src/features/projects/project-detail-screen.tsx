@@ -7,6 +7,7 @@ import { ScreenScroll } from '@/components/screen';
 import { Section } from '@/components/section';
 import { SkeletonBlock, SkeletonGroup, SkeletonList } from '@/components/skeleton';
 import { ErrorState } from '@/components/state-views';
+import { ProjectDocumentsSection } from '@/features/documents/project-documents-section';
 import { ProjectSiteUpdates } from '@/features/site-updates/project-site-updates';
 import { DeliverableRow } from '@/features/tasks/deliverables-section';
 import { useProject, useProjectDeliverables } from '@/queries/project-queries';
@@ -68,6 +69,7 @@ export function ProjectDetailScreen() {
             </Section>
             <MilestoneList milestones={project.data.milestones} stages={project.data.stages} />
             <ProjectDeliverables projectId={project.data.id} />
+            <ProjectDocumentsSection projectId={project.data.id} />
             <ProjectSiteUpdates projectId={project.data.id} />
           </>
         ) : null}

@@ -1,12 +1,26 @@
 'use client';
 
 import { useToast } from '@lintel/design-system/web';
+import type { TaskPriority } from '@lintel/domain';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { queryKeys } from '@/lib/query/query-keys';
 import { useFailureToast } from '@/lib/query/use-failure-toast';
 
 export type TaskShift = { readonly taskId: string; readonly shiftWorkingDays: number };
+
+export interface ScopeRequest {
+  readonly taskShifts: TaskShift[];
+  readonly newTasks: {
+    title: string;
+    stageId: string | null;
+    plannedStartDate: string | null;
+    dueDate: string | null;
+    ownerUserId: string | null;
+    priority: TaskPriority;
+  }[];
+  readonly cancelTaskIds: string[];
+}
 
 export function useScopeChanges(projectId: string) {
   return useQuery({
@@ -27,15 +41,15 @@ export function useScopeChangeMutations(projectId: string) {
     void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
   };
   const preview = useMutation({
-    mutationFn: (taskShifts: TaskShift[]) =>
+    mutationFn: (request: ScopeRequest) =>
       expectStatus(
-        api.projects.previewScopeChange({ params: { id: projectId }, body: { taskShifts } }),
+        api.projects.previewScopeChange({ params: { id: projectId }, body: request }),
         200,
       ),
     onError: (error) => fail(error, 'preview the change'),
   });
   const propose = useMutation({
-    mutationFn: (input: { title: string; description: string; taskShifts: TaskShift[] }) =>
+    mutationFn: (input: ScopeRequest & { title: string; description: string }) =>
       expectStatus(
         api.projects.proposeScopeChange({ params: { id: projectId }, body: input }),
         201,

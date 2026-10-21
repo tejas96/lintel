@@ -36,6 +36,13 @@
       "when": 1792557087370,
       "tag": "0004_notification_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792557575434,
+      "tag": "0005_project_tools",
+      "breakpoints": true
     }
   ]
 }

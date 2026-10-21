@@ -3,6 +3,11 @@ import type { DatabaseExecutor } from '../../client';
 import { scopeChangeRequests, scopeChangeTaskImpacts, tasks } from '../../schema';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import type { UserSummaryView } from '../shared/view-types';
+import {
+  loadScopeAdditionViews,
+  type ScopeCancellationView,
+  type ScopeNewTaskView,
+} from './scope-change-additions.query';
 
 export interface ScopeChangeView {
   readonly id: string;
@@ -23,6 +28,8 @@ export interface ScopeChangeView {
     isDownstream: boolean;
   }[];
   readonly projectEndImpactDays: number;
+  readonly newTasks: ScopeNewTaskView[];
+  readonly cancellations: ScopeCancellationView[];
   readonly createdAt: string;
   readonly version: number;
 }
@@ -43,7 +50,7 @@ async function loadScopeChanges(db: DatabaseExecutor, where: SQL): Promise<Scope
     .where(where)
     .orderBy(desc(scopeChangeRequests.createdAt));
   if (rows.length === 0) return [];
-  const [impacts, people] = await Promise.all([
+  const [impacts, people, additions] = await Promise.all([
     db
       .select({ impact: scopeChangeTaskImpacts, taskTitle: tasks.title, number: tasks.number })
       .from(scopeChangeTaskImpacts)
@@ -58,6 +65,10 @@ async function loadScopeChanges(db: DatabaseExecutor, where: SQL): Promise<Scope
     loadUserSummaries(
       db,
       rows.flatMap((row) => [row.requestedByUserId, row.decidedByUserId]),
+    ),
+    loadScopeAdditionViews(
+      db,
+      rows.map((row) => row.id),
     ),
   ]);
   return rows.map((row) => ({
@@ -81,6 +92,8 @@ async function loadScopeChanges(db: DatabaseExecutor, where: SQL): Promise<Scope
         isDownstream: impact.isDownstream,
       })),
     projectEndImpactDays: row.projectEndImpactDays,
+    newTasks: additions.newTasks.get(row.id) ?? [],
+    cancellations: additions.cancellations.get(row.id) ?? [],
     createdAt: row.createdAt.toISOString(),
     version: row.version,
   }));

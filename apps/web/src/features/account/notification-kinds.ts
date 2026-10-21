@@ -78,6 +78,14 @@ export const KIND_COPY: Readonly<Record<NotificationKind, KindCopy>> = {
     label: 'Your reward is updated',
     explanation: 'When your recognition is reviewed.',
   },
+  reassignment_requested: {
+    label: 'Someone asks to hand over a task',
+    explanation: 'When a task in a project you manage should move to someone else.',
+  },
+  reassignment_decided: {
+    label: 'Your handover request is decided',
+    explanation: 'Accepted with the new owner, or declined with a note.',
+  },
 };
 
 /** Kinds in the order people think about them. */
@@ -93,6 +101,7 @@ export const KIND_GROUPS: readonly {
       'deadline_upcoming',
       'task_overdue',
       'priority_changed',
+      'reassignment_decided',
     ],
   },
   {
@@ -103,6 +112,7 @@ export const KIND_GROUPS: readonly {
       'review_requested',
       'review_reminder',
       'review_decided',
+      'reassignment_requested',
     ],
   },
   {

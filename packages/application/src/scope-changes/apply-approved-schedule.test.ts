@@ -50,6 +50,21 @@ class RecordingScopeChangeStore implements ScopeChangeStore {
   userIdsWithCapability(): never {
     throw new Error('not used');
   }
+  stagesOf(): never {
+    throw new Error('not used');
+  }
+  newTasksOf(): never {
+    throw new Error('not used');
+  }
+  cancellationsOf(): never {
+    throw new Error('not used');
+  }
+  linkCreatedTask(): never {
+    throw new Error('not used');
+  }
+  settleCancellation(): never {
+    throw new Error('not used');
+  }
 }
 
 const facts: ProjectScheduleFacts = {

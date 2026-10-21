@@ -2,6 +2,7 @@ import type { ProjectAccessStore } from '../access/project-access.store';
 import type { BackgroundStores } from '../background/background.stores';
 import type { WorkingCalendarStore } from '../calendars/working-calendar.store';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
+import type { ProjectDocumentStore } from '../documents/project-document.store';
 import type { ProjectCostStore } from '../finances/project-cost.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { LeaveStore } from '../leave/leave.store';
@@ -11,11 +12,13 @@ import type { NotificationInboxStore } from '../notifications/notification-inbox
 import type { CapacityReadStore } from '../operations/capacity.store';
 import type { PeopleStore } from '../people/people.store';
 import type { ProjectStore } from '../projects/project.store';
+import type { ReassignmentStore } from '../reassignments/reassignment.store';
 import type { RewardStore } from '../rewards/reward.store';
 import type { ScopeChangeStore } from '../scope-changes/scope-change.store';
 import type { SettingsStore } from '../settings/settings.store';
 import type { TaskStore } from '../tasks/task.store';
 import type { TaskItemStore } from '../tasks/task-item.store';
+import type { TemplateUpdateStore } from '../template-updates/template-update.store';
 import type { TemplateStore } from '../templates/template.store';
 import type { WorkSessionStore } from '../work/work-session.store';
 import type { RecordStore } from './record.store';
@@ -47,6 +50,9 @@ export interface ApplicationStores {
   readonly costs: ProjectCostStore;
   readonly leaveTypes: LeaveTypeStore;
   readonly calendars: WorkingCalendarStore;
+  readonly documents: ProjectDocumentStore;
+  readonly reassignments: ReassignmentStore;
+  readonly templateUpdates: TemplateUpdateStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */

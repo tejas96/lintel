@@ -1,6 +1,7 @@
 import { commonErrorResponses } from '../common/errors';
 import { authContract } from './auth.contract';
 import { deliverablesContract } from './deliverables.contract';
+import { documentsContract } from './documents.contract';
 import { leaveContract } from './leave.contract';
 import { leavePoliciesContract } from './leave-policies.contract';
 import { operationsContract } from './operations.contract';
@@ -9,8 +10,10 @@ import { platformContract } from './platform.contract';
 import { profileContract } from './profile.contract';
 import { projectCostsContract } from './project-costs.contract';
 import { projectsContract } from './projects.contract';
+import { reassignmentsContract } from './reassignments.contract';
 import { reportsContract } from './reports.contract';
 import { tasksContract } from './tasks.contract';
+import { templateUpdatesContract } from './template-updates.contract';
 import { templatesContract } from './templates.contract';
 import { workContract } from './work.contract';
 import { workingCalendarsContract } from './working-calendars.contract';
@@ -36,6 +39,9 @@ export type ApiRouterDefinition = {
   readonly profile: typeof profileContract;
   readonly leavePolicies: typeof leavePoliciesContract;
   readonly workingCalendars: typeof workingCalendarsContract;
+  readonly documents: typeof documentsContract;
+  readonly reassignments: typeof reassignmentsContract;
+  readonly templateUpdates: typeof templateUpdatesContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -54,6 +60,9 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   profile: profileContract,
   leavePolicies: leavePoliciesContract,
   workingCalendars: workingCalendarsContract,
+  documents: documentsContract,
+  reassignments: reassignmentsContract,
+  templateUpdates: templateUpdatesContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -65,6 +74,7 @@ export const apiContractOptions = {
 
 export { authContract } from './auth.contract';
 export { deliverablesContract } from './deliverables.contract';
+export { documentsContract } from './documents.contract';
 export { leaveContract, leavePeriodSchema } from './leave.contract';
 export { leavePoliciesContract } from './leave-policies.contract';
 export { operationsContract } from './operations.contract';
@@ -73,6 +83,7 @@ export { platformContract } from './platform.contract';
 export { profileContract } from './profile.contract';
 export { projectCostsContract } from './project-costs.contract';
 export { createProjectBodySchema, projectsContract } from './projects.contract';
+export { reassignmentsContract } from './reassignments.contract';
 export {
   REPORT_NAMES,
   type ReportName,
@@ -83,6 +94,7 @@ export {
   reportsContract,
 } from './reports.contract';
 export { createTaskBodySchema, tasksContract } from './tasks.contract';
+export { templateUpdatesContract } from './template-updates.contract';
 export { templatesContract } from './templates.contract';
 export { workContract } from './work.contract';
 export {

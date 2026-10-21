@@ -35,7 +35,7 @@ export class ScopeChangesController {
       },
       previewScopeChange: async ({ params, body }) => ({
         status: 200,
-        body: await this.propose.preview(context, params.id, body.taskShifts),
+        body: await this.propose.preview(context, params.id, body),
       }),
       proposeScopeChange: async ({ params, body }) => {
         const { id } = await this.propose.propose(context, params.id, body);

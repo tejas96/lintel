@@ -18,6 +18,7 @@ const TABS = [
   { segment: '/timeline', label: 'Timeline' },
   { segment: '/list', label: 'List' },
   { segment: '/deliverables', label: 'Deliverables' },
+  { segment: '/documents', label: 'Documents' },
   { segment: '/scope', label: 'Scope changes' },
   { segment: '/activity', label: 'Activity' },
 ] as const;

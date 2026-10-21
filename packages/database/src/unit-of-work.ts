@@ -11,6 +11,8 @@ import { PeopleRepository } from './repositories/people.repository';
 import { ProjectRepository } from './repositories/project.repository';
 import { ProjectAccessRepository } from './repositories/project-access.repository';
 import { ProjectCostRepository } from './repositories/project-cost.repository';
+import { ProjectDocumentRepository } from './repositories/project-document.repository';
+import { ReassignmentRepository } from './repositories/reassignment.repository';
 import { RecordRepository } from './repositories/record.repository';
 import { RewardRepository } from './repositories/reward.repository';
 import { ScopeChangeRepository } from './repositories/scope-change.repository';
@@ -18,6 +20,7 @@ import { SettingsRepository } from './repositories/settings.repository';
 import { TaskRepository } from './repositories/task.repository';
 import { TaskItemRepository } from './repositories/task-item.repository';
 import { TemplateRepository } from './repositories/template.repository';
+import { TemplateUpdateRepository } from './repositories/template-update.repository';
 import { WorkSessionRepository } from './repositories/work-session.repository';
 import { WorkingCalendarRepository } from './repositories/working-calendar.repository';
 import { createBackgroundStores } from './worker/background-stores';
@@ -46,6 +49,9 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     costs: new ProjectCostRepository(executor),
     leaveTypes: new LeaveTypeRepository(executor),
     calendars: new WorkingCalendarRepository(executor),
+    documents: new ProjectDocumentRepository(executor),
+    reassignments: new ReassignmentRepository(executor),
+    templateUpdates: new TemplateUpdateRepository(executor),
   };
 }
 

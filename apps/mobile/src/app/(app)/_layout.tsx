@@ -42,6 +42,8 @@ export default function SignedInLayout() {
       <Stack.Screen name="blockers/[id]/resolve" options={sheet([0.6, 0.9], colors.surface)} />
       <Stack.Screen name="projects/[id]" options={{ title: '' }} />
       <Stack.Screen name="deliverables/[id]" options={{ title: 'Deliverable' }} />
+      <Stack.Screen name="documents/[id]" options={{ title: 'Document' }} />
+      <Stack.Screen name="project-documents/[projectId]" options={{ title: 'Documents' }} />
       <Stack.Screen name="leave/[id]" options={{ title: 'Leave request' }} />
       <Stack.Screen
         name="leave/new"

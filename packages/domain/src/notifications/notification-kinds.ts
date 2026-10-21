@@ -19,6 +19,8 @@ export const NOTIFICATION_KINDS = [
   'scope_change_decided',
   'reward_updated',
   'priority_changed',
+  'reassignment_requested',
+  'reassignment_decided',
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -49,6 +51,8 @@ export const NOTIFICATION_URGENCY: Readonly<Record<NotificationKind, Notificatio
   scope_change_decided: 'normal',
   reward_updated: 'low',
   priority_changed: 'normal',
+  reassignment_requested: 'normal',
+  reassignment_decided: 'normal',
 };
 
 /**

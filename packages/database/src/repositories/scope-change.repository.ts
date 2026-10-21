@@ -19,6 +19,14 @@ import {
   tasks,
   users,
 } from '../schema';
+import {
+  insertScopeAdditions,
+  linkScopeCreatedTask,
+  loadScopeCancellations,
+  loadScopeNewTasks,
+  loadScopeStages,
+  settleScopeCancellation,
+} from './scope-change-additions.writer';
 
 export class ScopeChangeRepository implements ScopeChangeStore {
   constructor(private readonly db: DatabaseExecutor) {}
@@ -92,6 +100,7 @@ export class ScopeChangeRepository implements ScopeChangeStore {
         })),
       );
     }
+    await insertScopeAdditions(this.db, row.id, change);
     return row;
   }
 
@@ -205,5 +214,28 @@ export class ScopeChangeRepository implements ScopeChangeStore {
       .innerJoin(roleCapabilities, eq(roleCapabilities.role, users.role))
       .where(and(eq(roleCapabilities.capability, capability), eq(users.status, 'active')));
     return rows.map((row) => row.id);
+  }
+
+  stagesOf(projectId: string) {
+    return loadScopeStages(this.db, projectId);
+  }
+
+  newTasksOf(scopeChangeId: string) {
+    return loadScopeNewTasks(this.db, scopeChangeId);
+  }
+
+  cancellationsOf(scopeChangeId: string) {
+    return loadScopeCancellations(this.db, scopeChangeId);
+  }
+
+  linkCreatedTask(newTaskId: string, taskId: string) {
+    return linkScopeCreatedTask(this.db, newTaskId, taskId);
+  }
+
+  settleCancellation(
+    cancellationId: string,
+    outcome: { readonly appliedAt: Date } | { readonly skipReason: string },
+  ) {
+    return settleScopeCancellation(this.db, cancellationId, outcome);
   }
 }
