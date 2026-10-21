@@ -30,12 +30,13 @@ export interface HealthContributorView extends HealthComponent {
   readonly link: { readonly label: string; readonly linkPath: string };
 }
 
-export interface BusinessHealthView extends Omit<BusinessHealthScore, 'contributors'> {
-  readonly contributors: readonly HealthContributorView[];
+export interface BusinessHealthView extends Omit<BusinessHealthScore, 'contributors' | 'components'> {
+  readonly components: HealthComponent[];
+  readonly contributors: HealthContributorView[];
   readonly trend: {
     /** Null when the view has no recorded readings (project or team filter). */
     readonly scopeKey: string | null;
-    readonly points: readonly { readonly date: string; readonly score: number }[];
+    readonly points: { readonly date: string; readonly score: number }[];
     /** The reading a week ago (or the earliest one after it), for the change. */
     readonly previousScore: number | null;
     readonly previousOn: string | null;
@@ -167,6 +168,7 @@ export async function loadBusinessHealth(
   ]);
   return {
     ...score,
+    components: [...score.components],
     contributors: score.contributors.map((part) => ({ ...part, link: links[part.key] })),
     trend,
   };

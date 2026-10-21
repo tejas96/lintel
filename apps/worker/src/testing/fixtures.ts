@@ -25,11 +25,13 @@ export function deadlineTask(overrides: Patch<TaskDeadlineFacts> = {}): TaskDead
     title: 'Working drawings',
     status: 'in_progress',
     priority: 'medium',
+    plannedStartDate: null,
     dueDate: toCalendarDate('2026-11-10'),
     escalateAfterOverdueDays: 1,
     ownerUserId: OWNER,
     ownerName: 'Ananya Joshi',
     archived: false,
+    prerequisitesDone: true,
     project: PROJECT,
     ...definedOnly(overrides),
   };

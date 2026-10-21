@@ -15,6 +15,7 @@ import { silentLogger } from '../observability/worker-logger';
 import {
   FakeDailyOperationsStore,
   FakeFollowUpStore,
+  FakeInsightSnapshotStore,
   FakeLeaveImpactStore,
   FakeOutboxRelayStore,
   FakeWorkflowRunStore,
@@ -88,6 +89,7 @@ export function createFakeWorld(now = '2026-11-09T06:00:00.000Z') {
       operations: new FakeDailyOperationsStore(),
       messageDeliveries: new FakeMessageDeliveryStore(),
       emailDigests: new FakeEmailDigestStore(),
+      insights: new FakeInsightSnapshotStore(),
     },
   } satisfies WorkerStores;
   const uow = new FakeUnitOfWork(stores);

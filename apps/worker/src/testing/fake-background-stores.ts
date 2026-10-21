@@ -3,6 +3,7 @@ import type {
   DailyOperationsStore,
   DeliverableReviewFacts,
   FollowUpStore,
+  InsightSnapshotStore,
   LeaveImpactStore,
   LeaveRequestFacts,
   LeaveTaskImpactFact,
@@ -17,6 +18,7 @@ import type {
   WorkflowRunStore,
 } from '@lintel/application';
 import type { Capability, MilestoneHealth } from '@lintel/domain';
+import type { CalendarDate } from '@lintel/shared';
 
 export class FakeFollowUpStore implements FollowUpStore {
   readonly deadlines = new Map<string, TaskDeadlineFacts>();
@@ -90,6 +92,16 @@ export class FakeWorkflowRunStore implements WorkflowRunStore {
   }
   async openTasksWithoutDeadlineWorkflow(_prefix: string, limit: number) {
     return this.tasksWithoutRuns.slice(0, limit);
+  }
+}
+
+/** Remembers the days a health reading was asked for. */
+export class FakeInsightSnapshotStore implements InsightSnapshotStore {
+  readonly days: string[] = [];
+
+  async recordBusinessHealth(today: CalendarDate) {
+    this.days.push(today);
+    return { recorded: 1 };
   }
 }
 

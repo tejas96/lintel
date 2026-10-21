@@ -118,3 +118,13 @@ describe('deadline workflow self-healing', () => {
     ]);
   });
 });
+
+describe('daily business health reading', () => {
+  it('records today’s score in the business timezone', async () => {
+    const fake = createFakeWorld('2026-11-08T20:00:00.000Z');
+    const activities = createDailyOperationsActivities(fake.deps);
+    // 01:30 on Monday 9 November in India.
+    expect(await activities.recordBusinessHealth()).toEqual({ recorded: 1 });
+    expect(fake.stores.background.insights.days).toEqual(['2026-11-09']);
+  });
+});
