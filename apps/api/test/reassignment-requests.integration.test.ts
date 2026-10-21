@@ -20,10 +20,15 @@ async function taskTitled(title: string): Promise<TaskRow> {
   return tasks.body.items.find((task: TaskRow) => task.title === title);
 }
 
-async function notificationsFor(userId: string, kind: string): Promise<string[]> {
+/** Notifications of one kind about one subject (a request or a task), so earlier runs do not count. */
+async function notificationsFor(
+  userId: string,
+  kind: string,
+  subjectId: string,
+): Promise<string[]> {
   const result = await testApp.database.pool.query(
-    'SELECT title FROM notifications WHERE recipient_user_id = $1 AND kind = $2',
-    [userId, kind],
+    'SELECT title FROM notifications WHERE recipient_user_id = $1 AND kind = $2 AND subject_id = $3',
+    [userId, kind, subjectId],
   );
   return result.rows.map((row: { title: string }) => row.title);
 }
@@ -84,7 +89,7 @@ describe('reassignment requests', () => {
         suggestedUserId: null,
       })
       .expect(409);
-    expect(await notificationsFor(ids.pm, 'reassignment_requested')).toHaveLength(1);
+    expect(await notificationsFor(ids.pm, 'reassignment_requested', asked.body.id)).toHaveLength(1);
 
     const queue = await as.pm.get('/v1/me/approvals').expect(200);
     expect(queue.body).toContainEqual(
@@ -111,8 +116,8 @@ describe('reassignment requests', () => {
     expect(accepted.body).toMatchObject({ status: 'accepted', newOwner: { id: ids.other } });
     const after = await as.pm.get(`/v1/tasks/${brief.id}`).expect(200);
     expect(after.body.owner.id).toBe(ids.other);
-    expect(await notificationsFor(ids.other, 'task_assigned')).not.toHaveLength(0);
-    expect(await notificationsFor(ids.designer, 'reassignment_decided')).toEqual([
+    expect(await notificationsFor(ids.other, 'task_assigned', brief.id)).not.toHaveLength(0);
+    expect(await notificationsFor(ids.designer, 'reassignment_decided', asked.body.id)).toEqual([
       'Reassignment accepted',
     ]);
     const audit = await testApp.database.pool.query(
@@ -152,7 +157,7 @@ describe('reassignment requests', () => {
       })
       .expect(200);
     expect(declined.body.status).toBe('declined');
-    expect(await notificationsFor(ids.pm, 'reassignment_decided')).toEqual([
+    expect(await notificationsFor(ids.pm, 'reassignment_decided', asked.body.id)).toEqual([
       'Reassignment declined',
     ]);
   });
