@@ -34,6 +34,23 @@ built, merged into `main` and tested:
 
 All code is committed on `main` (local git, nothing pushed anywhere).
 
+## Evening update — Lintel now explains problems and names the next action
+
+Built on branch `claude/friendly-banach-df1ac3` (not merged into `main` yet). Rules and
+formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
+
+- **Business health score** (0–100) on the command center, with its band, the three biggest
+  contributors (each opens the record behind it), "How it's scored", and a trend the worker
+  records every morning.
+- **Risk cards** on the command center and in each project: what is happening, how many
+  working days it slips, the next action, who acts, and when it escalates if nobody does.
+- **Command center**: deadlines in the next 7 days, performance highlights, owner
+  intervention needed.
+- **Late start**: the owner is nudged the working day after a missed start; they can start,
+  report a blocker, or ask for a new date, which the project manager accepts or declines.
+- **Cover for absences**: the leave page suggests who could take each affected task; one
+  click opens the handover or the new "Change owner" sheet. Nothing moves on its own.
+
 ## Running right now
 
 | What | Where |
