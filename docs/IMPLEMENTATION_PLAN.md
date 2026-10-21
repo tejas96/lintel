@@ -124,7 +124,7 @@ The system now explains problems and drives the next action (`PRODUCT_REQUIREMEN
 
 ## Stage 11 — Planning flexibility (21 Oct, evening) ✅
 
-Built on branch `claude/keen-bardeen-6da0eb` (migration `0007_planning_flexibility`).
+Migration `0007_planning_flexibility`.
 
 - ✅ Optional due time on tasks (studio time): Today's order and overdue flags, the deadline
   reminders (overdue at the due time) and every task screen on web and phone use it.
@@ -139,6 +139,17 @@ Built on branch `claude/keen-bardeen-6da0eb` (migration `0007_planning_flexibili
   end becomes a scope change.
 - ✅ First-run tips per role on Today, a task, the project control room, leave and the
   command center, stored per person (seen once on any device); "Show tips again" in Account.
+
+## Stage 12 — Fair rewards and learning from history (21 Oct, evening) ✅
+
+Migration `0008_fair_rewards`.
+
+- ✅ Milestone rewards (individual or shared, equal split), checked on completion and decided
+  by a reviewer with `rewards.decide` (never their own); no automatic payment or deduction.
+- ✅ My recognition and reward challenges on web and phone, with full history and audit.
+- ✅ Reports: estimate accuracy, rework rate and recurring delays, with CSV export.
+- ✅ All five evening branches merged into `main`; 645 unit, 89 API, 18 database, 19 worker
+  and 35 browser tests pass on the merged code.
 
 ## Known external blockers
 

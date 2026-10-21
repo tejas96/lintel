@@ -36,7 +36,7 @@ All code is committed on `main` (local git, nothing pushed anywhere).
 
 ## Evening update — Lintel now explains problems and names the next action
 
-Built on branch `claude/friendly-banach-df1ac3` (not merged into `main` yet). Rules and
+Merged into `main` on 21 October (migration `0006_risk_intelligence`). Rules and
 formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
 
 - **Business health score** (0–100) on the command center, with its band, the three biggest
@@ -55,7 +55,7 @@ formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
   *At risk* with "Forecast N working days late"; a delivery slip makes the project *Off track*;
   the header's Forecast is the same date (§6, screenshots 128–130).
 
-## Evening update — planning flexibility (branch `claude/keen-bardeen-6da0eb`)
+## Evening update — planning flexibility (migration `0007_planning_flexibility`)
 
 - Tasks can be due at a set time (for example 11:00); Today, reminders and every task screen
   use it.
@@ -69,6 +69,17 @@ formulas: `docs/PRODUCT_REQUIREMENTS.md` §15. Screenshots 111–127.
 - Short first-time tips on Today, a task, a project, leave and the command center, shown
   once per person (Account → Tips shows them again).
 - Screenshots 131–146 in `docs/screenshots/web/`.
+
+## Evening update — fair rewards (migration `0008_fair_rewards`)
+
+- **Milestone rewards**: attach an amount to a milestone for one person or shared by a team;
+  on completion Lintel checks deliverables, reviews, dates (or an approved new date) and
+  documents, then recommends — a reviewer approves or declines. Nothing is paid or deducted
+  automatically; waiting on a client, supplier or colleague never counts as late.
+- **My recognition and challenges** (web and phone): what earns a reward, what is pending,
+  every decision with its reasons, and a way to challenge a record (the reviewer upholds or
+  corrects it; a correction can only raise a reward).
+- **Three new reports**: estimate accuracy, rework and delays, each with a safe CSV download.
 
 ## Running right now
 
@@ -96,9 +107,9 @@ cd apps/web && PORT=3100 pnpm start
 ## What was verified
 
 - Quality gates: Biome lint (0 errors, 0 warnings), every file ≤ 250 lines, package
-  boundaries, strict typecheck, 472 unit tests, 49 API integration tests (including the
-  business journeys), 12 database and 18 Temporal integration tests, 31 browser
-  end-to-end and accessibility tests.
+  boundaries, strict typecheck, 645 unit tests, 89 API integration tests (including the
+  business journeys), 18 database and 19 Temporal integration tests, 35 browser
+  end-to-end and accessibility tests (all re-run after the evening merge).
 - Live checks of every API route per role; web screens in a real browser at desktop and
   phone sizes; mobile app on the iOS simulator and Android emulator; production Docker
   images built and started.
