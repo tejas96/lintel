@@ -4,6 +4,7 @@ export * from './capacity';
 export * from './documents';
 export * from './events';
 export * from './identity';
+export * from './insights';
 export * from './leave';
 export * from './notifications';
 export * from './projects';

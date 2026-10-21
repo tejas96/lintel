@@ -30,6 +30,9 @@ const KIND_ICON: Readonly<Record<NotificationItem['kind'], IconName>> = {
   priority_changed: 'flag',
   reassignment_requested: 'person',
   reassignment_decided: 'person',
+  task_late_start: 'waiting',
+  date_change_requested: 'calendar',
+  date_change_decided: 'calendar',
 };
 
 export interface NotificationRowProps {

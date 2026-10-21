@@ -1,5 +1,5 @@
 import type { NewNotification } from '@lintel/application';
-import { notificationDedupeKey } from '@lintel/domain';
+import { notificationDedupeKey, REVIEW_FOLLOW_UP_WORKING_DAYS } from '@lintel/domain';
 import type { ReviewSubject } from '../workflows/workflow-contract';
 import { type ActivityDependencies, calendarFor, withNotifier } from './activity-dependencies';
 import { type FollowUpPlan, type FollowUpSendResult, INACTIVE_PLAN } from './follow-up.types';
@@ -7,12 +7,6 @@ import { loadReviewState, type ReviewState } from './review-state';
 import { afterWorkingDays, delayUntil, formatLocalDate } from './working-time';
 
 export type ReviewStage = 'reviewer' | 'manager';
-
-/** Working days after submission: remind the reviewer after 1, the manager 2 days later. */
-const REVIEW_STAGE_WORKING_DAYS: Readonly<Record<ReviewStage, number>> = {
-  reviewer: 1,
-  manager: 3,
-};
 
 function reviewNotification(
   state: ReviewState,
@@ -61,7 +55,7 @@ export function createReviewActivities(deps: ActivityDependencies) {
       const stages = (['reviewer', 'manager'] as const).map((key) => ({
         key,
         delayMs: delayUntil(
-          afterWorkingDays(calendar, state.submittedAt, REVIEW_STAGE_WORKING_DAYS[key]),
+          afterWorkingDays(calendar, state.submittedAt, REVIEW_FOLLOW_UP_WORKING_DAYS[key]),
           now,
         ),
       }));

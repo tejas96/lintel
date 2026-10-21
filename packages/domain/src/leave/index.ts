@@ -1,3 +1,4 @@
+export * from './cover-suggestion.strategy';
 export * from './leave-approval.policy';
 export * from './leave-conflict.detector';
 export * from './leave-request';

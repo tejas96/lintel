@@ -1,5 +1,5 @@
 import type { BlockerFacts, NewNotification } from '@lintel/application';
-import { notificationDedupeKey } from '@lintel/domain';
+import { BLOCKER_FOLLOW_UP_WORKING_DAYS, notificationDedupeKey } from '@lintel/domain';
 import {
   type ActivityDependencies,
   notifyEach,
@@ -10,12 +10,6 @@ import { type FollowUpPlan, type FollowUpSendResult, INACTIVE_PLAN } from './fol
 import { afterWorkingDays, delayUntil, formatLocalDate } from './working-time';
 
 export type BlockerStage = 'manager' | 'owner';
-
-/** Working days a blocker stays open before each audience hears about it. */
-const BLOCKER_STAGE_WORKING_DAYS: Readonly<Record<BlockerStage, number>> = {
-  manager: 1,
-  owner: 3,
-};
 
 const WAITING_ON: Readonly<Record<string, string>> = {
   client: 'waiting on the client',
@@ -34,7 +28,7 @@ function blockerNotification(
 ): NewNotification {
   const since = formatLocalDate(blocker.raisedAt, timeZone);
   const waiting = WAITING_ON[blocker.category] ?? 'blocked';
-  const days = BLOCKER_STAGE_WORKING_DAYS[stage];
+  const days = BLOCKER_FOLLOW_UP_WORKING_DAYS[stage];
   return {
     recipientUserId,
     kind: 'task_blocked',
@@ -65,7 +59,7 @@ export function createBlockerActivities(deps: ActivityDependencies) {
       const stages = (['manager', 'owner'] as const).map((key) => ({
         key,
         delayMs: delayUntil(
-          afterWorkingDays(calendar, blocker.raisedAt, BLOCKER_STAGE_WORKING_DAYS[key]),
+          afterWorkingDays(calendar, blocker.raisedAt, BLOCKER_FOLLOW_UP_WORKING_DAYS[key]),
           now,
         ),
       }));

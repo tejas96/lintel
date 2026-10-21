@@ -86,6 +86,18 @@ export const KIND_COPY: Readonly<Record<NotificationKind, KindCopy>> = {
     label: 'Your handover request is decided',
     explanation: 'Accepted with the new owner, or declined with a note.',
   },
+  task_late_start: {
+    label: 'Your task has not started',
+    explanation: 'The working day after its planned start, if it is still waiting.',
+  },
+  date_change_requested: {
+    label: 'Someone asks for a new date',
+    explanation: 'When a task in a project you manage needs a later date.',
+  },
+  date_change_decided: {
+    label: 'Your new-date request is decided',
+    explanation: 'Accepted with the new dates, or declined with a note.',
+  },
 };
 
 /** Kinds in the order people think about them. */
@@ -100,8 +112,10 @@ export const KIND_GROUPS: readonly {
       'task_reassigned',
       'deadline_upcoming',
       'task_overdue',
+      'task_late_start',
       'priority_changed',
       'reassignment_decided',
+      'date_change_decided',
     ],
   },
   {
@@ -113,6 +127,7 @@ export const KIND_GROUPS: readonly {
       'review_reminder',
       'review_decided',
       'reassignment_requested',
+      'date_change_requested',
     ],
   },
   {

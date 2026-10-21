@@ -85,3 +85,9 @@ export function zonedTimeToInstant(date: CalendarDate, time: string, timeZone: s
   const corrected = wallClockAsUtc - offsetMilliseconds(new Date(firstGuess), timeZone);
   return new Date(corrected);
 }
+
+/** The local wall-clock time ("HH:mm", 24-hour) of an instant in a timezone. */
+export function localTimeInTimeZone(instant: Date, timeZone: string): string {
+  const parts = zonedParts(instant, timeZone);
+  return `${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
+}
