@@ -3,15 +3,17 @@ import { TransitionTaskCommand } from '../tasks/transition-task.command';
 import { contextFor, InMemoryOperationsWorld } from '../testing/in-memory-operations.world';
 import { WorkSessionCommands } from './work-session.commands';
 
-function setup() {
+function setup(tracking = { enabled: true }) {
   const world = new InMemoryOperationsWorld('2026-10-21T04:00:00Z');
   world.addProject('p1', 'pm', { ananya: 'designer', rohit: 'designer' });
   world.addTask({ id: 'measure', projectId: 'p1', ownerUserId: 'ananya', estimateMinutes: 180 });
   world.addTask({ id: 'layout', projectId: 'p1', ownerUserId: 'rohit', status: 'in_progress' });
   world.collaborators.set('layout', ['ananya']);
   world.addTask({ id: 'draft', projectId: 'p1', ownerUserId: 'ananya', status: 'draft' });
-  const sessions = new WorkSessionCommands(world.dependencies());
-  return { world, sessions, ananya: contextFor('ananya') };
+  const sessions = new WorkSessionCommands(world.dependencies(), {
+    isEnabled: async () => tracking.enabled,
+  });
+  return { world, sessions, tracking, ananya: contextFor('ananya') };
 }
 
 describe('work sessions', () => {
@@ -75,5 +77,23 @@ describe('work sessions', () => {
     await expect(sessions.pause(ananya, 'measure')).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
     });
+  });
+
+  it('refuses to start or pause while the studio does not track working time', async () => {
+    const { world, sessions, tracking, ananya } = setup();
+    await sessions.start(ananya, 'measure');
+    tracking.enabled = false;
+    for (const action of [
+      () => sessions.start(ananya, 'layout'),
+      () => sessions.pause(ananya, 'measure'),
+    ]) {
+      await expect(action()).rejects.toMatchObject({
+        code: 'PRECONDITION_FAILED',
+        message: expect.stringMatching(/Work tracking is switched off/),
+        details: [{ message: expect.stringMatching(/Move the task with its status instead/) }],
+      });
+    }
+    expect(world.sessions).toHaveLength(1);
+    expect(world.tasks.get('layout')?.version).toBe(1);
   });
 });

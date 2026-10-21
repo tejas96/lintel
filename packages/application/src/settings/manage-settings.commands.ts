@@ -1,5 +1,6 @@
 import { CAPABILITIES, type Capability, type Role } from '@lintel/domain';
 import {
+  type Clock,
   ForbiddenError,
   isCalendarDate,
   isValidTimeZone,
@@ -9,9 +10,10 @@ import {
 import { requireCapability } from '../common/capability-guard';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
+import { closeAllWorkSessions } from '../work/work-tracking';
 import type { HolidayRecord, OrganizationSettings } from './settings.store';
 
-type SettingsStores = Pick<ApplicationStores, 'settings' | 'records'>;
+type SettingsStores = Pick<ApplicationStores, 'settings' | 'records' | 'workSessions' | 'tasks'>;
 
 /** Keeps the order of the domain list so stored grants are stable and readable. */
 function orderedCapabilities(granted: Iterable<Capability>): Capability[] {
@@ -21,7 +23,10 @@ function orderedCapabilities(granted: Iterable<Capability>): Capability[] {
 
 /** Studio settings, role grants and the holiday calendar. Every change is audited. */
 export class ManageSettingsCommands {
-  constructor(private readonly uow: UnitOfWork<SettingsStores>) {}
+  constructor(
+    private readonly uow: UnitOfWork<SettingsStores>,
+    private readonly clock: Clock,
+  ) {}
 
   async updateOrganization(
     context: RequestContext,
@@ -40,13 +45,17 @@ export class ManageSettingsCommands {
     return this.uow.transaction(async (stores) => {
       const before = await stores.settings.organization();
       const after = await stores.settings.updateOrganization(settings);
+      const trackingStops = before.workTrackingEnabled && !after.workTrackingEnabled;
+      const closedWorkSessions = trackingStops
+        ? await closeAllWorkSessions(stores, this.clock.now())
+        : 0;
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
         action: 'organization.updated',
         entityType: 'organization',
         entityId: null,
         before: { ...before },
-        after: { ...after },
+        after: { ...after, ...(trackingStops ? { closedWorkSessions } : {}) },
         requestId: context.requestId,
       });
       return after;

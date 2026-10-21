@@ -58,6 +58,8 @@ export function WorkSessionBar({ task }: { readonly task: TaskDetail }) {
   const elapsed = useElapsedSeconds(task.activeWorkSessionStartedAt);
   const active = task.activeWorkSessionStartedAt !== null;
   const logged = task.actualMinutes > 0 ? `${formatMinutes(task.actualMinutes)} logged` : null;
+  // The studio does not track working time: the task moves by its status alone.
+  if (!task.workTrackingEnabled) return null;
   if (!active && !canBeginWork(task, user.id) && !logged) return null;
   const estimate = task.estimateMinutes
     ? `of ${formatMinutes(task.estimateMinutes)} estimated`

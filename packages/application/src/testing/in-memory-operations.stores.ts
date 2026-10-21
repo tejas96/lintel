@@ -135,6 +135,9 @@ function workSessionStore(world: InMemoryOperationsWorld): WorkSessionStore {
     async activeSessionsOnTask(taskId) {
       return world.sessions.filter((item) => item.taskId === taskId && !item.endedAt);
     },
+    async activeSessions() {
+      return world.sessions.filter((item) => !item.endedAt);
+    },
     async startSession(taskId, userId, at) {
       const session = { id: world.nextId('session'), taskId, userId, startedAt: at, endedAt: null };
       world.sessions.push(session);

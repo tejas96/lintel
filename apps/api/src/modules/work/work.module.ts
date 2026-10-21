@@ -18,7 +18,15 @@ import { WorkController } from './work.controller';
   imports: [TasksModule],
   controllers: [WorkController],
   providers: [
-    operationsUseCase(WorkSessionCommands),
+    {
+      provide: WorkSessionCommands,
+      inject: [OPERATIONS_DEPENDENCIES, UNIT_OF_WORK],
+      useFactory: (deps: OperationsDependencies, uow: UnitOfWork<ApplicationStores>) =>
+        // Read fresh on every start and pause, so switching tracking off takes effect at once.
+        new WorkSessionCommands(deps, {
+          isEnabled: async () => (await uow.stores.settings.organization()).workTrackingEnabled,
+        }),
+    },
     operationsUseCase(PriorityConflictCommands),
     {
       provide: MyWorkQueueQuery,

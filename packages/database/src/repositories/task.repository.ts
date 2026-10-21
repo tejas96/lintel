@@ -24,12 +24,7 @@ import { loadTaskDecisionInputs, referencesInProject } from './task-facts.loader
 
 function toTask(row: typeof tasks.$inferSelect): TaskRecord {
   const { createdAt: _c, updatedAt: _u, archivedAt: _a, createdByUserId: _b, ...rest } = row;
-  const {
-    templateKey: _t,
-    requiresAcknowledgement: _r,
-    position: _p,
-    ...record
-  } = rest;
+  const { templateKey: _t, requiresAcknowledgement: _r, position: _p, ...record } = rest;
   return record;
 }
 

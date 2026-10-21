@@ -20,6 +20,8 @@ export interface WorkSessionStore {
   lockPerson(userId: string): Promise<void>;
   activeSessionFor(userId: string): Promise<WorkSessionRecord | null>;
   activeSessionsOnTask(taskId: string): Promise<WorkSessionRecord[]>;
+  /** Every running session in the studio (used when tracking is switched off). */
+  activeSessions(): Promise<WorkSessionRecord[]>;
   startSession(taskId: string, userId: string, at: Date): Promise<WorkSessionRecord>;
   endSession(sessionId: string, at: Date): Promise<void>;
   createPriorityConflict(input: {

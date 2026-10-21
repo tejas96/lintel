@@ -147,6 +147,8 @@ export const taskDetailObject = taskSummaryObject.extend({
   viewerCanEdit: z.boolean(),
   /** Working days overdue before the project manager is alerted. */
   escalateAfterOverdueDays: z.number().int(),
+  /** False when the studio does not track working time: no start or pause controls. */
+  workTrackingEnabled: z.boolean(),
 });
 export type TaskDetail = z.infer<typeof taskDetailObject>;
 export const taskDetailSchema: ResponseSchema<TaskDetail> = taskDetailObject;
@@ -183,6 +185,8 @@ export const workQueueObject = z.object({
   reviewsWaitingForMe: z.array(taskSummarySchema),
   recentlyCompleted: z.array(taskSummarySchema),
   strategy: z.string(),
+  /** False when the studio does not track working time: no start or pause controls. */
+  workTrackingEnabled: z.boolean(),
 });
 export type WorkQueue = z.infer<typeof workQueueObject>;
 export const workQueueSchema: ResponseSchema<WorkQueue> = workQueueObject;

@@ -35,6 +35,10 @@ export class WorkSessionRepository implements WorkSessionStore {
       .where(and(eq(workSessions.taskId, taskId), isNull(workSessions.endedAt)));
   }
 
+  activeSessions() {
+    return this.db.select(sessionColumns).from(workSessions).where(isNull(workSessions.endedAt));
+  }
+
   async startSession(taskId: string, userId: string, at: Date) {
     const [row] = await this.db
       .insert(workSessions)

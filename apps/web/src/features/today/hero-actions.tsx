@@ -6,6 +6,7 @@ import { Check, Hand, OctagonPause, Pause, Play, Send } from 'lucide-react';
 import { useTask } from '@/features/tasks/use-task';
 import { useTaskActions } from '@/features/tasks/use-task-actions';
 import { WorkTimer } from '@/features/tasks/work-timer';
+import { canStartFrom, useWorkTracking } from '@/features/tasks/work-tracking';
 
 interface HeroActionsProps {
   readonly task: TaskSummary;
@@ -20,6 +21,8 @@ interface HeroActionsProps {
 export function HeroActions({ task, onBeforeChange, onReportBlocker }: HeroActionsProps) {
   const detail = useTask(task.id).data;
   const actions = useTaskActions();
+  const queueTracking = useWorkTracking();
+  const tracking = detail?.workTrackingEnabled ?? queueTracking;
   const run = (action: () => void) => {
     onBeforeChange();
     action();
@@ -44,6 +47,27 @@ export function HeroActions({ task, onBeforeChange, onReportBlocker }: HeroActio
         >
           Acknowledge
         </Button>
+      ) : !tracking ? (
+        // Without time tracking, starting is a plain status move.
+        canStartFrom(task.status) && (
+          <Button
+            variant="blueprint"
+            pending={actions.transition.isPending}
+            leadingIcon={<Play aria-hidden />}
+            onClick={() =>
+              run(() =>
+                actions.transition.mutate({
+                  taskId: task.id,
+                  to: 'in_progress',
+                  note: null,
+                  version,
+                }),
+              )
+            }
+          >
+            Start task
+          </Button>
+        )
       ) : sessionStartedAt ? (
         <Button
           variant="blueprint"

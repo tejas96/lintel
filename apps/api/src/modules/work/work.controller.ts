@@ -12,6 +12,7 @@ import { Controller } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
 import { Ctx } from '../../common/auth/auth.decorators';
 import { apiContract } from '../../contract';
+import { BusinessContextService } from '../../infrastructure/business-context.service';
 import { TaskDetailPresenter } from '../tasks/task-detail.presenter';
 
 const contract = apiContract.work;
@@ -26,7 +27,10 @@ function presentItem(item: WorkQueueItem<TaskSummaryView>) {
   };
 }
 
-export function presentWorkQueue(result: WorkQueueResult<TaskSummaryView>): WorkQueue {
+export function presentWorkQueue(
+  result: WorkQueueResult<TaskSummaryView>,
+  workTrackingEnabled: boolean,
+): WorkQueue {
   return {
     today: result.today,
     next: result.next ? presentItem(result.next) : null,
@@ -36,6 +40,7 @@ export function presentWorkQueue(result: WorkQueueResult<TaskSummaryView>): Work
     reviewsWaitingForMe: result.reviewsWaitingForMe,
     recentlyCompleted: result.recentlyCompleted,
     strategy: result.strategy,
+    workTrackingEnabled,
   };
 }
 
@@ -47,6 +52,7 @@ export class WorkController {
     private readonly sessions: WorkSessionCommands,
     private readonly conflicts: PriorityConflictCommands,
     private readonly presenter: TaskDetailPresenter,
+    private readonly business: BusinessContextService,
   ) {}
 
   @TsRestHandler(contract)
@@ -55,7 +61,10 @@ export class WorkController {
     return tsRestHandler(contract, {
       myWorkQueue: async () => ({
         status: 200,
-        body: presentWorkQueue(await this.queue.execute(actor)),
+        body: presentWorkQueue(
+          await this.queue.execute(actor),
+          (await this.business.settings()).workTrackingEnabled,
+        ),
       }),
       startWork: async ({ params }) => {
         await this.sessions.start(context, params.id);

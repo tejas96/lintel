@@ -36,6 +36,21 @@ export function useStartWork() {
   });
 }
 
+/** Without time tracking, "Start" is a plain status move to in progress. */
+export function useStartTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { taskId: string; version: number }) =>
+      unwrap(
+        api.tasks.transitionTask({
+          params: { id: input.taskId },
+          body: { to: 'in_progress', note: null, version: input.version },
+        }),
+      ),
+    onSuccess: (task) => applyTaskChange(queryClient, task),
+  });
+}
+
 export function usePauseWork() {
   const queryClient = useQueryClient();
   return useMutation({
