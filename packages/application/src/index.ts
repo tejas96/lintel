@@ -15,6 +15,7 @@ export * from './projects';
 export * from './rewards';
 export * from './scope-changes';
 export * from './settings';
+export * from './setup';
 export * from './tasks';
 export * from './templates';
 export * from './work';

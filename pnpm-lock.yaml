@@ -534,6 +534,9 @@ importers:
       pg:
         specifier: 'catalog:'
         version: 8.23.1
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
     devDependencies:
       '@lintel/tsconfig':
         specifier: workspace:*

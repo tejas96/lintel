@@ -25,6 +25,7 @@
     "db:migrate": "tsx src/migrate.cli.ts",
     "db:seed": "tsx src/seed/seed.cli.ts",
     "db:seed:demo": "tsx src/seed/demo/seed-demo.cli.ts",
+    "setup:studio": "node dist/setup/setup-studio.cli.js",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
@@ -32,7 +33,8 @@
     "@lintel/domain": "workspace:*",
     "@lintel/shared": "workspace:*",
     "drizzle-orm": "catalog:",
-    "pg": "catalog:"
+    "pg": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@lintel/tsconfig": "workspace:*",

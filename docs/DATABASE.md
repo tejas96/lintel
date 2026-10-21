@@ -68,6 +68,22 @@ compatible with the new schema for one release.
   templates. Refuses to run with `NODE_ENV=production`.
 - `pnpm --filter @lintel/database db:seed:demo` — demo projects created through the
   real project-creation use case with dates relative to today.
+- Production uses neither seed. `setup:studio` (`dist/setup/setup-studio.cli.js`, also in
+  the `migrate` image) creates the settings row, the default working calendar, the
+  role→capability grants and the owner in one transaction and refuses once any of them
+  exists (see `OPERATIONS.md`, production step 5).
+
+## Administration tables
+
+- `leave_types` and `working_calendars` carry a `version` (migration
+  `0002_studio_administration`). Leave types are never deleted: retiring sets
+  `is_active = false`, and existing requests keep pointing at the type.
+- `working_calendars.is_default` marks the studio week. `users.working_calendar_id`
+  null means "follows the studio week". Holidays are stored on the default calendar
+  and apply to every working week.
+- `organization_settings.work_tracking_enabled` is enforced by the work-session
+  commands; switching it off ends running sessions.
+- `tasks.escalate_after_overdue_days` is editable per task by its project manager.
 
 ## Integration tests
 
