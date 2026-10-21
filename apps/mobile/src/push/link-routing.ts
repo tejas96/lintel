@@ -35,6 +35,8 @@ const SECTION_RULES: readonly { readonly pattern: RegExp; readonly href: Href }[
   { pattern: /^\/leave/i, href: '/leave' },
   { pattern: /^\/notifications/i, href: '/inbox' },
   { pattern: /^\/projects\/?$/i, href: '/projects' },
+  // Only the person's own rewards; reviewing and policies (/rewards/review, …) are web-only.
+  { pattern: /^\/rewards\/?$/i, href: '/rewards' },
   { pattern: /^\/(today|work|me)?\/?$/i, href: '/' },
 ];
 

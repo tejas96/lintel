@@ -37,8 +37,16 @@ describe('hrefForLinkPath', () => {
   it('maps section links and refuses what the app has no screen for', () => {
     expect(hrefForLinkPath('/approvals')).toBe('/approvals');
     expect(hrefForLinkPath('/notifications')).toBe('/inbox');
-    expect(hrefForLinkPath('/rewards')).toBeNull();
     expect(hrefForLinkPath(null)).toBeNull();
     expect(hrefForLinkPath('/tasks/not-a-uuid')).toBeNull();
+  });
+
+  it('opens my rewards, but leaves reviewing and policies to the web', () => {
+    expect(hrefForLinkPath('/rewards')).toBe('/rewards');
+    expect(hrefForLinkPath('/rewards/')).toBe('/rewards');
+    expect(hrefForLinkPath('/rewards?from=push')).toBe('/rewards');
+    expect(hrefForLinkPath('/rewards/review')).toBeNull();
+    expect(hrefForLinkPath('/rewards/review?kind=milestones')).toBeNull();
+    expect(hrefForLinkPath('/rewards/policies')).toBeNull();
   });
 });
