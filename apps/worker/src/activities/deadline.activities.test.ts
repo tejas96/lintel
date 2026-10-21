@@ -71,6 +71,24 @@ describe('deadline activities', () => {
     ]);
   });
 
+  it('reads the task’s current escalation delay every time it plans', async () => {
+    const fake = world('2026-11-07T03:30:00.000Z');
+    const due = toCalendarDate('2026-11-09');
+    const managerStep = async () =>
+      (await fake.activities.loadDeadlinePlan('task-1')).steps.find(
+        (planned) => planned.audience === 'project_manager',
+      );
+    fake.stores.background.followUps.deadlines.set('task-1', deadlineTask({ dueDate: due }));
+    // One working day overdue: Tuesday 10 Nov, 09:30 IST.
+    expect((await managerStep())?.at).toBe('2026-11-10T04:00:00.000Z');
+    // A manager changes it to three days; the reloaded plan moves the alert to Thursday.
+    fake.stores.background.followUps.deadlines.set(
+      'task-1',
+      deadlineTask({ dueDate: due, escalateAfterOverdueDays: 3 }),
+    );
+    expect((await managerStep())?.at).toBe('2026-11-12T04:00:00.000Z');
+  });
+
   it('reports a closed or archived task so the workflow can stop', async () => {
     const fake = world();
     fake.stores.background.followUps.deadlines.set('task-1', deadlineTask({ status: 'done' }));

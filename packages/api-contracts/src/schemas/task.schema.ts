@@ -145,6 +145,8 @@ export const taskDetailObject = taskSummaryObject.extend({
   transitions: z.array(transitionOptionSchema),
   viewerCanManage: z.boolean(),
   viewerCanEdit: z.boolean(),
+  /** Working days overdue before the project manager is alerted. */
+  escalateAfterOverdueDays: z.number().int(),
 });
 export type TaskDetail = z.infer<typeof taskDetailObject>;
 export const taskDetailSchema: ResponseSchema<TaskDetail> = taskDetailObject;

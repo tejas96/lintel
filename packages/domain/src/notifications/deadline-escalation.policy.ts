@@ -6,6 +6,16 @@ import type { NotificationKind } from './notification-kinds';
 
 export type EscalationAudience = 'task_owner' | 'project_manager' | 'business_owner';
 
+/** Working days overdue before the project manager hears; 0 behaves like 1 (the next working day). */
+export const ESCALATION_DELAY_LIMITS = { minimum: 1, maximum: 30 } as const;
+
+export function validateEscalationDelay(workingDays: number): string | null {
+  const { minimum, maximum } = ESCALATION_DELAY_LIMITS;
+  return Number.isInteger(workingDays) && workingDays >= minimum && workingDays <= maximum
+    ? null
+    : `Use a whole number of working days from ${minimum} to ${maximum}.`;
+}
+
 export interface EscalationStep {
   readonly at: Date;
   readonly audience: EscalationAudience;

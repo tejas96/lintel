@@ -92,6 +92,7 @@ export class InMemoryOperationsWorld {
       requiresReview: false,
       acknowledgedAt: null,
       completionCriteria: null,
+      escalateAfterOverdueDays: 1,
       reviewRounds: 0,
       startedAt: null,
       submittedAt: null,

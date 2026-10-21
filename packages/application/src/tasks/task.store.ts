@@ -27,6 +27,8 @@ export interface TaskRecord {
   readonly requiresReview: boolean;
   readonly acknowledgedAt: Date | null;
   readonly completionCriteria: string | null;
+  /** Working days overdue before the project manager is alerted (1 = the next working day). */
+  readonly escalateAfterOverdueDays: number;
   readonly reviewRounds: number;
   readonly startedAt: Date | null;
   readonly submittedAt: Date | null;

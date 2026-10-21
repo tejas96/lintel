@@ -27,7 +27,6 @@ function toTask(row: typeof tasks.$inferSelect): TaskRecord {
   const {
     templateKey: _t,
     requiresAcknowledgement: _r,
-    escalateAfterOverdueDays: _e,
     position: _p,
     ...record
   } = rest;
