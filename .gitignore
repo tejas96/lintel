@@ -44,6 +44,7 @@ firebase-service-account*.json
 # test output
 playwright-report/
 test-results/
+apps/e2e/.auth/
 
 # agent worktrees
 .claude/worktrees/

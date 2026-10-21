@@ -16,7 +16,12 @@ export function CapacityGrid({ overview, today, compact }: CapacityGridProps) {
   const dates = eachDate(overview.start, overview.end);
   const holidays = new Map(overview.holidays.map((holiday) => [holiday.date, holiday.name]));
   return (
-    <div className="relative overflow-x-auto rounded-lg border border-hairline bg-raised">
+    <section
+      aria-label="Capacity by person and day"
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: the cells hold no controls, so the scrollable grid itself must take focus for keyboard scrolling (WCAG 2.1.1)
+      tabIndex={0}
+      className="relative overflow-x-auto rounded-lg border border-hairline bg-raised"
+    >
       <table className="w-full table-fixed border-separate border-spacing-0">
         <caption className="sr-only">
           Booked work against available time, {formatLongDate(overview.start)} to{' '}
@@ -46,7 +51,7 @@ export function CapacityGrid({ overview, today, compact }: CapacityGridProps) {
                   className={cn(
                     'border-b border-l border-hairline px-1.5 pt-2 pb-1.5 text-left align-bottom font-normal',
                     holiday && 'bg-sunken/60',
-                    date < today && 'text-ink-faint [&>span]:opacity-60',
+                    date < today && 'bg-sunken/40',
                   )}
                 >
                   <span
@@ -61,7 +66,7 @@ export function CapacityGrid({ overview, today, compact }: CapacityGridProps) {
                   <span
                     className={cn(
                       'font-display text-[1.125rem] leading-6 tabular-nums',
-                      isToday ? 'text-accent' : 'text-ink',
+                      isToday ? 'text-accent' : date < today ? 'text-ink-faint' : 'text-ink',
                     )}
                   >
                     {Number(date.slice(8))}
@@ -110,6 +115,6 @@ export function CapacityGrid({ overview, today, compact }: CapacityGridProps) {
           ))}
         </tbody>
       </table>
-    </div>
+    </section>
   );
 }
