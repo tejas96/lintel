@@ -31,34 +31,38 @@ export function ScopeImpacts({
           ? 'The project end date does not move.'
           : `The project ends ${shiftWords(projectEndImpactDays)}.`}
       </p>
-      <ul className="flex flex-col divide-y divide-hairline rounded-md border border-hairline bg-raised">
-        {impacts.map((impact) => (
-          <li
-            key={impact.taskId}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
-          >
-            <span className="min-w-0 flex-1 truncate type-body-sm text-ink">
-              {impact.taskTitle}
-              {impact.isDownstream && (
-                <span className="text-ink-faint"> (follows from another task)</span>
-              )}
-            </span>
-            <span className="flex items-center gap-1.5 type-body-sm text-ink-muted tabular-nums">
-              {impact.currentDueDate ? formatCalendarDate(impact.currentDueDate, today) : 'No date'}
-              <ArrowRight aria-hidden className="size-3.5" />
-              <span className="sr-only">to</span>
-              <span className="text-ink">
-                {impact.proposedDueDate
-                  ? formatCalendarDate(impact.proposedDueDate, today)
-                  : 'No date'}
+      {impacts.length > 0 && (
+        <ul className="flex flex-col divide-y divide-hairline rounded-md border border-hairline bg-raised">
+          {impacts.map((impact) => (
+            <li
+              key={impact.taskId}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
+            >
+              <span className="min-w-0 flex-1 truncate type-body-sm text-ink">
+                {impact.taskTitle}
+                {impact.isDownstream && (
+                  <span className="text-ink-faint"> (follows from another task)</span>
+                )}
               </span>
-            </span>
-            <span className="w-full type-body-sm text-ink-faint sm:w-40 sm:text-right">
-              {shiftWords(impact.shiftWorkingDays)}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <span className="flex items-center gap-1.5 type-body-sm text-ink-muted tabular-nums">
+                {impact.currentDueDate
+                  ? formatCalendarDate(impact.currentDueDate, today)
+                  : 'No date'}
+                <ArrowRight aria-hidden className="size-3.5" />
+                <span className="sr-only">to</span>
+                <span className="text-ink">
+                  {impact.proposedDueDate
+                    ? formatCalendarDate(impact.proposedDueDate, today)
+                    : 'No date'}
+                </span>
+              </span>
+              <span className="w-full type-body-sm text-ink-faint sm:w-40 sm:text-right">
+                {shiftWords(impact.shiftWorkingDays)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

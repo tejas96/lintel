@@ -33,6 +33,11 @@ const KINDS: Readonly<
   leave_request: { label: 'Leave request', action: 'See the impact and decide', onWeb: true },
   reward_review: { label: 'Reward review', action: 'Review the reward', onWeb: true },
   priority_conflict: { label: 'Priority conflict', action: 'Resolve the conflict', onWeb: false },
+  reassignment_request: {
+    label: 'Reassignment request',
+    action: 'Read the request and decide',
+    onWeb: true,
+  },
 };
 
 /** Reward reviews are decided in the review queue of the rewards screen. */
@@ -85,7 +90,7 @@ export function ApprovalsView() {
         <EmptyState
           drawing="lamp"
           title="You’re all caught up"
-          description="Reviews, scope changes and leave requests that need you will appear here."
+          description="Reviews, scope changes, leave and reassignment requests that need you will appear here."
         />
       )}
       {items.length > 0 && (

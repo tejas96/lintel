@@ -8,6 +8,7 @@ import {
   MilestoneTimeline,
   SkeletonText,
 } from '@lintel/design-system/web';
+import { TemplateUpdateBanner } from '@/features/projects/template-update/template-update-banner';
 import { useSession } from '@/features/session/session-provider';
 import { daysBetween, todayIn } from '@/lib/format/dates';
 import {
@@ -47,6 +48,7 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <TemplateUpdateBanner projectId={projectId} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile label="Open tasks" value={health.openTaskCount} goodDirection="none" />
         <KpiTile

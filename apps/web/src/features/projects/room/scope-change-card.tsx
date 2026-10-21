@@ -1,6 +1,6 @@
 'use client';
 
-import type { ScopeChange } from '@lintel/api-contracts';
+import type { ScopeChangeDetail } from '@lintel/api-contracts';
 import {
   Avatar,
   Button,
@@ -12,11 +12,12 @@ import {
 } from '@lintel/design-system/web';
 import { useState } from 'react';
 import { formatRelativeInstant } from '@/lib/format/dates';
+import { additionRowsOf, ScopeAdditions } from './scope-additions';
 import { ScopeImpacts } from './scope-impacts';
 import { useScopeChangeMutations } from './use-scope-changes';
 
 const STATUS: Readonly<
-  Record<ScopeChange['status'], { tone: PillTone; glyph: StatusGlyphName; label: string }>
+  Record<ScopeChangeDetail['status'], { tone: PillTone; glyph: StatusGlyphName; label: string }>
 > = {
   proposed: { tone: 'review', glyph: 'review', label: 'Waiting for a decision' },
   approved: { tone: 'onTrack', glyph: 'done', label: 'Approved' },
@@ -30,7 +31,7 @@ export function ScopeChangeCard({
   today,
   canDecide,
 }: {
-  readonly change: ScopeChange;
+  readonly change: ScopeChangeDetail;
   readonly today: string;
   readonly canDecide: boolean;
 }) {
@@ -69,6 +70,7 @@ export function ScopeChangeCard({
         projectEndImpactDays={change.projectEndImpactDays}
         today={today}
       />
+      <ScopeAdditions {...additionRowsOf(change)} today={today} />
       {change.decidedBy && (
         <p className="type-body-sm text-ink-muted">
           {status.label} by {change.decidedBy.fullName}
@@ -80,7 +82,7 @@ export function ScopeChangeCard({
         <div className="flex flex-col gap-3 border-t border-hairline pt-4">
           <Field
             label="Decision note"
-            hint="Approving applies the new dates and keeps the old ones in history."
+            hint="Approving applies the dates, adds and cancels the tasks together, and keeps the history."
             error={error}
             required
           >
@@ -98,7 +100,7 @@ export function ScopeChangeCard({
               pending={decide.isPending && decide.variables?.decision === 'approved'}
               onClick={() => run('approved')}
             >
-              Approve and apply dates
+              Approve and apply
             </Button>
             <Button
               variant="danger"

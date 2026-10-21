@@ -29,23 +29,21 @@ export function ScopeTab({ projectId }: { readonly projectId: string }) {
   const [proposing, setProposing] = useState(false);
   const canPropose = project?.viewerCanManage ?? false;
   const canDecide = can('scope_changes.approve');
-  const movable = (tasks.data?.items ?? []).filter(
-    (task) => !CLOSED.has(task.status) && task.dueDate !== null,
-  );
+  const openTasks = (tasks.data?.items ?? []).filter((task) => !CLOSED.has(task.status));
 
   return (
     <div className="flex flex-col gap-5">
       {canPropose && (
         <div className="flex items-center justify-between gap-3">
           <p className="max-w-xl type-body-sm text-ink-muted">
-            When the client changes the brief or something slips, propose the new dates here.
-            Approval applies them and keeps the old ones in history.
+            When the client changes the brief or something slips, propose new dates, extra tasks or
+            tasks to drop. Approval applies all of it together and keeps the history.
           </p>
           <Button
             variant="secondary"
             leadingIcon={<Plus aria-hidden />}
             onClick={() => setProposing(true)}
-            disabled={movable.length === 0}
+            disabled={!project}
           >
             Propose a change
           </Button>
@@ -76,10 +74,10 @@ export function ScopeTab({ projectId }: { readonly projectId: string }) {
           ))}
         </div>
       )}
-      {canPropose && (
+      {canPropose && project && (
         <ProposeScopeSheet
-          projectId={projectId}
-          tasks={movable}
+          project={project}
+          tasks={openTasks}
           today={today}
           open={proposing}
           onOpenChange={setProposing}

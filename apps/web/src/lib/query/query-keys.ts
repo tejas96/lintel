@@ -24,4 +24,14 @@ export const queryKeys = {
   organization: ['settings', 'organization'] as const,
   roles: ['settings', 'roles'] as const,
   holidays: ['settings', 'holidays'] as const,
+  projectDocuments: (projectId: string, filters: Record<string, unknown>) =>
+    ['projects', 'detail', projectId, 'documents', filters] as const,
+  allProjectDocuments: (projectId: string) =>
+    ['projects', 'detail', projectId, 'documents'] as const,
+  document: (documentId: string) => ['documents', documentId] as const,
+  taskReassignments: (taskId: string) => ['tasks', 'detail', taskId, 'reassignments'] as const,
+  templateUpdate: (projectId: string) =>
+    ['projects', 'detail', projectId, 'template-update'] as const,
+  templateUpdatePreview: (projectId: string, versionId: string, ticked: readonly string[]) =>
+    ['projects', 'detail', projectId, 'template-update', 'preview', versionId, ticked] as const,
 };

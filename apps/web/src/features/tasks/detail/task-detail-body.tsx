@@ -10,6 +10,7 @@ import { TaskAttachments } from './task-attachments';
 import { TaskChecklist } from './task-checklist';
 import { ScheduleHistory, TaskComments } from './task-comments';
 import { TaskFacts } from './task-header';
+import { TaskReassignment } from './task-reassignment';
 import { TaskBlockers, TaskDependencies } from './task-relations';
 import { TaskTransitions } from './task-transitions';
 
@@ -73,6 +74,7 @@ export function TaskDetailBody({
   const side = (
     <>
       <TaskBlockers task={task} onReport={report} />
+      <TaskReassignment task={task} />
       <TaskDependencies task={task} today={today} />
       <Collaborators task={task} />
       <ScheduleHistory task={task} today={today} />
