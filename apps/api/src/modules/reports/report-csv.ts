@@ -13,8 +13,9 @@ export interface CsvTable {
   readonly rows: CsvCell[][];
 }
 
-const hours = (minutes: number) => Math.round((minutes / 60) * 10) / 10;
-const percent = (ratio: number | null) => (ratio === null ? null : Math.round(ratio * 1000) / 10);
+export const hours = (minutes: number) => Math.round((minutes / 60) * 10) / 10;
+export const percent = (ratio: number | null) =>
+  ratio === null ? null : Math.round(ratio * 1000) / 10;
 
 const LOAD_WORDS = {
   available: 'Has room',
@@ -30,7 +31,7 @@ const APPROVAL_WORDS = {
 } as const;
 
 /** "2026-10-21 14:05" in the studio timezone. */
-function localInstant(iso: string, timeZone: string): string {
+export function localInstant(iso: string, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',

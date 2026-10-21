@@ -3,6 +3,7 @@ export * from './dashboard.schema';
 export * from './deliverable.schema';
 export * from './document.schema';
 export * from './finance.schema';
+export * from './learning-report.schema';
 export * from './leave.schema';
 export * from './milestone-reward.schema';
 export * from './notification.schema';

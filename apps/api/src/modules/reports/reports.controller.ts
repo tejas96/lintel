@@ -31,6 +31,18 @@ export class ReportsController {
         status: 200,
         body: await this.reports.approvals(context, query),
       }),
+      estimatesReport: async ({ query }) => ({
+        status: 200,
+        body: await this.reports.estimates(context, query),
+      }),
+      reworkReport: async ({ query }) => ({
+        status: 200,
+        body: await this.reports.rework(context, query),
+      }),
+      delaysReport: async ({ query }) => ({
+        status: 200,
+        body: await this.reports.delays(context, query),
+      }),
     });
   }
 }
