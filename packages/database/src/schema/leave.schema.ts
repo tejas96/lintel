@@ -32,7 +32,9 @@ export const leaveTypes = pgTable('leave_types', {
   minimumNoticeDays: integer('minimum_notice_days').notNull().default(0),
   annualAllowanceHalfDays: integer('annual_allowance_half_days'),
   colorIndex: integer('color_index').notNull().default(0),
+  /** Retired types stay on existing requests but cannot be chosen for new ones. */
   isActive: boolean('is_active').notNull().default(true),
+  version: version(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
