@@ -24,15 +24,22 @@ const MILESTONE_HEALTH = {
 export function UpcomingMilestones({
   data,
   today,
+  filtered = false,
 }: {
   readonly data: CommandCenter;
   readonly today: string;
+  /** Narrowed to some projects, people or a team: the wording says so. */
+  readonly filtered?: boolean;
 }) {
   return (
     <Card>
       <CardHeader
         title="Milestones ahead"
-        description="Across every open project, soonest first."
+        description={
+          filtered
+            ? 'Across the open projects in this view, soonest first.'
+            : 'Across every open project, soonest first.'
+        }
       />
       {data.upcomingMilestones.length === 0 ? (
         <p className="px-5 pb-5 type-body-sm text-ink-faint">No milestones in the coming weeks.</p>
