@@ -134,7 +134,7 @@ export async function loadCommandCenter(
     team,
     leaveAwaitingDecision: leave,
     scopeChangesAwaitingDecision: scopeChanges,
-    deliveryTrend: weeklyDeliveryTrend(completions, plan.today, plan.trendWeeks),
+    deliveryTrend: weeklyDeliveryTrend(completions, plan.trendEndsOn, plan.trendWeeks),
     rewards: plan.includeRewards
       ? await rewardsSummary(db, plan, sources.timeZone, sources.currency)
       : null,

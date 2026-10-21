@@ -10,7 +10,7 @@
   follow-ups, leave reassessment, push / SMS / email delivery, a daily email digest, a
   daily 08:30 check, monthly reward runs.
 - **Web app** (Next.js) — every Phase 1 screen, light and dark, calm-motion option
-  (96 screenshots in `docs/screenshots/web/`).
+  (100 screenshots in `docs/screenshots/web/`).
 - **Mobile app** (Expo, iOS + Android) — runs on the iOS simulator and the Android emulator
   (31 screenshots in `docs/screenshots/mobile/`).
 
@@ -60,7 +60,7 @@ cd apps/web && PORT=3100 pnpm start
 ## What was verified
 
 - Quality gates: Biome lint (0 errors, 0 warnings), every file ≤ 250 lines, package
-  boundaries, strict typecheck, 470 unit tests, 49 API integration tests (including the
+  boundaries, strict typecheck, 472 unit tests, 49 API integration tests (including the
   business journeys), 12 database and 18 Temporal integration tests, 31 browser
   end-to-end and accessibility tests.
 - Live checks of every API route per role; web screens in a real browser at desktop and

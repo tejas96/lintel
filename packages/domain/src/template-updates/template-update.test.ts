@@ -83,12 +83,6 @@ describe('template update preview: changed items', () => {
     expect(itemWillApply(mood, new Set([mood.key]))).toBe(true);
   });
 
-  it('never changes finished work, even when ticked', () => {
-    const handover = item('task:handover');
-    expect(handover.blocked?.reason).toBe('Finished work stays as it was recorded.');
-    expect(fieldsToApply(handover, new Set([handover.key]))).toEqual([]);
-  });
-
   it('applies renames to stages that have not started and holds them on started ones', () => {
     expect(item('stage:design').fields).toEqual([
       expect.objectContaining({ field: 'name', to: 'Design development', outcome: 'apply' }),

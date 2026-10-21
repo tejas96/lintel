@@ -58,13 +58,13 @@ export function onTimeDeliveryKpi(
   return { value: current.rate ?? 0, previousValue: previous.rate, sampleSize: current.sampleSize };
 }
 
-/** On-time and late completions per ISO week, oldest first, ending with this week. */
+/** On-time and late completions per ISO week, oldest first, ending with the week of `endsOn`. */
 export function weeklyDeliveryTrend(
   completions: readonly CompletionFact[],
-  today: CalendarDate,
+  endsOn: CalendarDate,
   weeks: number,
 ): { weekStart: CalendarDate; onTime: number; late: number }[] {
-  const thisWeek = isoWeekSpanOf(today).start;
+  const thisWeek = isoWeekSpanOf(endsOn).start;
   return Array.from({ length: weeks }, (_, index) => {
     const start = addDays(thisWeek, (index - weeks + 1) * 7);
     const span = { start, end: addDays(start, 6) };

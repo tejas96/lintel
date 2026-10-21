@@ -247,11 +247,13 @@ critical projects. Durable timers run in Temporal; the database stays the source
 ## 12. Command center (FR-CMD)
 
 Active / at-risk / off-track projects, overdue, blocked and due-today tasks,
-pending approvals, on-time delivery rate (with sample size and previous period),
+pending approvals, on-time delivery rate (with sample size and previous period;
+"–" and no change badge when nothing finished in the period),
 projects needing attention, upcoming milestones, critical tasks today, blockers,
 approvals, team availability and overload, leave and scope decisions waiting,
-8-week trend, reward summary (restricted). Filters: date range, project, manager,
-team. Every item links to its record.
+8-week delivery trend (ending with the period's last week, or this week when the
+period runs to today), reward summary (restricted). Filters: date range, project,
+manager, team. Every item links to its record.
 
 The web filters live in the URL (`?from=&to=&project=&manager=&team=`), so a view
 can be shared and Back undoes the last change; applied filters show as removable

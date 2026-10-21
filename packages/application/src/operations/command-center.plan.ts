@@ -5,6 +5,7 @@ import {
   daysBetween,
   ForbiddenError,
   isoWeekday,
+  minCalendarDate,
   toCalendarDate,
   ValidationFailedError,
 } from '@lintel/shared';
@@ -30,7 +31,7 @@ export interface CommandCenterPlan {
   readonly range: CommandCenterSpan;
   /** The equal-length period right before `range`, for comparisons. */
   readonly previousRange: CommandCenterSpan;
-  /** Monday to Sunday of the current week (the delivery trend ends with it). */
+  /** Monday to Sunday of the current week. */
   readonly week: CommandCenterSpan;
   /** Today through Sunday: the part of the week whose load can still change, for overload. */
   readonly remainingWeek: CommandCenterSpan;
@@ -43,6 +44,8 @@ export interface CommandCenterPlan {
   /** Compensation totals are shown only with `rewards.view_all`. */
   readonly includeRewards: boolean;
   readonly trendWeeks: number;
+  /** The delivery trend ends with the week holding this day: the period's end, never after today. */
+  readonly trendEndsOn: CalendarDate;
 }
 
 export const COMMAND_CENTER_DEFAULT_DAYS = 30;
@@ -96,5 +99,6 @@ export function planCommandCenter(
     teamId: filters.teamId ?? null,
     includeRewards: actor.capabilities.has('rewards.view_all'),
     trendWeeks: DELIVERY_TREND_WEEKS,
+    trendEndsOn: minCalendarDate(end, today),
   };
 }
