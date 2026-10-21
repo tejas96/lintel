@@ -262,7 +262,8 @@ chips. Without a period the range is the last 30 days. When profitability is on
 
 ## 13. Reports (FR-RPT)
 
-Four reports in the web app (Reports), each also downloadable as CSV. Every number
+Seven reports in the web app (Reports), each also downloadable as CSV: four about
+the period (13.1–13.4) and three that learn from history (13.6–13.8). Every number
 is counted from records; the formulas below are implemented in
 `packages/application/src/reports/*.metrics.ts` (unit-tested) and applied by the read
 models in `packages/database/src/queries/reports/`.
@@ -346,7 +347,8 @@ the slowest decisions linked to their records.
 
 ### 13.5 CSV export
 
-`GET /v1/reports/:report/csv` (`delivery`, `workload`, `leave`, `approvals`) takes the
+`GET /v1/reports/:report/csv` (`delivery`, `workload`, `leave`, `approvals`,
+`estimates`, `rework`, `delays`) takes the
 same filters and rules as the JSON report and answers UTF-8 with a byte-order mark,
 CRLF line endings, `Content-Disposition: attachment` with a dated file name
 (`lintel-delivery-reliability-2026-07-24-to-2026-10-21.csv`) and `no-store`. Text
@@ -354,6 +356,60 @@ cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return are prefixe
 with a single quote so spreadsheets show them as text; cells with commas, quotes or
 line breaks are quoted (RFC 4180). Hours are decimal hours, rates percentages,
 instants `YYYY-MM-DD HH:mm` in the studio timezone.
+
+### 13.6 Estimate accuracy
+
+| Measure | Formula |
+|---|---|
+| Counted | Done tasks (not archived) whose completion day falls in the period, on the scoped projects; with a team filter, only tasks owned by team members. |
+| Logged | The task's ended work sessions — everyone's, whenever they ran — summed and rounded to whole minutes. |
+| Measured | A task with an estimate above zero and logged time above zero. Only measured tasks enter the ratios. |
+| Not measured / without an estimate | Estimated but no time logged / no estimate (or zero). Counted and shown apart; never in a ratio. |
+| Logged ÷ estimated | Logged minutes ÷ estimated minutes, both summed over measured tasks, to 0.1 %; "–" when nothing was measured. |
+| Within estimate | Measured tasks whose own logged ÷ estimated is 80 %–120 %, both ends included, ÷ measured, to 0.1 %. **Over**: above 120 %. **Under**: below 80 %. |
+| Median task | The median of each measured task's logged ÷ estimated (the mean of the two middle values for an even count), to 0.1 %. |
+
+Grouped by person (the task owner), by task type (the task's template key within its
+project's template, named by the template version's task title, else the most common
+task title; tasks without a template key are one group, "Added by hand"), by template
+(the project's workflow template, or "No template") and by period (completion day).
+The report carries `workTrackingEnabled`, so an empty report can say that time
+tracking is switched off.
+
+### 13.7 Rework rate
+
+| Measure | Formula |
+|---|---|
+| Reviewed | Deliverable versions with a decision other than pending (approved, changes requested, rejected) reviewed in the period, on the scoped projects; with a team filter, only versions submitted by team members. |
+| Sent back | Changes requested + rejected. |
+| Rework rate | Sent back ÷ reviewed, to 0.1 %; "–" when nothing was reviewed. |
+
+Each version counts once, on the day it was reviewed; versions still waiting are not
+counted. Grouped by project, by person (who submitted the version), by period and by
+task (a deliverable without a task is its own row). The ten sent back most (ties: the
+most reviewed) are listed, each linked to its task or deliverable.
+
+### 13.8 Recurring approval delays
+
+| Kind | Wait starts | Wait ends | Counted when |
+|---|---|---|---|
+| Client sign-off | the latest completion of the milestone's done tasks; without one, 00:00 on its due date | the milestone is completed (sign-off recorded) | a milestone that requires client approval is completed in the period |
+| Client wait | a task blocker with category client is raised | it is resolved | it is resolved in the period |
+| Internal review | a deliverable version is submitted | it is reviewed | it is reviewed in the period |
+
+Wait = end − start in elapsed clock hours (nights and weekends included), to 0.1 h,
+never below zero. **Delayed** = a wait longer than 48 hours (exactly 48 is not).
+Per kind and group: count, delayed, median (as in 13.4) and slowest. **Waiting now**
+counts what has not ended today, whenever it began, with the age of the oldest:
+sign-offs that are ready but not recorded (milestone pending, requires client approval,
+every task that is not archived done or cancelled, ready by now), open client blockers
+on tasks that are neither done nor cancelled, and the current version of deliverables in
+review. Grouped by client (`client_name` trimmed and compared without case, shown with
+the spelling of the oldest project) and by project, most delayed first (then most
+waiting, then slowest). **Recurring** = a client or project with 3 or more delayed
+approvals in the period. The eight longest waits that ended in the period are listed,
+linked to the project timeline, the task or the deliverable. Archived tasks and
+cancelled milestones never count.
 
 ## 14. Profitability (FR-FIN)
 
