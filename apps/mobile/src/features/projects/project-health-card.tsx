@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
-import { formatShortDate } from '@/formatting/dates';
+import { formatShortDate, withReadableDates } from '@/formatting/dates';
 import { useAppTheme } from '@/theme/app-theme';
 import { SPACE } from '@/theme/layout';
 
@@ -56,7 +56,7 @@ export function ProjectHealthCard({ project }: { readonly project: ProjectDetail
           <View key={reason.message} style={styles.reason}>
             <Icon name="error" size={14} color={tone.fg} />
             <AppText variant="bodySm" color={tone.fg} style={styles.flex}>
-              {reason.message}
+              {withReadableDates(reason.message)}
             </AppText>
           </View>
         );

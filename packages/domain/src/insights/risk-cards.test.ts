@@ -53,10 +53,11 @@ describe('risk cards', () => {
       plannedStartDate: date('2026-10-21'),
       dueDate: date('2026-10-22'),
     });
+    const dependencies = [{ taskId: 'drawings', dependsOnTaskId: 'design' }];
+    const concept = milestone('2026-10-22', [design, drawings], ['drawings'], dependencies);
+    expect(concept.health).toBe('at_risk');
     const [card] = buildProjectRiskCards(
-      project([design, drawings], [milestone('2026-10-22', [design, drawings], ['drawings'])], {
-        dependencies: [{ taskId: 'drawings', dependsOnTaskId: 'design' }],
-      }),
+      project([design, drawings], [concept], { dependencies }),
       RISK_CONTEXT,
     );
     expect(card).toMatchObject({

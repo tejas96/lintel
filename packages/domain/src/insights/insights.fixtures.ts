@@ -1,6 +1,7 @@
 import { type CalendarDate, toCalendarDate } from '@lintel/shared';
 import type { WorkingCalendar } from '../calendar/working-calendar';
-import { assessMilestoneRisk } from '../projects/milestone-risk';
+import { assessProjectSchedule } from '../projects/project-schedule-health';
+import type { TaskDependencyEdge } from '../tasks/task-dependency-graph';
 import type {
   RiskCommitment,
   RiskContext,
@@ -47,20 +48,29 @@ export function riskTask(id: string, overrides: Partial<RiskTaskFacts> = {}): Ri
   };
 }
 
+/** Milestone "m1" with its health from the production rules (§6), on the same forecast. */
 export function riskMilestone(
   dueDate: string,
   tasks: readonly RiskTaskFacts[],
   linked: readonly string[] = tasks.map((task) => task.id),
+  dependencies: readonly TaskDependencyEdge[] = [],
 ): RiskCommitment {
-  const assessment = assessMilestoneRisk(
+  const { milestoneRisk } = assessProjectSchedule(
     {
-      name: 'Concept approved',
-      status: 'pending',
-      dueDate: date(dueDate),
-      tasks: tasks
-        .filter((task) => linked.includes(task.id))
-        .map((task) => ({ title: task.title, status: task.status, dueDate: task.dueDate })),
+      status: 'active',
+      plannedEndDate: null,
+      tasks: tasks.map((task) => ({
+        ...task,
+        hasOpenBlocker: task.openBlocker !== null,
+        milestoneId: linked.includes(task.id) ? 'm1' : null,
+      })),
+      dependencies,
+      milestones: [
+        { id: 'm1', name: 'Concept approved', status: 'pending', dueDate: date(dueDate) },
+      ],
+      openBlockerAgesInDays: [],
     },
+    RISK_CONTEXT.calendar,
     RISK_CONTEXT.today,
   );
   return {
@@ -68,7 +78,7 @@ export function riskMilestone(
     id: 'm1',
     name: 'Concept approved',
     dueDate: date(dueDate),
-    health: assessment.health,
+    health: milestoneRisk.get('m1')?.health ?? null,
     taskIds: linked,
   };
 }
