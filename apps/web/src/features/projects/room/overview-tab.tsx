@@ -9,6 +9,7 @@ import {
   SkeletonText,
 } from '@lintel/design-system/web';
 import { ProjectProfitabilityPanel } from '@/features/finances/project-profitability-panel';
+import { MilestonesPanel } from '@/features/projects/milestones/milestones-panel';
 import { TemplateUpdateBanner } from '@/features/projects/template-update/template-update-banner';
 import { useSession } from '@/features/session/session-provider';
 import { daysBetween, todayIn } from '@/lib/format/dates';
@@ -89,6 +90,7 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
               )}
             </div>
           </Card>
+          <MilestonesPanel project={project} today={today} />
           <Card>
             <CardHeader
               title="Due in the next two weeks"

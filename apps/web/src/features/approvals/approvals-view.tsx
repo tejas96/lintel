@@ -42,7 +42,8 @@ const KINDS: Readonly<
 
 /** Reward reviews are decided in the review queue of the rewards screen. */
 function webPathOf(item: ApprovalItem): string {
-  return item.type === 'reward_review' ? '/rewards/review' : item.linkPath;
+  if (item.type !== 'reward_review') return item.linkPath;
+  return item.linkPath.startsWith('/rewards/review') ? item.linkPath : '/rewards/review';
 }
 
 /** Everything waiting for this person's decision, most urgent first, each a step from its page. */

@@ -122,11 +122,13 @@ function deliverablesCheck(facts: MilestoneRewardFacts): MilestoneCheckResult {
     'deliverables_submitted',
     missing.length === 0,
     required.length === 0 ? 'None needed' : `${submitted} of ${required.length}`,
-    'all',
+    required.length === 0 ? 'nothing' : 'all',
     required.length === 0
       ? 'No deliverables were required for this milestone.'
       : missing.length === 0
-        ? `All ${plural(required.length, 'required deliverable')} were submitted.`
+        ? required.length === 1
+          ? 'The required deliverable was submitted.'
+          : `All ${required.length} required deliverables were submitted.`
         : `Not submitted: ${listNames(missing)}.`,
   );
 }
@@ -140,7 +142,7 @@ function reviewsCheck(facts: MilestoneRewardFacts): MilestoneCheckResult {
     required.length === 0
       ? 'None needed'
       : `${required.length - notApproved.length} of ${required.length}`,
-    'all approved',
+    required.length === 0 ? 'nothing' : 'all approved',
     required.length === 0
       ? 'Nothing needed a review.'
       : notApproved.length === 0
@@ -157,7 +159,7 @@ function onTimeCheck(facts: MilestoneRewardFacts): MilestoneCheckResult {
     : formatRewardDate(deadline);
   const late = Math.max(0, workingDaysBetween(facts.calendar, deadline, facts.completedOn));
   const excused = excusedWorkingDays(facts.blockers, facts.recipientUserId, facts.calendar);
-  const required = `by ${formatRewardDate(deadline)}`;
+  const required = `completion by ${formatRewardDate(deadline)}`;
   if (late === 0) {
     return result(
       'on_time',
@@ -189,7 +191,7 @@ function documentationCheck(facts: MilestoneRewardFacts): MilestoneCheckResult {
     'documentation',
     missing.length === 0,
     required === 0 ? 'None needed' : `${required - missing.length} of ${required}`,
-    'all on file',
+    required === 0 ? 'nothing' : 'all on file',
     required === 0
       ? 'No documents were required.'
       : missing.length === 0
