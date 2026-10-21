@@ -22,7 +22,10 @@ export interface ReschedulePreview {
   readonly plannedEndDate: string;
   readonly forecastEndDate: string | null;
   readonly projectEndImpactDays: number;
-  /** The agreed end date would move: propose a scope change instead of moving directly. */
+  /**
+   * The moves push the end past the agreed end (and past where open work
+   * already ended): propose a scope change instead of moving directly.
+   */
   readonly requiresScopeChange: boolean;
   /** A committed deadline moves, so the move needs a reason for the history. */
   readonly needsReason: boolean;
@@ -110,7 +113,7 @@ export function previewReschedule(
     plannedEndDate: facts.plannedEndDate,
     forecastEndDate: plan.forecastEndDate,
     projectEndImpactDays: plan.projectEndImpactDays,
-    requiresScopeChange: plan.projectEndImpactDays > 0,
+    requiresScopeChange: plan.movesAgreedEnd,
     needsReason: moves.some((move) => move.committed),
     slippingMilestones: slipping(facts, plan.moves),
   };

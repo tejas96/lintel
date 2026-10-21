@@ -189,6 +189,15 @@ describe('tailoring validation', () => {
       monday,
     );
     expect(loop.map((issue) => issue.path)).toEqual(['addedTasks']);
+    const subtaskKey = validatePlanTailoring(
+      template,
+      tailoring({ addedStages: [{ key: 'brief#1', name: 'Extra', afterStageKey: null }] }),
+      monday,
+    );
+    expect(subtaskKey).toContainEqual({
+      path: 'addedStages.0.key',
+      message: 'A key cannot contain "#".',
+    });
   });
 
   it('refuses impossible durations, early starts and an empty plan', () => {

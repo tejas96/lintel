@@ -122,6 +122,24 @@ function withTaskOwners(
   return [...members, ...added];
 }
 
+/** People given a task by hand must be active; the error names the adjustment that chose them. */
+async function requireActiveOwners(stores: PlanStores, tailoring: PlanTailoring): Promise<void> {
+  const chosen = tailoring.adjustments.flatMap((adjustment, index) =>
+    adjustment.ownerUserId ? [{ userId: adjustment.ownerUserId, index }] : [],
+  );
+  if (chosen.length === 0) return;
+  const active = await stores.projects.activeUserIds(chosen.map((entry) => entry.userId));
+  const issues = chosen
+    .filter((entry) => !active.has(entry.userId))
+    .map((entry) => ({
+      field: `tailoring.adjustments.${entry.index}.ownerUserId`,
+      message: 'This person is not an active studio member.',
+    }));
+  if (issues.length > 0) {
+    throw new ValidationFailedError('Some people are not active members of the studio.', issues);
+  }
+}
+
 /**
  * Everything a new project's plan depends on, checked and dated: the team,
  * the published template and its options, the tailoring, and the plan the
@@ -139,11 +157,14 @@ export async function prepareProjectPlan(
       { field: 'tailoring', message: 'Only a template plan can be tailored.' },
     ]);
   }
-  const members = withTaskOwners(normalizeMembers(input.managerUserId, input.members), tailoring);
+  // Roles go to the team as entered; people given one task by hand only join it as members.
+  const team = normalizeMembers(input.managerUserId, input.members);
+  const members = withTaskOwners(team, tailoring);
   await requireActiveUsers(
     stores.projects,
-    members.map((member) => member.userId),
+    team.map((member) => member.userId),
   );
+  await requireActiveOwners(stores, tailoring);
   if (!input.templateVersionId) {
     return { chosen: null, workflow: null, plan: singleStagePlan(startDate), members, tailoring };
   }
@@ -154,7 +175,7 @@ export async function prepareProjectPlan(
     calendar: await stores.settings.defaultCalendar(),
     startDate,
     options: input.templateOptions,
-    members,
+    members: team,
     tailoring,
   });
   const plan = planFromTemplate(workflow, input.managerUserId, addedPlanKeys(tailoring));

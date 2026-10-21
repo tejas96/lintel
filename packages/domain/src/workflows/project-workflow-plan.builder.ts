@@ -140,13 +140,14 @@ export class ProjectWorkflowPlanBuilder {
       const start = pinned ? nextWorkingDayOnOrAfter(this.calendar, pinned) : earliest;
       const dueDate = addWorkingDays(this.calendar, start, task.durationDays - 1);
       dueByKey.set(key, dueDate);
+      const ownerUserId = this.ownerFor(task);
       planned.push({
         template: task,
         stageKey,
         plannedStartDate: start,
         dueDate,
-        ownerUserId: this.ownerFor(task),
-        reviewerUserId: task.reviewerRole ? (this.assignees.get(task.reviewerRole) ?? null) : null,
+        ownerUserId,
+        reviewerUserId: this.reviewerFor(task, ownerUserId),
         startPinned: pinned !== undefined,
         overlapsPrerequisite: start < earliest && task.dependsOn.some((dep) => dueByKey.has(dep)),
       });
@@ -157,6 +158,12 @@ export class ProjectWorkflowPlanBuilder {
   private ownerFor(task: TemplateTask): string | null {
     if (this.taskOwners.has(task.key)) return this.taskOwners.get(task.key) ?? null;
     return this.assignees.get(task.responsibleRole) ?? null;
+  }
+
+  /** Nobody reviews their own work: a task given by hand to its reviewer has no reviewer yet. */
+  private reviewerFor(task: TemplateTask, ownerUserId: string | null): string | null {
+    const reviewer = task.reviewerRole ? (this.assignees.get(task.reviewerRole) ?? null) : null;
+    return reviewer !== null && reviewer === ownerUserId ? null : reviewer;
   }
 
   private startDateFor(task: TemplateTask, dueByKey: Map<string, CalendarDate>): CalendarDate {

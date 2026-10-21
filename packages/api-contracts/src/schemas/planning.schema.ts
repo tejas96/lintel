@@ -9,13 +9,16 @@ import {
 import { projectRoleSchema } from './people.schema';
 import { taskPrioritySchema, taskStatusSchema } from './task.schema';
 
-/** A key inside a plan: a template key, or one the wizard made up for an added item. */
+/**
+ * A key inside a plan: a template key, or one the wizard made up for an added
+ * item. No "#": subtasks are keyed "parent#1", so it would collide.
+ */
 const planKeySchema = z
   .string()
   .trim()
   .min(1)
   .max(100)
-  .regex(/^[a-z0-9][a-z0-9_#-]*$/i, 'Use letters, numbers and dashes.');
+  .regex(/^[a-z0-9][a-z0-9_-]*$/i, 'Use letters, numbers and dashes.');
 const durationSchema = z.number().int().min(1).max(300);
 
 /** A project manager's changes to a template before the project starts. */

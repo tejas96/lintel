@@ -148,7 +148,7 @@ export class ScopeChangeRepository implements ScopeChangeStore {
   }
 
   async rescheduleTask(change: TaskReschedule) {
-    await this.db
+    const [moved] = await this.db
       .update(tasks)
       .set({
         plannedStartDate: change.plannedStartDate,
@@ -156,14 +156,16 @@ export class ScopeChangeRepository implements ScopeChangeStore {
         version: sql`${tasks.version} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, change.taskId));
+      .where(eq(tasks.id, change.taskId))
+      .returning({ dueTime: tasks.dueTime });
+    // Scope changes move dates only: the due time stays, so the history shows it on both sides.
+    const dueTime = moved?.dueTime ?? null;
     await this.db.insert(taskScheduleChanges).values({
       taskId: change.taskId,
       previousDueDate: change.previousDueDate,
       newDueDate: change.dueDate,
-      // Scope changes move dates only; the due time stays as it was.
-      previousDueTime: null,
-      newDueTime: null,
+      previousDueTime: dueTime,
+      newDueTime: dueTime,
       reason: change.reason,
       isApproved: true,
       scopeChangeId: change.scopeChangeId,

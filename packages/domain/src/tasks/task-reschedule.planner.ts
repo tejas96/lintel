@@ -44,6 +44,12 @@ export interface ReschedulePlan {
   readonly forecastEndDate: CalendarDate | null;
   /** Working days the forecast lands after the agreed (planned) end; 0 when it does not. */
   readonly projectEndImpactDays: number;
+  /**
+   * The moves push the end past the agreed end and past where open work
+   * already ended, so the agreed end has to move. Work that already ran late
+   * does not block moves that make it no later.
+   */
+  readonly movesAgreedEnd: boolean;
 }
 
 export interface RescheduleInput {
@@ -121,15 +127,24 @@ export function planTaskReschedule(input: RescheduleInput): ReschedulePlan {
       },
     ];
   });
-  const forecastEndDate = open.reduce<CalendarDate | null>((latest, task) => {
-    const due = dates.get(task.id)?.due ?? null;
-    return due && (!latest || due > latest) ? due : latest;
-  }, null);
-  const projectEndImpactDays =
-    forecastEndDate && forecastEndDate > input.plannedEndDate
-      ? workingDaysBetween(calendar, input.plannedEndDate, forecastEndDate)
-      : 0;
-  return { moves, forecastEndDate, projectEndImpactDays };
+  const currentEnd = latestDue(open.map((task) => task.dueDate));
+  const forecastEndDate = latestDue(open.map((task) => dates.get(task.id)?.due ?? null));
+  if (!forecastEndDate || forecastEndDate <= input.plannedEndDate) {
+    return { moves, forecastEndDate, projectEndImpactDays: 0, movesAgreedEnd: false };
+  }
+  return {
+    moves,
+    forecastEndDate,
+    projectEndImpactDays: workingDaysBetween(calendar, input.plannedEndDate, forecastEndDate),
+    movesAgreedEnd: currentEnd === null || forecastEndDate > currentEnd,
+  };
+}
+
+function latestDue(dues: readonly (CalendarDate | null)[]): CalendarDate | null {
+  return dues.reduce<CalendarDate | null>(
+    (latest, due) => (due && (!latest || due > latest) ? due : latest),
+    null,
+  );
 }
 
 function pushAfterMovedPrerequisites(

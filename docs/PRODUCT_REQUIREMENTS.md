@@ -97,7 +97,9 @@ records both answer **404** so IDs cannot be probed.
   lets the person creating the project leave out stages or tasks, add stages (placed after
   a stage) and tasks (title, working days, what they start after), change a task's start
   date or length, and choose a person per task (or nobody yet). Whoever is chosen joins the
-  team as a member.
+  team as a member but holds no role, so the roles' other tasks stay with the team as
+  entered. A task given to its own reviewer has no reviewer yet (nobody reviews their own
+  work).
 - The plan builder (`packages/domain/src/workflows`) dates the result: removed work is no
   longer waited on, a chosen start wins over the one worked out from prerequisites (a start
   before a prerequisite ends is flagged, not refused), and an empty stage sits where the
@@ -134,7 +136,9 @@ records both answer **404** so IDs cannot be probed.
 - Applying moves the tasks in one transaction. A committed deadline (not a draft) needs a
   reason and is kept in each task's schedule history; owners are told. A change that would
   move the **agreed end** is refused here and becomes a scope change with exact dates
-  (approval applies those dates).
+  (approval applies those dates). When open work already runs past the agreed end, moves
+  that end no later than it already does are allowed. A task that changed after the
+  preview was worked out (dates or status) refuses the whole move with a stale-version error.
 
 ### Project documents (FR-DOC)
 

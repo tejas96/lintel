@@ -24,6 +24,19 @@ interface AppliedMove {
   readonly after: TaskRecord;
 }
 
+/**
+ * The locked task still has the dates and status the plan was worked out
+ * from. Tasks pushed along by a move carry no version from the person, so a
+ * change made since the plan was read must refuse the move, not be overwritten.
+ */
+function isAsPlanned(task: TaskRecord, move: PreviewedMove): boolean {
+  return (
+    task.status === move.status &&
+    task.plannedStartDate === move.currentStartDate &&
+    task.dueDate === move.currentDueDate
+  );
+}
+
 async function scheduleFacts(stores: ApplicationStores, projectId: string) {
   const facts = await stores.scopeChanges.scheduleFacts(projectId);
   if (!facts) throw new PreconditionFailedError('The project has no schedule yet.');
@@ -96,7 +109,7 @@ export class RescheduleTasksCommand {
       if (!before) continue;
       const expected = versions.get(move.taskId) ?? before.version;
       const after =
-        expected === before.version
+        expected === before.version && isAsPlanned(before, move)
           ? await stores.tasks.update(before.id, before.version, {
               plannedStartDate: move.proposedStartDate,
               dueDate: move.proposedDueDate,

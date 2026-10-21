@@ -65,6 +65,14 @@ describe('rescheduling on the timeline', () => {
 
   it('sends a move of the agreed end date through a scope change', async () => {
     const project = await as.pm.get(`/v1/projects/${projectId}`).expect(200);
+    const untimed = await task('Issue good-for-construction drawings');
+    await as.pm
+      .patch(`/v1/tasks/${untimed.id}`, {
+        version: untimed.version,
+        dueTime: '11:00',
+        scheduleChangeReason: 'Hand over before the site meeting',
+      })
+      .expect(200);
     const last = await task('Issue good-for-construction drawings');
     const changes = [
       {
@@ -106,6 +114,12 @@ describe('rescheduling on the timeline', () => {
     expect(moved.body).toMatchObject({
       plannedStartDate: changes[0]?.plannedStartDate,
       dueDate: changes[0]?.dueDate,
+      dueTime: '11:00',
+    });
+    // The scope change moved the date only: its history keeps the time on both sides.
+    expect(moved.body.scheduleChanges.at(-1)).toMatchObject({
+      previousDueTime: '11:00',
+      newDueTime: '11:00',
     });
     const after = await as.pm.get(`/v1/projects/${projectId}`).expect(200);
     expect(after.body.plannedEndDate).toBe(changes[0]?.dueDate);
@@ -150,5 +164,37 @@ describe('rescheduling on the timeline', () => {
     expect(detail.body.scheduleChanges.at(-1).reason).toContain('Site access only from Tuesday');
     const pushed = await as.pm.get(`/v1/tasks/${review.id}`).expect(200);
     expect(pushed.body.scheduleChanges.at(-1).reason).toMatch(/waits for was rescheduled/);
+  });
+
+  it('still moves work in a project that runs late, as long as the end gets no later', async () => {
+    const project = await as.pm.get(`/v1/projects/${projectId}`).expect(200);
+    const last = await task('Issue good-for-construction drawings');
+    await as.pm
+      .patch(`/v1/tasks/${last.id}`, {
+        version: last.version,
+        dueDate: plusDays(project.body.plannedEndDate, 3),
+        scheduleChangeReason: 'Printer is booked until later',
+      })
+      .expect(200);
+    const measure = await task('Measure the site');
+    const changes = [
+      {
+        taskId: measure.id,
+        plannedStartDate: measure.plannedStartDate,
+        dueDate: plusDays(measure.dueDate, -1),
+      },
+    ];
+    const preview = await as.pm
+      .post(`/v1/projects/${projectId}/reschedule/preview`, { changes })
+      .expect(200);
+    expect(preview.body.projectEndImpactDays).toBeGreaterThan(0);
+    expect(preview.body.requiresScopeChange).toBe(false);
+    await as.pm
+      .post(`/v1/projects/${projectId}/reschedule`, {
+        changes,
+        reason: 'Site access sorted after all',
+        expectedVersions: [{ taskId: measure.id, version: measure.version }],
+      })
+      .expect(200);
   });
 });

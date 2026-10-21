@@ -47,7 +47,10 @@ function keyIssues(definition: WorkflowTemplateDefinition, tailoring: PlanTailor
     })),
   ];
   for (const { key, path } of addedKeys) {
-    if (taken.has(key)) issues.push({ path, message: 'This key is already used in the plan.' });
+    // Subtasks are keyed "parent#1": an added key with "#" could take one's place.
+    if (key.includes('#')) issues.push({ path, message: 'A key cannot contain "#".' });
+    else if (taken.has(key))
+      issues.push({ path, message: 'This key is already used in the plan.' });
     taken.add(key);
   }
   return issues;

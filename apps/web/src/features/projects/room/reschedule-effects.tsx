@@ -16,10 +16,15 @@ export function knockOnSummary(preview: ReschedulePreview): string {
 /** The agreed end: unchanged, or how far it would move (which needs a scope change). */
 export function endNote(preview: ReschedulePreview, today: string): string {
   const planned = formatCalendarDate(preview.plannedEndDate, today);
-  if (!preview.requiresScopeChange) return `The agreed end stays ${planned}.`;
   const forecast = preview.forecastEndDate
     ? formatCalendarDate(preview.forecastEndDate, today)
     : 'later';
+  if (!preview.requiresScopeChange) {
+    // Work that already ran late may still move, as long as the end gets no later.
+    return preview.projectEndImpactDays > 0
+      ? `The agreed end stays ${planned}; open work already runs to ${forecast}, and this does not push it later.`
+      : `The agreed end stays ${planned}.`;
+  }
   const days = preview.projectEndImpactDays;
   return `The agreed end would move from ${planned} to ${forecast} (${days} working ${days === 1 ? 'day' : 'days'}), so it needs a scope change.`;
 }

@@ -58,11 +58,13 @@ function ReviewHeader({
         <p aria-live="polite" className="flex items-start gap-1.5 type-body-sm text-ink-muted">
           {scope && <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0 text-at-risk" />}
           <span className={scope ? 'text-ink' : undefined}>
-            {preview
-              ? `${knockOnSummary(preview)} ${endNote(preview, today)}`
-              : waiting
-                ? 'Working out what follows…'
-                : null}
+            {preview && !own
+              ? 'It lands back on its current dates, so there is nothing to save.'
+              : preview
+                ? `${knockOnSummary(preview)} ${endNote(preview, today)}`
+                : waiting
+                  ? 'Working out what follows…'
+                  : null}
           </span>
         </p>
       </div>
@@ -86,7 +88,9 @@ export function ReschedulePanel(props: ReschedulePanelProps) {
   const asksReason = scope || (preview?.needsReason ?? false);
   const error = props.previewError ?? props.saveError;
   const reasoned = reason.trim().length >= 3;
-  const canSave = preview !== undefined && (!asksReason || reasoned) && (!scope || title.trim());
+  // A drop that snaps back onto the current dates (a day off, say) leaves nothing to save.
+  const changed = preview?.moves.some((move) => !move.isDownstream) ?? false;
+  const canSave = changed && (!asksReason || reasoned) && (!scope || title.trim());
   const save = () =>
     scope
       ? props.onPropose(title.trim(), reason.trim())

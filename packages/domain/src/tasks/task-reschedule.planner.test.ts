@@ -85,6 +85,22 @@ describe('rescheduling tasks on the timeline', () => {
     });
     expect(result.forecastEndDate).toBe('2026-11-14');
     expect(result.projectEndImpactDays).toBe(3);
+    expect(result.movesAgreedEnd).toBe(true);
+  });
+
+  it('lets work that already runs late move as long as the end gets no later', () => {
+    // Render already ends on the 11th, two working days after the agreed 9th.
+    const earlier = plan(
+      [{ taskId: 'a', plannedStartDate: d('2026-11-02'), dueDate: d('2026-11-02') }],
+      '2026-11-09',
+    );
+    expect(earlier.projectEndImpactDays).toBe(2);
+    expect(earlier.movesAgreedEnd).toBe(false);
+    const later = plan(
+      [{ taskId: 'b', plannedStartDate: d('2026-11-09'), dueDate: d('2026-11-12') }],
+      '2026-11-09',
+    );
+    expect(later.movesAgreedEnd).toBe(true);
   });
 
   it('never pulls waiting work earlier', () => {
