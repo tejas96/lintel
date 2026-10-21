@@ -58,6 +58,51 @@ records both answer **404** so IDs cannot be probed.
 - Scope changes are proposed with a computed impact (moved tasks, downstream tasks,
   project end impact), approved by `scope_changes.approve`, and applied with a full
   `task_schedule_changes` history. Original commitments are never overwritten.
+- A scope change can also **add tasks** (title, open stage, dates, an owner already on
+  the project) and **cancel tasks** (open, not waiting for review, not also being
+  moved). Cancelled tasks stop counting towards the end date and no longer pass
+  delays on to the tasks that follow them. Approval moves the dates, creates the new
+  tasks (ready when they have an owner and a due date) and cancels the others in one
+  transaction; a task that closed or went to review since the proposal is left as
+  it was and the reason is kept. Nobody decides a change they proposed (the studio
+  owner excepted, as before).
+- **Template updates.** When a newer version of a project's template is published,
+  the project manager sees a dry run: what would be added, changed and removed, and
+  what will not change and why. Rules: new stages go after the nearest earlier stage
+  the project has and never in front of a stage that has started; new tasks are
+  scheduled from today after their prerequisites and given to whoever holds the role;
+  changes apply to work that has not started, compared three ways (old template, new
+  template, project) so a value the project changed itself is kept; started work,
+  committed dates and the planned end change only when the manager ticks them;
+  finished work, closed stages and anything in review never change; removed tasks
+  are cancelled (never deleted) only when not started. Applying records the update
+  (`project_template_updates`), schedule history for new and moved tasks, activity
+  and audit, and points the project at the new version.
+
+### Project documents (FR-DOC)
+
+- A library per project for files not tied to a task: drawings, contracts, mood
+  boards, site photos, other. Same upload rules as attachments (content-detected
+  allow-list, size limit, random keys, access-checked download).
+- Visibility **project** (everyone on the project) or **confidential** (project
+  managers, owner, administrators, holders of `files.view_confidential`, and the
+  person who added it). Confidential documents and their titles never reach anyone
+  else: they are left out of lists, counts, activity text and the file route (404).
+  Only people who may read confidential documents can file one.
+- Filters by folder, kind and text; image previews. Archiving (by the person who added
+  it or a project manager) is a soft delete: the document leaves the library, its file
+  stops being served, the stored object and the audit record stay.
+
+### Handover requests (FR-TSK-RA)
+
+- The owner of a task, or a collaborator, asks the project manager to give it to
+  someone else, with a reason and an optional suggested person. One open request per
+  task (also enforced by a partial unique index).
+- The project manager (or the project owner when the manager is the one asking)
+  sees it in the approvals queue and on the task. Accepting reassigns through the
+  normal assignment path (audited, new owner notified, reminders restarted);
+  declining needs a note. The person who asked hears either way and may withdraw an
+  open request. Nobody decides their own request (also a database CHECK).
 
 ## 4. Tasks (FR-TSK)
 

@@ -33,7 +33,15 @@ reviewer can check each one.
   reward amounts (the person or `rewards.view_all`), phone numbers always masked
   in directory views.
 - Separation of duties: nobody reviews their own deliverable; only the owner can
-  grant the owner role; the owner account cannot be deactivated.
+  grant the owner role; the owner account cannot be deactivated; nobody decides a
+  task handover (reassignment) request they made (domain rule plus a database
+  CHECK), and handovers are accepted only by someone who manages the project.
+- Confidential project documents: filtered in SQL before anything leaves the
+  database (lists, counts, single reads), named only as "a confidential document"
+  in the project activity feed, and audited without their title. Only people who
+  may read confidential documents can file one. Template updates and handover
+  decisions require project management rights; members who are not managers get
+  403, non-members 404.
 
 ## Data protection
 
