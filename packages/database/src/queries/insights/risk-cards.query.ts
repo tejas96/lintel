@@ -26,6 +26,7 @@ export interface RiskCardView {
   readonly task: TaskRefView | null;
   readonly happening: string;
   readonly impact: RiskCard['impact'];
+  readonly alsoAffects: RiskCard['alsoAffects'][number][];
   readonly nextAction: { readonly label: string; readonly linkPath: string };
   readonly responsible: { readonly role: ResponsibleRole; readonly user: UserSummaryView | null };
   readonly escalation: {
@@ -104,6 +105,7 @@ export async function loadRiskCards(
         task: card.task ? (refs.find((ref) => ref.id === card.task?.id) ?? null) : null,
         happening: card.happening,
         impact: card.impact,
+        alsoAffects: [...card.alsoAffects],
         nextAction: { label: card.nextAction.label, linkPath: linkPathOf(card.nextAction.target) },
         responsible: {
           role: card.responsible.role,

@@ -63,8 +63,13 @@ export interface RiskCommitment {
   readonly id: string;
   readonly name: string;
   readonly dueDate: CalendarDate;
-  /** From the milestone risk rules; null for the delivery date. */
+  /**
+   * From the milestone risk rules; for the delivery date "at_risk" when the
+   * project health is at risk or off track, otherwise null.
+   */
   readonly health: MilestoneHealth | null;
+  /** The commitment's own health is critical (an off-track project). */
+  readonly critical?: boolean;
   readonly taskIds: readonly string[];
 }
 
@@ -116,6 +121,10 @@ export interface RiskCard {
     readonly forecastDate: CalendarDate | null;
     readonly summary: string;
   };
+  /** Later commitments the same cause also puts at risk, with their forecast slip. */
+  readonly alsoAffects: readonly (Pick<RiskCommitment, 'kind' | 'id' | 'name' | 'dueDate'> & {
+    readonly slipWorkingDays: number;
+  })[];
   readonly nextAction: { readonly label: string; readonly target: RiskLinkTarget };
   readonly responsible: { readonly role: ResponsibleRole; readonly userId: string | null };
   readonly escalation: RiskEscalation | null;

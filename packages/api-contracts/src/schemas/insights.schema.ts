@@ -54,6 +54,16 @@ export const riskCardObject = z.object({
     forecastDate: calendarDateSchema.nullable(),
     summary: z.string(),
   }),
+  /** Later commitments the same cause also delays. */
+  alsoAffects: z.array(
+    z.object({
+      kind: z.enum(['milestone', 'delivery']),
+      id: idSchema,
+      name: z.string(),
+      dueDate: calendarDateSchema,
+      slipWorkingDays: z.number().int().min(0),
+    }),
+  ),
   nextAction: z.object({ label: z.string(), linkPath: z.string() }),
   responsible: z.object({
     role: z.enum(['task_owner', 'reviewer', 'project_manager', 'waiting_on']),
@@ -126,6 +136,8 @@ export const coverSuggestionsObject = z.object({
       task: taskSummarySchema,
       window: z.object({ start: calendarDateSchema, end: calendarDateSchema }),
       remainingMinutes: z.number().int(),
+      /** The share of the remaining effort planned on the days away. */
+      needMinutes: z.number().int(),
       handover: z
         .object({
           id: idSchema,

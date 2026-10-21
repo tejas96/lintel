@@ -84,13 +84,14 @@ describe('schedule forecast', () => {
       WEEKDAY_CALENDAR,
       today,
     );
+    // Blocked work cannot finish today: Thursday at the earliest.
     expect(forecasts.get('design')).toMatchObject({
-      forecastFinish: '2026-10-21',
+      forecastFinish: '2026-10-22',
       cause: 'blocked',
     });
     expect(forecasts.get('drawings')).toMatchObject({
-      forecastFinish: '2026-10-23',
-      slipWorkingDays: 1,
+      forecastFinish: '2026-10-26',
+      slipWorkingDays: 2,
       cause: 'waiting_on_prerequisite',
       pushedBy: 'design',
     });

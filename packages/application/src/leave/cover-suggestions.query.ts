@@ -1,7 +1,9 @@
 import {
   type CoverSuggestion,
   type CoverWindow,
+  coverNeedMinutes,
   coverWindow,
+  DEFAULT_WORKING_CALENDAR,
   type ProjectRole,
   suggestCover,
 } from '@lintel/domain';
@@ -26,6 +28,8 @@ export interface CoverTaskSuggestions {
   readonly projectId: string;
   readonly window: CoverWindow;
   readonly remainingMinutes: number;
+  /** The share of that effort planned in the cover window. */
+  readonly needMinutes: number;
   /** The handover already proposed for this task on the request, if any. */
   readonly handover: {
     readonly id: string;
@@ -146,10 +150,17 @@ export class CoverSuggestionsQuery {
       const window = windows.get(task.taskId) ?? span;
       const load = loads.find((candidate) => candidate.taskId === task.taskId);
       const remainingMinutes = load ? toTaskLoad(load).remainingMinutes : 0;
+      const needMinutes = coverNeedMinutes(
+        remainingMinutes,
+        { plannedStartDate: task.plannedStartDate, dueDate: task.dueDate },
+        window,
+        calendars.get(request.userId) ?? DEFAULT_WORKING_CALENDAR,
+        today,
+      );
       const handover = request.handovers.find((item) => item.taskId === task.taskId) ?? null;
       const absent = poolById.get(request.userId);
       const suggestions = suggestCover(
-        { reviewerUserId: load?.reviewerUserId ?? null, remainingMinutes },
+        { reviewerUserId: load?.reviewerUserId ?? null, needMinutes },
         {
           userId: request.userId,
           designation: absentDesignation,
@@ -167,6 +178,7 @@ export class CoverSuggestionsQuery {
         projectId: task.projectId,
         window: { start: toCalendarDate(window.start), end: toCalendarDate(window.end) },
         remainingMinutes,
+        needMinutes,
         handover: handover
           ? { id: handover.id, toUserId: handover.toUserId, status: handover.status }
           : null,

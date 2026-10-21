@@ -192,6 +192,79 @@ describe('risk cards', () => {
     });
   });
 
+  it('explains an off-track project whose milestones are fine, from its most overdue work', () => {
+    const inReview = riskTask('review', { status: 'in_review', dueDate: date('2026-10-24') });
+    const overdue = riskTask('late', { title: 'Site analysis', dueDate: date('2026-09-26') });
+    const delivery: RiskCommitment = {
+      kind: 'delivery',
+      id: 'p1',
+      name: 'Planned delivery',
+      dueDate: date('2026-11-03'),
+      health: 'at_risk',
+      critical: true,
+      taskIds: ['review', 'late'],
+    };
+    const [card] = buildProjectRiskCards(project([inReview, overdue], [delivery]), RISK_CONTEXT);
+    expect(card).toMatchObject({
+      rule: 'overdue',
+      severity: 'critical',
+      task: { id: 'late' },
+      impact: {
+        slipWorkingDays: 0,
+        summary:
+          'No slip forecast yet; the planned delivery (due 2026-11-03) slips if this is not resolved.',
+      },
+    });
+  });
+
+  it('gives one card per cause and lists the later commitments it also delays', () => {
+    const blocked = riskTask('b', {
+      status: 'blocked',
+      dueDate: date('2026-10-21'),
+      openBlocker: {
+        category: 'supplier',
+        reason: 'Tiles late',
+        raisedAt: RISK_CONTEXT.now,
+        waitingOnUserId: null,
+      },
+    });
+    const next = riskTask('n', {
+      status: 'ready',
+      plannedStartDate: date('2026-10-22'),
+      dueDate: date('2026-10-23'),
+    });
+    const first = { ...milestone('2026-10-21', [blocked, next], ['b']), id: 'm1' };
+    const second = {
+      ...milestone('2026-10-23', [blocked, next], ['n']),
+      id: 'm2',
+      name: 'Handover',
+    };
+    const delivery: RiskCommitment = {
+      kind: 'delivery',
+      id: 'p1',
+      name: 'Planned delivery',
+      dueDate: date('2026-10-23'),
+      health: null,
+      taskIds: ['b', 'n'],
+    };
+    const cards = buildProjectRiskCards(
+      project([blocked, next], [first, second, delivery], {
+        dependencies: [{ taskId: 'n', dependsOnTaskId: 'b' }],
+      }),
+      RISK_CONTEXT,
+    );
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({
+      rule: 'blocked',
+      commitment: { id: 'm1' },
+      impact: { slipWorkingDays: 1 },
+      alsoAffects: [
+        { id: 'm2', name: 'Handover', slipWorkingDays: 1 },
+        { kind: 'delivery', id: 'p1', slipWorkingDays: 1 },
+      ],
+    });
+  });
+
   it('says nothing when every commitment is on track', () => {
     const fine = riskTask('t1', { dueDate: date('2026-10-23') });
     expect(

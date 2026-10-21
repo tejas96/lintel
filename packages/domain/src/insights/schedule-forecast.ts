@@ -42,8 +42,9 @@ const NOT_STARTED: readonly TaskStatus[] = ['draft', 'ready'];
  * Forecast finish of every open task with a due date (forward pass, rules in
  * docs/PRODUCT_REQUIREMENTS.md §15.2):
  * - Duration = working days from planned start to due date (1 without a start).
- * - Work that has started (or is blocked) finishes on its due date, or today
- *   at the earliest when it is overdue: nothing finishes in the past.
+ * - Work that has started finishes on its due date, or today at the earliest
+ *   when it is overdue: nothing finishes in the past. Blocked work cannot
+ *   finish today: the working day after today at the earliest.
  * - Work not started yet starts on its planned start, but never before today
  *   and never before the working day after each open prerequisite's forecast
  *   finish (finish-to-start), then keeps its duration.
@@ -130,7 +131,8 @@ function startedForecast(
   today: CalendarDate,
   calendar: WorkingCalendar,
 ): TaskForecast {
-  const finish = dueDate < todayWorking ? todayWorking : dueDate;
+  const earliest = blocked ? nextWorkingDayAfter(calendar, today) : todayWorking;
+  const finish = dueDate < earliest ? earliest : dueDate;
   const cause: ForecastCause = blocked ? 'blocked' : dueDate < today ? 'overdue' : 'on_plan';
   return result(taskId, dueDate, finish, cause, null, calendar);
 }

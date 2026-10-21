@@ -6,14 +6,13 @@ import {
   responsibleFor,
   ruleForTask,
 } from './risk-card.rules';
-import {
-  RISK_RULES,
-  type RiskCard,
-  type RiskCommitment,
-  type RiskContext,
-  type RiskProjectFacts,
-  type RiskRule,
-  type RiskTaskFacts,
+import type {
+  RiskCard,
+  RiskCommitment,
+  RiskContext,
+  RiskProjectFacts,
+  RiskRule,
+  RiskTaskFacts,
 } from './risk-card.types';
 import { escalationFor } from './risk-escalation';
 import {
@@ -23,7 +22,19 @@ import {
   type TaskForecast,
 } from './schedule-forecast';
 
-const RULE_ORDER = new Map<RiskRule, number>(RISK_RULES.map((rule, index) => [rule, index]));
+/**
+ * Which problem explains a risk best when nothing slips yet: blocked and
+ * overdue work first, then a decision waiting, a late start, an absence, a review.
+ */
+const CANDIDATE_ORDER: readonly RiskRule[] = [
+  'blocked',
+  'overdue',
+  'date_request_waiting',
+  'late_start',
+  'owner_away',
+  'review_waiting',
+];
+const RULE_ORDER = new Map<RiskRule, number>(CANDIDATE_ORDER.map((rule, index) => [rule, index]));
 
 function isOpen(task: RiskTaskFacts): boolean {
   return !['done', 'cancelled'].includes(task.status);
@@ -89,7 +100,7 @@ function cardFor(
   return {
     key: `${commitment.kind}:${commitment.id}:${rule}:${task?.id ?? 'none'}`,
     rule,
-    severity: missed || impact.slipWorkingDays > 0 ? 'critical' : 'risk',
+    severity: commitment.critical || missed || impact.slipWorkingDays > 0 ? 'critical' : 'risk',
     projectId: project.id,
     commitment: {
       kind: commitment.kind,
@@ -100,6 +111,7 @@ function cardFor(
     task: task ? { id: task.id, title: task.title } : null,
     happening: happeningFor(rule, task, commitment, context),
     impact,
+    alsoAffects: [],
     nextAction: nextActionFor(rule, task, commitment, project.id),
     responsible,
     escalation: task
@@ -119,10 +131,42 @@ export function compareRiskCards(left: RiskCard, right: RiskCard): number {
 }
 
 /**
+ * One card per cause: when the same problem on the same task puts several
+ * commitments at risk, the earliest commitment keeps the card and the others
+ * are listed as also affected (the planned delivery only when it slips).
+ */
+function mergeByCause(candidates: readonly RiskCard[]): RiskCard[] {
+  const ordered = [...candidates].sort(
+    (left, right) =>
+      Number(left.commitment.kind === 'delivery') - Number(right.commitment.kind === 'delivery') ||
+      left.commitment.dueDate.localeCompare(right.commitment.dueDate),
+  );
+  const byCause = new Map<string, RiskCard>();
+  for (const card of ordered) {
+    const cause = `${card.rule}:${card.task?.id ?? card.commitment.id}`;
+    const first = byCause.get(cause);
+    if (!first) {
+      byCause.set(cause, card);
+      continue;
+    }
+    if (card.commitment.kind === 'delivery' && card.impact.slipWorkingDays === 0) continue;
+    byCause.set(cause, {
+      ...first,
+      severity: first.severity === 'critical' || card.severity === 'critical' ? 'critical' : 'risk',
+      alsoAffects: [
+        ...first.alsoAffects,
+        { ...card.commitment, slipWorkingDays: card.impact.slipWorkingDays },
+      ],
+    });
+  }
+  return [...byCause.values()].sort(compareRiskCards);
+}
+
+/**
  * Risk cards for one project (rules in docs/PRODUCT_REQUIREMENTS.md §15.2):
  * one per pending milestone that is at risk, missed or forecast late, plus one
- * for the planned delivery date when the forecast passes it and the cause is
- * not already explained by a milestone card.
+ * for the planned delivery date when the forecast passes it or the project is
+ * at risk or off track; cards with the same cause are merged (mergeByCause).
  */
 export function buildProjectRiskCards(project: RiskProjectFacts, context: RiskContext): RiskCard[] {
   const tasks = new Map(project.tasks.map((task) => [task.id, task]));
@@ -138,15 +182,8 @@ export function buildProjectRiskCards(project: RiskProjectFacts, context: RiskCo
     context.calendar,
     context.today,
   );
-  const cards: RiskCard[] = [];
-  for (const commitment of project.commitments.filter((item) => item.kind === 'milestone')) {
-    const card = cardFor(project, commitment, forecasts, tasks, context);
-    if (card) cards.push(card);
-  }
-  const explained = new Set(cards.map((card) => card.task?.id));
-  for (const commitment of project.commitments.filter((item) => item.kind === 'delivery')) {
-    const card = cardFor(project, commitment, forecasts, tasks, context);
-    if (card && card.impact.slipWorkingDays > 0 && !explained.has(card.task?.id)) cards.push(card);
-  }
-  return cards.sort(compareRiskCards);
+  const candidates = project.commitments
+    .map((commitment) => cardFor(project, commitment, forecasts, tasks, context))
+    .filter((card): card is RiskCard => card !== null);
+  return mergeByCause(candidates);
 }

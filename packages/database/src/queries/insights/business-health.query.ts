@@ -30,7 +30,8 @@ export interface HealthContributorView extends HealthComponent {
   readonly link: { readonly label: string; readonly linkPath: string };
 }
 
-export interface BusinessHealthView extends Omit<BusinessHealthScore, 'contributors' | 'components'> {
+export interface BusinessHealthView
+  extends Omit<BusinessHealthScore, 'contributors' | 'components'> {
   readonly components: HealthComponent[];
   readonly contributors: HealthContributorView[];
   readonly trend: {

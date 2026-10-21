@@ -36,6 +36,7 @@ export async function toCoverSuggestionsView(
           task,
           window: item.window,
           remainingMinutes: item.remainingMinutes,
+          needMinutes: item.needMinutes,
           handover: item.handover
             ? {
                 id: item.handover.id,

@@ -1,8 +1,10 @@
 import { toCalendarDate } from '@lintel/shared';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_WORKING_CALENDAR } from '../calendar/working-calendar';
 import {
   type CoverCandidateFact,
   type CoverPersonFact,
+  coverNeedMinutes,
   coverWindow,
   suggestCover,
 } from './cover-suggestion.strategy';
@@ -29,6 +31,25 @@ describe('cover window', () => {
   });
 });
 
+describe('cover need', () => {
+  const calendar = { ...DEFAULT_WORKING_CALENDAR, workingWeekdays: [1, 2, 3, 4, 5] };
+  const window = { start: toCalendarDate('2026-11-10'), end: toCalendarDate('2026-11-10') };
+
+  it('counts only the share of the effort planned in the window', () => {
+    // 36 h spread over 9 working days (Tue 10 – Fri 20 Nov): one day is 4 h.
+    const task = {
+      plannedStartDate: toCalendarDate('2026-11-10'),
+      dueDate: toCalendarDate('2026-11-20'),
+    };
+    expect(coverNeedMinutes(2160, task, window, calendar, today)).toBe(240);
+  });
+
+  it('counts overdue work whole', () => {
+    const task = { plannedStartDate: null, dueDate: toCalendarDate('2026-10-19') };
+    expect(coverNeedMinutes(600, task, window, calendar, today)).toBe(600);
+  });
+});
+
 const absent: CoverPersonFact = {
   userId: 'meera',
   designation: 'Interior designer',
@@ -48,7 +69,7 @@ function person(userId: string, overrides: Partial<CoverCandidateFact>): CoverCa
 }
 
 describe('cover suggestions', () => {
-  const task = { reviewerUserId: 'rohan', remainingMinutes: 480 };
+  const task = { reviewerUserId: 'rohan', needMinutes: 480 };
 
   it('ranks the same project role with room above a plain member', () => {
     const suggestions = suggestCover(task, absent, [
@@ -70,7 +91,7 @@ describe('cover suggestions', () => {
     expect(only).toMatchObject({
       userId: 'dev',
       hasRoom: false,
-      reasons: ['Also interior designer', 'Only 2 h free; the task needs about 8 h'],
+      reasons: ['Also interior designer', 'Only 2 h free; the task needs about 8 h then'],
     });
   });
 

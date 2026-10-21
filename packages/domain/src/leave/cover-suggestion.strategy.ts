@@ -1,4 +1,5 @@
 import { type CalendarDate, maxCalendarDate, minCalendarDate } from '@lintel/shared';
+import { type WorkingCalendar, workingDaysInRange } from '../calendar/working-calendar';
 import { PROJECT_ROLE_LABELS, type ProjectRole } from '../identity/roles';
 
 export interface CoverWindow {
@@ -23,10 +24,32 @@ export function coverWindow(
   return end < start ? { start: from, end: from } : { start, end };
 }
 
+/**
+ * The effort that falls in the cover window: remaining effort spread evenly
+ * over the owner's working days from today (or the planned start) to the due
+ * date, as capacity spreads it, counted on the window's days. Work with
+ * nothing planned in the window (overdue, or due before it) counts whole.
+ */
+export function coverNeedMinutes(
+  remainingMinutes: number,
+  task: { readonly plannedStartDate: CalendarDate | null; readonly dueDate: CalendarDate | null },
+  window: CoverWindow,
+  calendar: WorkingCalendar,
+  today: CalendarDate,
+): number {
+  const from =
+    task.plannedStartDate && task.plannedStartDate > today ? task.plannedStartDate : today;
+  const to = task.dueDate && task.dueDate >= from ? task.dueDate : from;
+  const days = workingDaysInRange(calendar, from, to);
+  const inWindow = days.filter((day) => day >= window.start && day <= window.end).length;
+  if (days.length === 0 || inWindow === 0) return remainingMinutes;
+  return Math.round((remainingMinutes * inWindow) / days.length);
+}
+
 export interface CoverTaskFact {
   readonly reviewerUserId: string | null;
-  /** Estimate minus logged time (the studio default when there is no estimate). */
-  readonly remainingMinutes: number;
+  /** The task's effort that falls in the cover window (coverNeedMinutes). */
+  readonly needMinutes: number;
 }
 
 export interface CoverPersonFact {
@@ -90,7 +113,7 @@ function fitOf(
 function roomReason(freeMinutes: number, need: number): string {
   if (freeMinutes >= need) return `${hours(freeMinutes)} free in those days`;
   if (freeMinutes > 0)
-    return `Only ${hours(freeMinutes)} free; the task needs about ${hours(need)}`;
+    return `Only ${hours(freeMinutes)} free; the task needs about ${hours(need)} then`;
   return 'Fully booked in those days';
 }
 
@@ -108,7 +131,7 @@ export function suggestCover(
   absent: CoverPersonFact,
   candidates: readonly CoverCandidateFact[],
 ): CoverSuggestion[] {
-  const need = Math.max(1, task.remainingMinutes);
+  const need = Math.max(1, task.needMinutes);
   const suggestions: CoverSuggestion[] = [];
   for (const candidate of candidates) {
     if (candidate.userId === absent.userId || candidate.userId === task.reviewerUserId) continue;

@@ -164,6 +164,7 @@ export function impactFor(
   today: RiskContext['today'],
 ): { slipWorkingDays: number; forecastDate: RiskContext['today'] | null; summary: string } {
   const label = commitment.kind === 'delivery' ? 'Delivery' : `"${commitment.name}"`;
+  const inSentence = commitment.kind === 'delivery' ? 'the planned delivery' : label;
   const slip = forecast?.slipWorkingDays ?? 0;
   if (forecast && slip > 0) {
     const days = `${slip} working day${slip === 1 ? '' : 's'}`;
@@ -183,6 +184,6 @@ export function impactFor(
   return {
     slipWorkingDays: 0,
     forecastDate: forecast?.forecastDate ?? null,
-    summary: `No slip forecast yet; ${label} (due ${commitment.dueDate}) slips if this is not resolved.`,
+    summary: `No slip forecast yet; ${inSentence} (due ${commitment.dueDate}) slips if this is not resolved.`,
   };
 }
