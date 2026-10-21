@@ -3,12 +3,21 @@ import type {
   CapacityPersonRecord,
   CapacityReadStore,
   CapacityTaskRecord,
+  CoverPoolRecord,
 } from '@lintel/application';
 import { OPEN_TASK_STATUSES } from '@lintel/domain';
-import { and, asc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import { userSummaryColumns } from '../queries/shared/user-summary.query';
-import { leaveRequests, taskBlockers, tasks, teams, users } from '../schema';
+import {
+  leaveRequests,
+  projectMembers,
+  projects,
+  taskBlockers,
+  tasks,
+  teams,
+  users,
+} from '../schema';
 
 export class CapacityReadRepository implements CapacityReadStore {
   constructor(private readonly db: DatabaseExecutor) {}
@@ -90,6 +99,7 @@ export class CapacityReadRepository implements CapacityReadStore {
       .select({
         taskId: tasks.id,
         ownerUserId: tasks.ownerUserId,
+        reviewerUserId: tasks.reviewerUserId,
         status: tasks.status,
         estimateMinutes: tasks.estimateMinutes,
         actualMinutes: tasks.actualMinutes,
@@ -127,5 +137,59 @@ export class CapacityReadRepository implements CapacityReadStore {
         ? [{ ...row, ownerUserId: row.ownerUserId, hasOpenBlocker: blocked.has(row.taskId) }]
         : [],
     );
+  }
+
+  async coverPool(input: {
+    readonly projectIds: readonly string[];
+    readonly designation: string | null;
+    readonly includeUserId: string;
+  }): Promise<CoverPoolRecord[]> {
+    const projectIds = [...input.projectIds];
+    const designation = input.designation?.trim().toLowerCase() ?? null;
+    const [members, managers] = projectIds.length
+      ? await Promise.all([
+          this.db
+            .select({
+              userId: projectMembers.userId,
+              projectId: projectMembers.projectId,
+              role: projectMembers.projectRole,
+            })
+            .from(projectMembers)
+            .where(inArray(projectMembers.projectId, projectIds)),
+          this.db
+            .select({ userId: projects.managerUserId, projectId: projects.id })
+            .from(projects)
+            .where(inArray(projects.id, projectIds)),
+        ])
+      : [[], []];
+    const memberIds = [...new Set([...members, ...managers].map((row) => row.userId))];
+    const people = await this.db
+      .select({ userId: users.id, designation: users.designation })
+      .from(users)
+      .where(
+        and(
+          eq(users.status, 'active'),
+          or(
+            eq(users.id, input.includeUserId),
+            memberIds.length > 0 ? inArray(users.id, memberIds) : undefined,
+            designation ? sql`lower(trim(${users.designation})) = ${designation}` : undefined,
+          ),
+        ),
+      );
+    return people.map((person) => {
+      const roles = new Map(
+        members
+          .filter((row) => row.userId === person.userId)
+          .map((row) => [row.projectId, row.role]),
+      );
+      for (const row of managers) {
+        if (row.userId === person.userId) roles.set(row.projectId, 'manager');
+      }
+      return {
+        userId: person.userId,
+        designation: person.designation,
+        projectRoles: [...roles.entries()].map(([projectId, role]) => ({ projectId, role })),
+      };
+    });
   }
 }

@@ -1,6 +1,7 @@
 import type { ProjectAccessStore } from '../access/project-access.store';
 import type { BackgroundStores } from '../background/background.stores';
 import type { WorkingCalendarStore } from '../calendars/working-calendar.store';
+import type { DateChangeStore } from '../date-changes/date-change.store';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
 import type { ProjectDocumentStore } from '../documents/project-document.store';
 import type { ProjectCostStore } from '../finances/project-cost.store';
@@ -53,6 +54,7 @@ export interface ApplicationStores {
   readonly documents: ProjectDocumentStore;
   readonly reassignments: ReassignmentStore;
   readonly templateUpdates: TemplateUpdateStore;
+  readonly dateChanges: DateChangeStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */

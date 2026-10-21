@@ -1,6 +1,7 @@
 import type { ApplicationStores, UnitOfWork } from '@lintel/application';
 import type { Database, DatabaseExecutor } from './client';
 import { CapacityReadRepository } from './repositories/capacity-read.repository';
+import { DateChangeRepository } from './repositories/date-change.repository';
 import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { LeaveRepository } from './repositories/leave.repository';
@@ -52,6 +53,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     documents: new ProjectDocumentRepository(executor),
     reassignments: new ReassignmentRepository(executor),
     templateUpdates: new TemplateUpdateRepository(executor),
+    dateChanges: new DateChangeRepository(executor),
   };
 }
 

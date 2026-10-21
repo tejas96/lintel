@@ -19,7 +19,8 @@ export interface ApprovalDraft {
     | 'scope_change'
     | 'reward_review'
     | 'priority_conflict'
-    | 'reassignment_request';
+    | 'reassignment_request'
+    | 'date_change_request';
   readonly id: string;
   readonly title: string;
   readonly subtitle: string;

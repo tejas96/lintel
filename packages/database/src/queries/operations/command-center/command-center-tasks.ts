@@ -17,7 +17,7 @@ import type { CommandCenterScope } from './command-center-scope';
 
 const SECTION_LIMIT = 10;
 
-function scopedTasks(scope: CommandCenterScope) {
+export function scopedTasks(scope: CommandCenterScope) {
   return and(
     inArray(tasks.projectId, scope.projectIds),
     isNull(tasks.archivedAt),
@@ -25,8 +25,8 @@ function scopedTasks(scope: CommandCenterScope) {
   );
 }
 
-const openTask = inArray(tasks.status, [...OPEN_TASK_STATUSES]);
-const hasOpenBlocker = (db: DatabaseExecutor) =>
+export const openTask = inArray(tasks.status, [...OPEN_TASK_STATUSES]);
+export const hasOpenBlocker = (db: DatabaseExecutor) =>
   exists(
     db
       .select({ id: taskBlockers.id })

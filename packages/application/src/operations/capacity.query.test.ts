@@ -63,6 +63,7 @@ function setup() {
       people.filter((p) => p.reportsToUserId === userId).map((p) => p.id),
     leaveInRange: async () => [],
     openTaskLoads: async (userIds) => tasks.filter((task) => userIds.includes(task.ownerUserId)),
+    coverPool: async () => [],
   };
   const stores = { capacity, people: fakePeople(people), settings: fakeSettings() };
   const uow: UnitOfWork<CapacityStores> = { stores, transaction: (work) => work(stores) };

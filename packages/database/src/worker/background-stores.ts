@@ -3,6 +3,7 @@ import type { DatabaseExecutor } from '../client';
 import { DailyOperationsRepository } from './daily-operations.repository';
 import { EmailDigestRepository } from './email-digest.repository';
 import { FollowUpRepository } from './follow-up.repository';
+import { InsightSnapshotRepository } from './insight-snapshot.repository';
 import { LeaveImpactRepository } from './leave-impact.repository';
 import { MessageDeliveryRepository } from './message-delivery.repository';
 import { OutboxRelayRepository } from './outbox-relay.repository';
@@ -20,5 +21,6 @@ export function createBackgroundStores(executor: DatabaseExecutor): BackgroundSt
     operations: new DailyOperationsRepository(executor),
     messageDeliveries: new MessageDeliveryRepository(executor),
     emailDigests: new EmailDigestRepository(executor),
+    insights: new InsightSnapshotRepository(executor),
   };
 }

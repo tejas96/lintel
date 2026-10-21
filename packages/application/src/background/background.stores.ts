@@ -1,6 +1,7 @@
 import type { DailyOperationsStore } from './daily-operations.store';
 import type { EmailDigestStore } from './email-digest.store';
 import type { FollowUpStore } from './follow-up.store';
+import type { InsightSnapshotStore } from './insight-snapshot.store';
 import type { LeaveImpactStore } from './leave-impact.store';
 import type { MessageDeliveryStore } from './message-delivery.store';
 import type { OutboxRelayStore, WorkflowRunStore } from './outbox-relay.store';
@@ -16,4 +17,5 @@ export interface BackgroundStores {
   readonly operations: DailyOperationsStore;
   readonly messageDeliveries: MessageDeliveryStore;
   readonly emailDigests: EmailDigestStore;
+  readonly insights: InsightSnapshotStore;
 }

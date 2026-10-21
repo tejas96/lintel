@@ -185,6 +185,8 @@ export const taskScheduleChanges = pgTable(
     reason: text('reason').notNull(),
     isApproved: boolean('is_approved').notNull().default(true),
     scopeChangeId: uuid('scope_change_id'),
+    /** Set when an accepted new-date request moved the task. */
+    dateChangeRequestId: uuid('date_change_request_id'),
     changedByUserId: uuid('changed_by_user_id')
       .notNull()
       .references(() => users.id),
