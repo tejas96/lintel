@@ -27,16 +27,14 @@ afterAll(async () => {
   await testApp.close();
 });
 
-type Share = { id: string; version: number; user: { id: string } };
-
 /** A completed milestone whose lead share was declined and designer share approved at ₹2,500. */
 async function decidedShares() {
   const { milestoneId } = await projectWithMilestone(people);
   const plan = await attachSharedReward(people, milestoneId);
   await completeMilestone(testApp, people, milestoneId);
-  const shares = (await sharesOf(people, plan.id)) as Share[];
+  const shares = await sharesOf(people, plan.id);
   const pick = (userId: string) => {
-    const share = shares.find((item) => item.user.id === userId);
+    const share = shares.find((item) => item.user?.id === userId);
     if (!share) throw new Error('missing share');
     return share;
   };

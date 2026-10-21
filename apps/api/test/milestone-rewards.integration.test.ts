@@ -75,7 +75,7 @@ describe('milestone rewards', () => {
     await completeMilestone(testApp, people, milestoneId);
     const shares = await sharesOf(people, plan.id);
     expect(shares).toHaveLength(2);
-    for (const share of shares as { status: string; criteria: unknown[]; decidedBy: unknown }[]) {
+    for (const share of shares) {
       expect(share.status).toBe('pending_review');
       expect(share.criteria).toHaveLength(4);
       expect(share.decidedBy).toBeNull();
@@ -119,8 +119,8 @@ describe('milestone rewards', () => {
     );
 
     const [designerShare] = (await sharesOf(people, plan.id)).filter(
-      (item) => item.user.id === people.ids.designer,
-    ) as { id: string; version: number }[];
+      (item) => item.user?.id === people.ids.designer,
+    );
     if (!designerShare) throw new Error('missing share');
     const approve = {
       decision: 'approve',

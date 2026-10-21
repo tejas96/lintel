@@ -1,3 +1,4 @@
+import type { MilestoneRewardShare } from '@lintel/api-contracts';
 import { expect } from 'vitest';
 import { type client, createJourneyProject, userIdOf } from './journey-helpers';
 import { PEOPLE, signInAs, type TestApp } from './test-app';
@@ -88,7 +89,6 @@ export async function completeMilestone(
 /** The pending milestone shares of a plan, as the owner sees them. */
 export async function sharesOf(people: RewardPeople, planId: string) {
   const all = await people.owner.get('/v1/rewards/milestones?scope=all&pageSize=100').expect(200);
-  return (all.body.items as { planId: string; user: { id: string } }[]).filter(
-    (item) => item.planId === planId,
-  );
+  const items: MilestoneRewardShare[] = all.body.items;
+  return items.filter((item) => item.planId === planId);
 }
