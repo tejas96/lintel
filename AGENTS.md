@@ -20,6 +20,7 @@ studios. Modular monolith in a pnpm + Turborepo monorepo. Read
 | `apps/worker` | Temporal worker + outbox relay | packages only |
 | `apps/web` | Next.js app (calls the API via the contract) | api-contracts, design-system, shared, domain |
 | `apps/mobile` | Expo app (calls the API via the contract) | api-contracts, design-system tokens, shared, domain |
+| `apps/e2e` | Playwright browser journeys + axe accessibility checks | database (its migrate/seed scripts only); drives the built apps |
 
 - Domain code has no framework, SDK or Zod imports.
 - Write side: controller → application command → stores (ports) inside `uow.transaction(...)`.
@@ -59,7 +60,11 @@ pnpm db:migrate && pnpm db:seed    # needs DATABASE_URL (see .env.example)
 pnpm build                         # turbo build (packages emit CommonJS + .d.ts to dist/)
 pnpm --filter @lintel/api start    # API on :4100 (docs at /docs); run with --env-file=../../.env
 pnpm check                         # lint + file size + boundaries + typecheck + unit tests
+pnpm test:e2e                      # browser journeys + axe (own database lintel_e2e; rebuilds apps/web/.next — stop :3100 first)
 ```
+
+Mobile: after adding a screen under `apps/mobile/src/app`, restart Metro (`CI=1` runs without a file
+watcher) so typed routes and the bundle include it.
 
 Local sign-in: phone `+91 90000 00001` (owner) … `00010`; code `123456` when `OTP_DEVELOPMENT_CODE=123456`.
 

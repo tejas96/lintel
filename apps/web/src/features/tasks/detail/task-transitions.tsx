@@ -27,8 +27,7 @@ export function TaskTransitions({ task, onReportBlocker }: TaskTransitionsProps)
   const [noteError, setNoteError] = useState<string | null>(null);
   // With time tracking, "Start work" starts a session and moves the task in one
   // step, so the plain status button for that move is not shown as well.
-  const startsWork =
-    task.workTrackingEnabled && startMove(task.status, task.transitions) !== null;
+  const startsWork = task.workTrackingEnabled && startMove(task.status, task.transitions) !== null;
   const workable = task.workTrackingEnabled && (task.status === 'in_progress' || startsWork);
   const allowed = task.transitions.filter(
     (option) =>

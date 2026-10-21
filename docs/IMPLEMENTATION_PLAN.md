@@ -70,11 +70,27 @@ Last updated: 2026-10-21, end of the overnight build session.
 - ✅ Independent security review: 0 Critical/High; 3 Medium + 13 Low/suspected fixed and re-tested live; residual risks listed in `SECURITY.md`.
 - ✅ Production images built and smoke-tested (api, worker, migrate, web).
 - ⏳ Dependency audit (`pnpm audit --prod`) runs in CI; not yet reviewed.
+- ✅ Browser end-to-end journeys and axe accessibility checks (`apps/e2e`, `pnpm test:e2e`, 31 tests).
 
 ## Stage 8 — Phase 2 preparation ✅
 
 - ✅ AI disabled by configuration (refuses `true`), `DisabledAiAssistant` port + test, `/v1/ai/status`.
 - ✅ `AI_PHASE_TWO.md`: capabilities, boundary, activation, audit.
+
+## Stage 9 — Gap closure (21 Oct, afternoon) ✅
+
+A review against the original requirements found gaps; all were built, merged and verified.
+
+- ✅ Production first-time setup command (`setup:studio`), refuses when a studio exists.
+- ✅ Leave types and rules administration; working weeks (studio and per person).
+- ✅ Self-profile editing (web and mobile); the work-tracking setting is enforced.
+- ✅ Per-task escalation timing; an "Edit details" sheet on the task page.
+- ✅ Command center filters (in the URL); reports (delivery, workload, leave, approvals) with CSV export.
+- ✅ Profitability (optional): project cost ledger, budget vs cost, margin indicator.
+- ✅ Project documents library (web and mobile); reassignment (handover) requests.
+- ✅ Moving a project to a newer template version (preview, then apply); scope changes that add or cancel tasks.
+- ✅ SMS and email notifications (with daily digest) and web push, behind ports with development adapters.
+- 🟡 Live SMS, email and web push not tried: no MSG91 SMS template, SMTP server or Firebase web app yet.
 
 ## Known external blockers
 
@@ -82,5 +98,8 @@ Last updated: 2026-10-21, end of the overnight build session.
 |---|---|
 | Real SMS OTP | MSG91 auth key, DLT-registered template, server IP allow-list |
 | Real push | Firebase project + service account; Apple Developer account + APNs key; Firebase iOS SDK in the app |
+| Web push | Firebase web app config and VAPID key (web build arguments) |
+| SMS notifications | MSG91 SMS template with the generic text and its DLT template ID |
+| Email notifications | SMTP server and credentials; SPF/DKIM for the sender domain |
 | iOS/Android store builds | Apple Developer Program, Google Play Console, signing keys |
 | Production host | Oracle Cloud access, DNS, TLS email |

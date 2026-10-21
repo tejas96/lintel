@@ -76,7 +76,9 @@ pnpm test:integration
 
 ## Status
 
-Phase 1 is built and verified locally: API, worker, web and mobile. Real SMS, push
+Phase 1 is built and verified locally: API, worker, web and mobile, including the
+gap-closure features (setup, leave and working-week settings, reports, documents,
+handovers, template updates, SMS/email/web-push channels). Real SMS, push and email
 delivery, store releases and the production server wait on external accounts
-(MSG91, Firebase/APNs, Apple/Google, Oracle Cloud). See
+(MSG91, Firebase/APNs, an SMTP server, Apple/Google, Oracle Cloud). See
 [docs/HANDOFF.md](docs/HANDOFF.md) and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
