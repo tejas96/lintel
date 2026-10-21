@@ -70,6 +70,8 @@ export interface TrendBarDatum {
   readonly good: number;
   /** Bad part (stacked on top), e.g. delivered late. */
   readonly bad: number;
+  /** Optional short axis label under the bar ("13 Oct"); decorative, the label carries the meaning. */
+  readonly tick?: string;
 }
 
 interface TrendBarsProps {
@@ -147,6 +149,18 @@ export function TrendBars({
           );
         })}
       </ul>
+      {data.some((datum) => datum.tick) && (
+        <div aria-hidden className="-mt-1.5 flex gap-1.5">
+          {data.map((datum) => (
+            <span
+              key={datum.key}
+              className="min-w-2 flex-1 text-center font-mono text-[0.6875rem] whitespace-nowrap text-ink-faint tabular-nums"
+            >
+              {datum.tick ?? ''}
+            </span>
+          ))}
+        </div>
+      )}
       <figcaption className="flex flex-wrap gap-4 type-body-sm text-ink-muted">
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden className="size-2.5 rounded-[3px] bg-on-track-solid" />

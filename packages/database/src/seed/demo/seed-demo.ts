@@ -10,6 +10,7 @@ import { projects, tasks } from '../../schema';
 import { createDemoContext, type DemoContext } from './demo-context';
 import { applyDemoProgress } from './demo-progress.writer';
 import { DEMO_PROJECTS, type DemoProject } from './demo-projects';
+import { seedDemoHistory } from './seed-demo-history';
 import { seedDemoRewards } from './seed-demo-rewards';
 
 async function createDemoProject(context: DemoContext, demo: DemoProject): Promise<string> {
@@ -102,6 +103,9 @@ export async function seedDemoProjects(
     }
     created.push(`${await createDemoProject(context, demo)} ${demo.name}`);
   }
+  // Before the rewards, so this month's evaluation sees the completed history.
+  const history = await seedDemoHistory(context, (demo) => createDemoProject(context, demo));
+  if (history) created.push(history);
   if (await seedDemoRewards(db, context))
     created.push('Reliable delivery bonus (reward policy + current month evaluation)');
   return { created, skipped };

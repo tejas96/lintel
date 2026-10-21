@@ -15,6 +15,13 @@
       "when": 1792528402586,
       "tag": "0001_scope_change_end_impact",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792552338747,
+      "tag": "0002_reports_profitability",
+      "breakpoints": true
     }
   ]
 }

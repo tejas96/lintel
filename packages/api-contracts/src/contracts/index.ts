@@ -5,7 +5,9 @@ import { leaveContract } from './leave.contract';
 import { operationsContract } from './operations.contract';
 import { peopleContract } from './people.contract';
 import { platformContract } from './platform.contract';
+import { projectCostsContract } from './project-costs.contract';
 import { projectsContract } from './projects.contract';
+import { reportsContract } from './reports.contract';
 import { tasksContract } from './tasks.contract';
 import { templatesContract } from './templates.contract';
 import { workContract } from './work.contract';
@@ -26,6 +28,8 @@ export type ApiRouterDefinition = {
   readonly leave: typeof leaveContract;
   readonly operations: typeof operationsContract;
   readonly platform: typeof platformContract;
+  readonly reports: typeof reportsContract;
+  readonly projectCosts: typeof projectCostsContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -39,6 +43,8 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   leave: leaveContract,
   operations: operationsContract,
   platform: platformContract,
+  reports: reportsContract,
+  projectCosts: projectCostsContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -54,7 +60,17 @@ export { leaveContract, leavePeriodSchema } from './leave.contract';
 export { operationsContract } from './operations.contract';
 export { peopleContract } from './people.contract';
 export { platformContract } from './platform.contract';
+export { projectCostsContract } from './project-costs.contract';
 export { createProjectBodySchema, projectsContract } from './projects.contract';
+export {
+  REPORT_NAMES,
+  type ReportName,
+  type ReportQuery,
+  reportCsvPath,
+  reportNameSchema,
+  reportQuerySchema,
+  reportsContract,
+} from './reports.contract';
 export { createTaskBodySchema, tasksContract } from './tasks.contract';
 export { templatesContract } from './templates.contract';
 export { workContract } from './work.contract';

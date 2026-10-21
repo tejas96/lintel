@@ -74,6 +74,7 @@ export const TEST_ORGANIZATION: OrganizationSettings = {
   defaultQuietHoursEnd: '08:00',
   leaveSecondApprovalAboveHalfDays: 10,
   workTrackingEnabled: true,
+  profitabilityEnabled: false,
 };
 
 type WorkerSettingsStore = Pick<

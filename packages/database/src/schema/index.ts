@@ -1,6 +1,7 @@
 export * from './audit.schema';
 export * from './deliverables.schema';
 export * from './enums';
+export * from './finances.schema';
 export * from './identity.schema';
 export * from './leave.schema';
 export * from './notifications.schema';

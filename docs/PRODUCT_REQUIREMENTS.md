@@ -23,6 +23,8 @@ mapped to roles in the `role_capabilities` table and editable by people holding
 | Capacity (team / all) | ✓ / ✓ | ✓ / ✓ | ✓ / | ✓ / | | |
 | Rewards: see all, decide | ✓ | | | | | |
 | Command center | ✓ | ✓ | scoped to managed projects | | | |
+| Reports and CSV export | ✓ | ✓ | scoped to managed projects | | | |
+| Budgets and project costs (when switched on) | ✓ | ✓ | own projects | | | |
 | Site updates | ✓ | ✓ | ✓ | | | ✓ |
 
 Project-scoped access is a second check: a person sees a project when they hold
@@ -178,6 +180,130 @@ projects needing attention, upcoming milestones, critical tasks today, blockers,
 approvals, team availability and overload, leave and scope decisions waiting,
 8-week trend, reward summary (restricted). Filters: date range, project, manager,
 team. Every item links to its record.
+
+The web filters live in the URL (`?from=&to=&project=&manager=&team=`), so a view
+can be shared and Back undoes the last change; applied filters show as removable
+chips. Without a period the range is the last 30 days. When profitability is on
+(section 14) the command center adds budget against recorded cost.
+
+## 13. Reports (FR-RPT)
+
+Four reports in the web app (Reports), each also downloadable as CSV. Every number
+is counted from records; the formulas below are implemented in
+`packages/application/src/reports/*.metrics.ts` (unit-tested) and applied by the read
+models in `packages/database/src/queries/reports/`.
+
+**Who sees what.** `dashboard.view_business` (owner and administrators) sees the
+whole studio. A project manager (role, or anyone managing at least one project)
+sees the same reports limited to the projects they manage; a project filter outside
+them answers 404. Leave in a manager's reports is limited to the people whose leave
+they may see (themselves, their direct reports and, with `capacity.view_team`, their
+team). Everyone else is refused (403).
+
+**Filters and periods.** Period (default: the last 90 days, at most 366 days),
+project, manager (studio view only) and team, shared with the command center. A
+team filter keeps projects whose manager or a member is in the team, and task-level
+numbers to task owners in the team. Reports cover every project, including completed
+and archived ones, because history matters. Ranges up to 98 days are broken down by
+ISO week (Monday–Sunday), longer ones by calendar month; the first and last buckets
+are clipped to the range. Calendar dates are in the studio timezone.
+
+### 13.1 Delivery reliability
+
+| Measure | Formula |
+|---|---|
+| On time | A task or milestone completed on or before its due date (the latest approved one). Completion day = the completion instant in the studio timezone. |
+| Late | Completed after its due date. Days late = calendar days from the due date to the completion day. |
+| Counted in the period | By completion day; work finished in the period counts even when it was due earlier. |
+| Still open past due | Not completed, due inside the period and before today. Shown apart; it never enters the rate. |
+| On-time rate | On time ÷ (on time + late), to 0.1 %; "–" when nothing was completed. |
+| Average lateness | Sum of days late ÷ late completions, to 0.1 day. |
+| Left out | Cancelled or archived tasks, cancelled milestones, tasks without a due date. |
+
+Broken down by period (tasks and milestones), by project (lowest task on-time rate
+first) and by person (tasks they own; milestones have no single owner).
+
+### 13.2 Workload and capacity
+
+| Measure | Formula |
+|---|---|
+| Available | For each day of the period: the person's working minutes per day × capacity % on their working days (weekends and studio holidays excluded), less approved leave (a half day removes half). Pending leave is not subtracted. |
+| Planned | Each scheduled task (owner and due date set, not cancelled, not archived, not a draft): its estimate — 120 minutes when it has none, and counted as "without an estimate" — spread evenly over the owner's working days from its planned start (or its due date) to its due date; with no working day in that window it lands on the due date. Only the part inside the period counts. |
+| Tentative | The same for draft tasks, shown apart. |
+| Logged | Ended work sessions of the person that started in the period, counted on the day they started (studio timezone). Shown only as recorded; zero when time tracking is off. |
+| Planned ÷ available | Planned ÷ available, to 0.1 %; "–" with no available time. |
+| Load | The capacity scale: has room below 40 %, balanced to 85 %, stretched to 105 %, overloaded above (`loadStatus`). |
+
+People: active people in scope (studio view without project or manager filter:
+everyone, or the team). With a project or manager filter, or for a project manager,
+only tasks and logged time on those projects count, while available time stays each
+person's whole availability. Teams are the sum of their people; periods the sum of
+everyone's days. Note: this report measures the plan; the Capacity screen measures
+remaining effort from today.
+
+### 13.3 Leave taken
+
+| Measure | Formula |
+|---|---|
+| Leave days | For each approved request (urgent absences included), its working days on the person's calendar (as when it was requested) that fall inside the period; a half day counts 0.5. |
+| Days taken / booked ahead | Leave days up to today / after today. |
+| Requests | Approved requests with at least one leave day in the period. |
+
+Grouped by person and leave type. Reasons never appear in reports. Pending,
+rejected and cancelled requests are not leave taken.
+
+### 13.4 Approvals turnaround
+
+| Kind | Requested | Decided | Decider |
+|---|---|---|---|
+| Deliverable review | the version's submission | its review (approved, changes requested or rejected) | the reviewer |
+| Leave decision | the request was created | the final approval or rejection | whoever made the final decision |
+| Scope change | the proposal was created | approval or rejection | the decider |
+
+Turnaround = decided − requested, in elapsed clock hours (nights and weekends
+included), to 0.1 h. For decisions made in the period: count, **median** (the middle
+value; the mean of the two middle values for an even count) and **slowest** (the
+longest; ties go to the earlier request). **Waiting now** counts what is undecided
+today, whenever it was requested, with the age of the oldest. Urgent absences
+(recorded, not requested), cancelled leave and withdrawn scope changes are not
+decisions. Deliverable reviews and scope changes follow the project scope; leave
+decisions follow the same people as the leave report. Broken down by decider, with
+the slowest decisions linked to their records.
+
+### 13.5 CSV export
+
+`GET /v1/reports/:report/csv` (`delivery`, `workload`, `leave`, `approvals`) takes the
+same filters and rules as the JSON report and answers UTF-8 with a byte-order mark,
+CRLF line endings, `Content-Disposition: attachment` with a dated file name
+(`lintel-delivery-reliability-2026-07-24-to-2026-10-21.csv`) and `no-store`. Text
+cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return are prefixed
+with a single quote so spreadsheets show them as text; cells with commas, quotes or
+line breaks are quoted (RFC 4180). Hours are decimal hours, rates percentages,
+instants `YYYY-MM-DD HH:mm` in the studio timezone.
+
+## 14. Profitability (FR-FIN)
+
+Off by default; the organisation setting **Profitability** switches it on. Budgets
+and costs are visible only to people who can see a project's budget:
+`projects.manage_any` (owner and administrators by default), or the project's own
+manager or owner. Everyone else gets 404, and when profitability is off the
+profitability endpoint answers 404 and nothing appears in the apps.
+
+- **Cost ledger:** entries with a date (not after today), a category (consultants,
+  materials, site work, other), an amount in minor units of the studio currency and
+  an optional note. Entries are never edited or deleted: a mistake is voided with a
+  reason (optimistic version check), stays on the ledger struck through, and stops
+  counting. Recording and voiding write an audit entry; nothing goes to the project
+  activity feed (which every member can read).
+- **Recorded cost** = the sum of entries that are not voided.
+- **Remaining budget** = budget − recorded cost (negative when over budget).
+- **Margin** = (budget − recorded cost) ÷ budget, to 0.1 %.
+- **Margin indicator** (`assessProfitability` in `packages/domain`): *over budget*
+  when recorded cost exceeds the budget; *thin* when less than 15 % of the budget is
+  left; *healthy* otherwise; *no budget set* without a budget.
+- **Command center:** budget, recorded cost and remaining budget over the projects
+  in view whose budgets the person may see (totals count only projects with a
+  budget), with each project's bar and indicator, most attention first.
 
 ## Non-functional requirements
 

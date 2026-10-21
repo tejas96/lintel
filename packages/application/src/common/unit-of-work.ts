@@ -1,6 +1,7 @@
 import type { ProjectAccessStore } from '../access/project-access.store';
 import type { BackgroundStores } from '../background/background.stores';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
+import type { ProjectCostStore } from '../finances/project-cost.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { LeaveStore } from '../leave/leave.store';
 import type { NotificationStore } from '../notifications/notification.store';
@@ -41,6 +42,7 @@ export interface ApplicationStores {
   readonly taskItems: TaskItemStore;
   readonly workSessions: WorkSessionStore;
   readonly deliverables: DeliverableStore;
+  readonly costs: ProjectCostStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */

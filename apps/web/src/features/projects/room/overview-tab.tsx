@@ -8,6 +8,7 @@ import {
   MilestoneTimeline,
   SkeletonText,
 } from '@lintel/design-system/web';
+import { ProjectProfitabilityPanel } from '@/features/finances/project-profitability-panel';
 import { useSession } from '@/features/session/session-provider';
 import { daysBetween, todayIn } from '@/lib/format/dates';
 import {
@@ -103,6 +104,7 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
               )}
             </div>
           </Card>
+          <ProjectProfitabilityPanel project={project} today={today} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
           <OverviewRisks project={project} today={today} />

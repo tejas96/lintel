@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../../client';
 import { projects } from '../../../schema';
 import { loadApprovalQueue } from '../../approvals/approval-queue.query';
+import { portfolioProfitability } from './command-center-finances';
 import {
   activeProjectSummaries,
   scopeChangesAwaitingDecision,
@@ -35,6 +36,8 @@ export interface CommandCenterSources {
   readonly viewerCapabilities: ReadonlySet<Capability>;
   readonly utilisation: UtilisationSource;
   readonly now: Date;
+  /** The studio setting; budgets and costs appear only when it is on. */
+  readonly profitabilityEnabled: boolean;
 }
 
 const ATTENTION_LIMIT = 8;
@@ -72,6 +75,7 @@ export async function loadCommandCenter(
     team,
     leave,
     scopeChanges,
+    profitability,
   ] = await Promise.all([
     activeProjectSummaries(db, scope, plan.today),
     taskCounts(db, scope, plan.today),
@@ -87,6 +91,17 @@ export async function loadCommandCenter(
     teamSection(db, scope, plan, sources.utilisation),
     leaveAwaitingDecision(db, scope, plan),
     scopeChangesAwaitingDecision(db, scope),
+    sources.profitabilityEnabled
+      ? portfolioProfitability(
+          db,
+          scope,
+          {
+            userId: plan.viewerUserId,
+            seesAllBudgets: sources.viewerCapabilities.has('projects.manage_any'),
+          },
+          sources.currency,
+        )
+      : Promise.resolve(null),
   ]);
   const healthCount = (status: string) =>
     summaries.filter((project) => project.health.status === status).length;
@@ -123,5 +138,6 @@ export async function loadCommandCenter(
     rewards: plan.includeRewards
       ? await rewardsSummary(db, plan, sources.timeZone, sources.currency)
       : null,
+    profitability,
   };
 }

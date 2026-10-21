@@ -10,6 +10,8 @@ export interface OrganizationSettings {
   readonly defaultQuietHoursEnd: string;
   readonly leaveSecondApprovalAboveHalfDays: number;
   readonly workTrackingEnabled: boolean;
+  /** Budget against recorded cost on projects and the command center. Off by default. */
+  readonly profitabilityEnabled: boolean;
 }
 
 export interface HolidayRecord {

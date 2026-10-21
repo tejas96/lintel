@@ -24,6 +24,7 @@ export const TEST_SETTINGS: OrganizationSettings = {
   defaultQuietHoursEnd: '08:00',
   leaveSecondApprovalAboveHalfDays: 10,
   workTrackingEnabled: true,
+  profitabilityEnabled: false,
 };
 
 function unused(): never {
