@@ -150,6 +150,13 @@ export function OrganizationForm() {
           checked={draft.workTrackingEnabled}
           onCheckedChange={(workTrackingEnabled) => update({ workTrackingEnabled })}
         />
+        <Switch
+          label="Profitability"
+          description="Record project costs and compare them with each budget. Only people who can see budgets — the owner, administrators and each project’s manager — see the numbers."
+          checked={draft.profitabilityEnabled}
+          onCheckedChange={(profitabilityEnabled) => update({ profitabilityEnabled })}
+          className="sm:col-start-2"
+        />
       </section>
       <div className="flex gap-2 border-t border-hairline pt-6">
         <Button type="submit" variant="primary" pending={save.isPending}>

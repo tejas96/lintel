@@ -24,4 +24,9 @@ export const queryKeys = {
   organization: ['settings', 'organization'] as const,
   roles: ['settings', 'roles'] as const,
   holidays: ['settings', 'holidays'] as const,
+  projectProfitability: (projectId: string) =>
+    ['projects', 'detail', projectId, 'profitability'] as const,
+  report: (name: string, query: Record<string, unknown>) => ['reports', name, query] as const,
+  allReports: ['reports'] as const,
+  allCommandCenters: ['dashboard', 'command-center'] as const,
 };
