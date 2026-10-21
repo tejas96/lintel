@@ -2,6 +2,7 @@ import type { Capability } from '@lintel/domain';
 import {
   Award,
   CalendarRange,
+  ChartColumn,
   DraftingCompass,
   Gauge,
   type LucideIcon,
@@ -64,6 +65,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/capacity',
     icon: Waypoints,
     requires: ['capacity.view_team', 'capacity.view_all'],
+    built: true,
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    href: '/reports',
+    icon: ChartColumn,
+    // Leadership sees the studio; people who create projects (managers) see their own.
+    requires: ['dashboard.view_business', 'projects.create'],
     built: true,
   },
   {
