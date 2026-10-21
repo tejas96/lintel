@@ -2,6 +2,7 @@ import { commonErrorResponses } from '../common/errors';
 import { authContract } from './auth.contract';
 import { deliverablesContract } from './deliverables.contract';
 import { leaveContract } from './leave.contract';
+import { leavePoliciesContract } from './leave-policies.contract';
 import { operationsContract } from './operations.contract';
 import { peopleContract } from './people.contract';
 import { platformContract } from './platform.contract';
@@ -28,6 +29,7 @@ export type ApiRouterDefinition = {
   readonly operations: typeof operationsContract;
   readonly platform: typeof platformContract;
   readonly profile: typeof profileContract;
+  readonly leavePolicies: typeof leavePoliciesContract;
 };
 
 export const apiRouterDefinition: ApiRouterDefinition = {
@@ -42,6 +44,7 @@ export const apiRouterDefinition: ApiRouterDefinition = {
   operations: operationsContract,
   platform: platformContract,
   profile: profileContract,
+  leavePolicies: leavePoliciesContract,
 };
 
 /** Every route lives under /v1 and shares the error response shape. */
@@ -54,6 +57,7 @@ export const apiContractOptions = {
 export { authContract } from './auth.contract';
 export { deliverablesContract } from './deliverables.contract';
 export { leaveContract, leavePeriodSchema } from './leave.contract';
+export { leavePoliciesContract } from './leave-policies.contract';
 export { operationsContract } from './operations.contract';
 export { peopleContract } from './people.contract';
 export { platformContract } from './platform.contract';

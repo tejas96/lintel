@@ -23,6 +23,7 @@ export const leaveTypeObject = z.object({
   annualAllowanceHalfDays: z.number().int().nullable(),
   colorIndex: z.number().int(),
   isActive: z.boolean(),
+  version: z.number().int(),
 });
 export type LeaveType = z.infer<typeof leaveTypeObject>;
 export const leaveTypeSchema: ResponseSchema<LeaveType> = leaveTypeObject;
@@ -110,3 +111,23 @@ export const leaveBalanceObject = z.object({
 });
 export type LeaveBalance = z.infer<typeof leaveBalanceObject>;
 export const leaveBalanceSchema: ResponseSchema<LeaveBalance> = leaveBalanceObject;
+
+export const managedLeaveTypeObject = leaveTypeObject.extend({
+  /** Requests ever made with this type (all statuses). */
+  requestCount: z.number().int(),
+  /** Requests still waiting for a decision or more information. */
+  openRequestCount: z.number().int(),
+});
+export type ManagedLeaveType = z.infer<typeof managedLeaveTypeObject>;
+export const managedLeaveTypeSchema: ResponseSchema<ManagedLeaveType> = managedLeaveTypeObject;
+
+export const leaveRulesObject = z.object({ secondApprovalAboveHalfDays: z.number().int() });
+export type LeaveRules = z.infer<typeof leaveRulesObject>;
+export const leaveRulesSchema: ResponseSchema<LeaveRules> = leaveRulesObject;
+
+export const leavePoliciesObject = z.object({
+  rules: leaveRulesObject,
+  types: z.array(managedLeaveTypeObject),
+});
+export type LeavePolicies = z.infer<typeof leavePoliciesObject>;
+export const leavePoliciesSchema: ResponseSchema<LeavePolicies> = leavePoliciesObject;

@@ -1,6 +1,7 @@
 import type { Type } from '@nestjs/common';
 import { DeliverablesModule } from './deliverables/deliverables.module';
 import { LeaveModule } from './leave/leave.module';
+import { LeavePoliciesModule } from './leave-policies/leave-policies.module';
 import { OperationsModule } from './operations/operations.module';
 import { PeopleModule } from './people/people.module';
 import { ProfileModule } from './profile/profile.module';
@@ -25,4 +26,5 @@ export const FEATURE_MODULES: Type[] = [
   LeaveModule,
   OperationsModule,
   ProfileModule,
+  LeavePoliciesModule,
 ];

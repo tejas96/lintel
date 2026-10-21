@@ -4,6 +4,7 @@ import { CapacityReadRepository } from './repositories/capacity-read.repository'
 import { DeliverableRepository } from './repositories/deliverable.repository';
 import { IdentityRepository } from './repositories/identity.repository';
 import { LeaveRepository } from './repositories/leave.repository';
+import { LeaveTypeRepository } from './repositories/leave-type.repository';
 import { NotificationRepository } from './repositories/notification.repository';
 import { NotificationInboxRepository } from './repositories/notification-inbox.repository';
 import { PeopleRepository } from './repositories/people.repository';
@@ -40,6 +41,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     taskItems: new TaskItemRepository(executor),
     workSessions: new WorkSessionRepository(executor),
     deliverables: new DeliverableRepository(executor),
+    leaveTypes: new LeaveTypeRepository(executor),
   };
 }
 

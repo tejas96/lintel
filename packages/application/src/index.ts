@@ -5,6 +5,7 @@ export * from './common';
 export * from './deliverables';
 export * from './identity';
 export * from './leave';
+export * from './leave-policies';
 export * from './notifications';
 export * from './operations';
 export * from './people';

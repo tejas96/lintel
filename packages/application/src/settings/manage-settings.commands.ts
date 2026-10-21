@@ -13,6 +13,12 @@ import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
 import { closeAllWorkSessions } from '../work/work-tracking';
 import type { HolidayRecord, OrganizationSettings } from './settings.store';
 
+/** The studio form; the leave threshold is optional because the leave rules screen owns it. */
+export type OrganizationSettingsInput = Omit<
+  OrganizationSettings,
+  'leaveSecondApprovalAboveHalfDays'
+> & { readonly leaveSecondApprovalAboveHalfDays?: number | undefined };
+
 type SettingsStores = Pick<ApplicationStores, 'settings' | 'records' | 'workSessions' | 'tasks'>;
 
 /** Keeps the order of the domain list so stored grants are stable and readable. */
@@ -30,21 +36,25 @@ export class ManageSettingsCommands {
 
   async updateOrganization(
     context: RequestContext,
-    settings: OrganizationSettings,
+    input: OrganizationSettingsInput,
   ): Promise<OrganizationSettings> {
     requireCapability(context, 'organization.manage_settings');
     const issues = [
-      ...(isValidTimeZone(settings.timeZone)
+      ...(isValidTimeZone(input.timeZone)
         ? []
         : [{ field: 'timeZone', message: 'Use an IANA timezone such as Asia/Kolkata.' }]),
-      ...(/^[A-Z]{3}$/.test(settings.currency)
+      ...(/^[A-Z]{3}$/.test(input.currency)
         ? []
         : [{ field: 'currency', message: 'Use a three-letter ISO currency code such as INR.' }]),
     ];
     if (issues.length > 0) throw new ValidationFailedError('Check the studio settings.', issues);
     return this.uow.transaction(async (stores) => {
       const before = await stores.settings.organization();
-      const after = await stores.settings.updateOrganization(settings);
+      const after = await stores.settings.updateOrganization({
+        ...input,
+        leaveSecondApprovalAboveHalfDays:
+          input.leaveSecondApprovalAboveHalfDays ?? before.leaveSecondApprovalAboveHalfDays,
+      });
       const trackingStops = before.workTrackingEnabled && !after.workTrackingEnabled;
       const closedWorkSessions = trackingStops
         ? await closeAllWorkSessions(stores, this.clock.now())

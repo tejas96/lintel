@@ -1,23 +1,35 @@
 'use client';
 
 import { ErrorState, PageHeader, pageEnter, TabNav } from '@lintel/design-system/web';
+import type { Capability } from '@lintel/domain';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ReactNode, useEffect } from 'react';
 import { useSession } from '@/features/session/session-provider';
 
-const SECTIONS = [
-  { href: '/settings', label: 'Studio' },
-  { href: '/settings/roles', label: 'Roles and access' },
-  { href: '/settings/holidays', label: 'Holidays' },
-] as const;
+/** Each section is shown to people holding its capability. */
+const SECTIONS: readonly { href: string; label: string; requires: Capability }[] = [
+  { href: '/settings', label: 'Studio', requires: 'organization.manage_settings' },
+  { href: '/settings/roles', label: 'Roles and access', requires: 'roles.manage' },
+  { href: '/settings/holidays', label: 'Holidays', requires: 'organization.manage_settings' },
+  { href: '/settings/leave', label: 'Leave', requires: 'leave.manage_policies' },
+];
 
 /** Settings pages share a header and section tabs; only administrators may enter. */
 export function SettingsFrame({ children }: { readonly children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { can } = useSession();
-  if (!can('organization.manage_settings', 'roles.manage')) {
+  const sections = SECTIONS.filter((section) => can(section.requires));
+  const current = SECTIONS.find((section) => section.href === pathname);
+  // Someone who may only manage, say, leave lands on the first section they can open.
+  const elsewhere = current && !can(current.requires) ? sections[0]?.href : undefined;
+  useEffect(() => {
+    if (elsewhere) router.replace(elsewhere);
+  }, [elsewhere, router]);
+  if (elsewhere) return null;
+  if (sections.length === 0 || (current && !can(current.requires))) {
     return (
       <div className="px-5 py-10">
         <ErrorState
@@ -39,7 +51,7 @@ export function SettingsFrame({ children }: { readonly children: ReactNode }) {
       <TabNav
         label="Settings sections"
         link={Link}
-        items={SECTIONS.map((section) => ({
+        items={sections.map((section) => ({
           href: section.href,
           label: section.label,
           active: pathname === section.href,

@@ -112,6 +112,7 @@ export async function listLeaveTypes(db: DatabaseExecutor, includeInactive: bool
       annualAllowanceHalfDays: leaveTypes.annualAllowanceHalfDays,
       colorIndex: leaveTypes.colorIndex,
       isActive: leaveTypes.isActive,
+      version: leaveTypes.version,
     })
     .from(leaveTypes)
     .where(includeInactive ? undefined : eq(leaveTypes.isActive, true))

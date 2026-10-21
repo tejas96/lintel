@@ -124,7 +124,11 @@ export async function assessLeaveImpact(
   });
   const blockingProblems = [...assessment.blockingProblems];
   if (days.length === 0) blockingProblems.unshift('These dates include no working days.');
-  if (!input.leaveType.isActive) blockingProblems.push('This leave type is no longer offered.');
+  // A retired type cannot be chosen again, but requests already made with it keep working.
+  const isNewRequest = input.excludeRequestId === null;
+  if (isNewRequest && !input.leaveType.isActive) {
+    blockingProblems.push('This leave type is no longer offered.');
+  }
   const conflicting = new Set(report.taskConflicts.map((conflict) => conflict.taskId));
   return {
     days,

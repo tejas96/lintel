@@ -3,6 +3,7 @@ import type { BackgroundStores } from '../background/background.stores';
 import type { DeliverableStore } from '../deliverables/deliverable.store';
 import type { IdentityStore } from '../identity/identity.store';
 import type { LeaveStore } from '../leave/leave.store';
+import type { LeaveTypeStore } from '../leave-policies/leave-type.store';
 import type { NotificationStore } from '../notifications/notification.store';
 import type { NotificationInboxStore } from '../notifications/notification-inbox.store';
 import type { CapacityReadStore } from '../operations/capacity.store';
@@ -41,6 +42,7 @@ export interface ApplicationStores {
   readonly taskItems: TaskItemStore;
   readonly workSessions: WorkSessionStore;
   readonly deliverables: DeliverableStore;
+  readonly leaveTypes: LeaveTypeStore;
 }
 
 /** Runs work atomically: every store write commits together or not at all. */
