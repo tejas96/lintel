@@ -9,8 +9,33 @@ import { DATABASE_CONNECTION } from '../../infrastructure/tokens';
 
 const { listAuditLog } = apiContract.operations;
 
-/** Compensation fields audited on reward decisions; hidden without `rewards.view_all`. */
-const COMPENSATION_FIELDS = ['amountMinor', 'adjustedAmountMinor', 'adjustmentReason', 'note'];
+/**
+ * Compensation fields audited on reward actions (policies, decisions,
+ * milestone rewards, challenges and their record snapshots); hidden at any
+ * depth without `rewards.view_all`. Notes and reasons can quote amounts, so
+ * they are hidden too.
+ */
+const COMPENSATION_FIELDS: ReadonlySet<string> = new Set([
+  'amountMinor',
+  'adjustedAmountMinor',
+  'adjustmentReason',
+  'shareAmountMinor',
+  'grantedAmountMinor',
+  'decisionNote',
+  'note',
+  'reason',
+]);
+
+function redact(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redact);
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, inner]) => [
+      key,
+      COMPENSATION_FIELDS.has(key) ? '[restricted]' : redact(inner),
+    ]),
+  );
+}
 
 function withoutCompensation(
   values: Record<string, unknown> | null,
@@ -19,7 +44,7 @@ function withoutCompensation(
   return Object.fromEntries(
     Object.entries(values).map(([key, value]) => [
       key,
-      COMPENSATION_FIELDS.includes(key) ? '[restricted]' : value,
+      COMPENSATION_FIELDS.has(key) ? '[restricted]' : redact(value),
     ]),
   );
 }

@@ -125,6 +125,14 @@ describe('reward challenges', () => {
       'rewards.challenge_raised',
       'rewards.challenge_corrected',
     ]);
+    const log = await people.admin
+      .get('/v1/audit?entityType=reward_challenge&pageSize=100')
+      .expect(200);
+    const entry = log.body.items.find(
+      (item: { entityId: string; action: string }) =>
+        item.entityId === raised.body.id && item.action === 'rewards.challenge_corrected',
+    );
+    expect(entry.after.record.grantedAmountMinor).toBe('[restricted]');
   });
 
   it('never lowers a granted reward, and hides amounts from people it is not about', async () => {

@@ -40,7 +40,11 @@ PostgreSQL 17, Drizzle ORM 0.45 and Drizzle Kit 0.31. Schema source:
   `project_documents` (the project library; visibility lives on the file row so the
   content route enforces it; archived documents keep their row and object).
 - **Leave:** `leave_types`, `leave_requests` (CHECK end ≥ start), `leave_approval_steps`, `leave_handovers`.
-- **Rewards:** `reward_policies`, `reward_evaluations` (unique per policy + subject + period).
+- **Rewards:** `reward_policies`, `reward_evaluations` (unique per policy + subject + period),
+  `milestone_rewards` (one per milestone; withdrawn rows kept), `milestone_reward_recipients`
+  (one per person and reward: share, recommendation, evidence, decision), `reward_challenges`
+  (exactly one record reference — CHECK; one open challenge per record — partial unique
+  indexes; outcome snapshots before and after).
 - **Notifications:** `notifications` (unique per recipient + dedupe key),
   `notification_deliveries` (one per channel), `notification_preferences`, `device_tokens`.
 - **Platform:** `activity_events`, `audit_log`, `outbox_events`, `idempotency_records`, `workflow_runs`.

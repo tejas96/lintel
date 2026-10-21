@@ -91,6 +91,9 @@ A review against the original requirements found gaps; all were built, merged an
 - ✅ Moving a project to a newer template version (preview, then apply); scope changes that add or cancel tasks.
 - ✅ SMS and email notifications (with daily digest) and web push, behind ports with development adapters.
 - 🟡 Live SMS, email and web push not tried: no MSG91 SMS template, SMTP server or Firebase web app yet.
+- ✅ Fair rewards: milestone rewards (attach, split, check at completion, review), My recognition with
+  challenges answered by reviewers (web and phone), learning reports (estimate accuracy, rework rate,
+  recurring approval delays) with CSV. Migration `0006_fair_rewards`; screenshots 151+.
 
 ## Known external blockers
 

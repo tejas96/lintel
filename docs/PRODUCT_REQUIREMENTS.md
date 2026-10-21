@@ -22,6 +22,7 @@ mapped to roles in the `role_capabilities` table and editable by people holding
 | Approve leave (team / any) | ✓ / ✓ | ✓ / ✓ | ✓ / | ✓ / | | |
 | Capacity (team / all) | ✓ / ✓ | ✓ / ✓ | ✓ / | ✓ / | | |
 | Rewards: see all, decide | ✓ | | | | | |
+| Rewards: policies and milestone rewards | ✓ | ✓ | | | | |
 | Command center | ✓ | ✓ | scoped to managed projects | | | |
 | Reports and CSV export | ✓ | ✓ | scoped to managed projects | | | |
 | Budgets and project costs (when switched on) | ✓ | ✓ | own projects | | | |
@@ -231,6 +232,76 @@ waiting on clients, suppliers or manager decisions. Evaluations are unique per
 policy, subject and period (no duplicates), store their evidence, need a manager
 decision, and record adjustments with reasons. Amounts are visible only to the
 person and to holders of `rewards.view_all`. Rewards are separate from payroll.
+
+### 10.1 Milestone rewards
+
+While planning, people holding `rewards.manage_policies` (owner and administrators)
+attach a reward to an **open** milestone: an amount for **one person**, or **shared** by
+2 to 20 people. Recipients must be active people working on the project (its members,
+manager or owner). The milestone's due date at that moment is recorded as the **agreed
+date**. A reward can be changed or withdrawn (with a reason the people read) until the
+milestone completes; after that only a reviewer's decision settles it.
+
+**Split rule.** A shared amount is split equally in minor units, in name order; the
+remainder (amount mod people) goes one paisa each to the first people, so the shares
+always add up to the amount (₹5,000.01 for two: ₹2,500.01 and ₹2,500.00;
+`splitMilestoneReward`).
+
+**Check at completion** (`assessMilestoneReward`, run in the same transaction that
+completes the milestone), for each recipient:
+
+| Condition | Met when |
+|---|---|
+| Required deliverables submitted | Every required, not cancelled deliverable of the milestone's (not cancelled) tasks has at least one submitted version. Met when none is required. |
+| Reviews passed | Each of those deliverables is approved (its latest version). |
+| Completed by the agreed date | Late working days ≤ excused working days. Late working days = the recipient's working days after the deadline up to the completion day (studio timezone). The deadline is the milestone's due date at completion, which only moves when a scope change is approved — so an approved revision replaces the agreed date. |
+| Required documents on file | Each folder the planner ticked holds a project document added by the completion instant and not archived before it. Met when none is required. |
+
+**Excused working days** = working days on the recipient's calendar on which at least one
+blocker on the milestone's tasks, outside the recipient's control, was open (from the day
+it was raised to the day before it was resolved, or to completion; overlaps count once).
+Outside the person's control: category client, supplier or manager decision, or waiting
+on a named colleague other than the person. A shared reward is judged per person, so a
+wait on one recipient excuses the others but not them.
+
+The result is a **recommendation** (grant when every condition is met, otherwise
+withhold) with the evidence of each condition, and the share waits for review. A person
+holding `rewards.decide` approves (optionally with a different amount, explained by the
+note) or declines it, always with a note, never for their own reward. Nothing is granted,
+paid or deducted automatically: the proposed amount is always the full share.
+
+Amounts: the person and `rewards.view_all` see what is proposed and granted; planners
+also see the amount and planned split they set in the project. Everyone else sees no
+reward on the milestone. Planning, checks, decisions and withdrawals are audited (amounts
+hidden in the audit log without `rewards.view_all`); nothing goes to the project activity
+feed. Recipients are told when a reward is attached, changed, withdrawn, checked and
+decided; reviewers when shares wait for them (`reward_review_requested`).
+
+### 10.2 Transparency and challenges
+
+Rewards → My recognition (web and phone) shows each person **what earns a reward**
+(every active policy with each criterion and how it is measured, and their planned
+milestone rewards with the conditions in words), **what waits for review** with the
+rules' findings, and **every decision** with its reasons, adjustments and challenges.
+
+The person a record is about (for a team evaluation, any member of the team) can
+**challenge** it with a reason (10 to 2,000 characters) once the outcome is known (not
+eligible, approved, not approved). One challenge per record can be open at a time, and a
+record can be challenged three times in all (`challengeRefusal`). Records the person may
+not see answer 404.
+
+The challenge goes to the reviewer who decided the record (or, when nobody did or they
+no longer hold `rewards.decide`, to everyone who does). A reviewer — never the person who
+raised it or anyone the record is about — answers with a note:
+
+- **Uphold:** the record stands.
+- **Correct:** the record is granted, or the amount granted is raised; the corrected
+  amount is stored as the adjusted amount so the original stays on record. A challenge
+  never lowers a reward or takes one away (`correctionProblem`).
+
+Each challenge keeps the record's outcome when it was raised and after the answer, so
+the full history is visible on the record. Raising and answering are audited, emit
+outbox events and notify both ways (sensitive kinds: generic lock-screen text).
 
 ## 11. Notifications and escalations (FR-NTF)
 

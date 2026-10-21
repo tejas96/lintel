@@ -145,6 +145,36 @@ describe('milestone rewards', () => {
       .post(`/v1/rewards/milestones/${designerShare.id}/decision`, approve)
       .expect(422);
   });
+  it('keeps compensation out of the audit log for people without rewards.view_all', async () => {
+    const { milestoneId } = await projectWithMilestone(people);
+    const plan = await attachSharedReward(people, milestoneId);
+    await completeMilestone(testApp, people, milestoneId);
+    const [share] = await sharesOf(people, plan.id);
+    if (!share) throw new Error('missing share');
+    await people.owner
+      .post(`/v1/rewards/milestones/${share.id}/decision`, {
+        decision: 'approve',
+        note: 'Approved at ₹2,000.',
+        adjustedAmountMinor: 200_000,
+        version: share.version,
+      })
+      .expect(200);
+    const query = '/v1/audit?entityType=milestone_reward_share&pageSize=100';
+    const asAdmin = await people.admin.get(query).expect(200);
+    const hidden = asAdmin.body.items.find(
+      (item: { entityId: string }) => item.entityId === share.id,
+    );
+    expect(hidden.before.shareAmountMinor).toBe('[restricted]');
+    expect(hidden.after).toMatchObject({
+      adjustedAmountMinor: '[restricted]',
+      note: '[restricted]',
+    });
+    const asOwner = await people.owner.get(query).expect(200);
+    const shown = asOwner.body.items.find(
+      (item: { entityId: string }) => item.entityId === share.id,
+    );
+    expect(shown.after.adjustedAmountMinor).toBe(200_000);
+  });
 });
 
 async function attachSharedRewardAt(milestoneId: string, version: number) {
