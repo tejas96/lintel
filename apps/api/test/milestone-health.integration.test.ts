@@ -79,7 +79,9 @@ describe('milestone health and the schedule forecast', () => {
       (item: { id: string }) => item.id === chosen.milestone,
     );
     expect(milestone.health).toBe('at_risk');
-    expect(milestone.riskReasons[0]).toMatch(/^Forecast \d+ working days? late, on \d{4}-/);
+    expect(milestone.riskReasons[0]).toMatch(
+      /^Forecast \d+ working days? late, on \d{1,2} [A-Z][a-z]{2}/,
+    );
   });
 
   it('agrees with the risk cards on every commitment they say is late', async () => {
