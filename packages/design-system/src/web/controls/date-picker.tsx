@@ -3,9 +3,6 @@
 import {
   addDays,
   addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
   format,
   isSameDay,
   isSameMonth,
@@ -42,6 +39,8 @@ function weeksOf(days: readonly Date[]): Date[][] {
   for (let index = 0; index < days.length; index += 7) weeks.push(days.slice(index, index + 7));
   return weeks;
 }
+
+const SHOWN_DAYS = 6 * 7;
 
 const KEY_STEPS: Readonly<Record<string, number>> = {
   ArrowLeft: -1,
@@ -86,10 +85,9 @@ export function DatePicker({
     const key = toKey(date);
     return (min !== undefined && key < min) || (max !== undefined && key > max);
   };
-  const days = eachDayOfInterval({
-    start: startOfWeek(startOfMonth(focusDate), { weekStartsOn: 1 }),
-    end: endOfWeek(endOfMonth(focusDate), { weekStartsOn: 1 }),
-  });
+  // Always six weeks: the popover keeps one height, so it never flips sides when the month changes.
+  const firstShown = startOfWeek(startOfMonth(focusDate), { weekStartsOn: 1 });
+  const days = Array.from({ length: SHOWN_DAYS }, (_, index) => addDays(firstShown, index));
   const onGridKeyDown = (event: KeyboardEvent<HTMLTableElement>) => {
     const step = KEY_STEPS[event.key];
     if (step !== undefined) {
