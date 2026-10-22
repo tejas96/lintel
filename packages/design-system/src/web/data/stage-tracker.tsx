@@ -43,7 +43,7 @@ export function StageTracker({ stages, variant = 'compact', className }: StageTr
     ? `Stage ${activeIndex + 1} of ${stages.length}: ${current.name}`
     : stages.every((stage) => stage.status === 'completed' || stage.status === 'skipped')
       ? 'All stages complete'
-      : `${stages.length} stages, not started`;
+      : `${stages.length} ${stages.length === 1 ? 'stage' : 'stages'}, not started`;
   if (stages.length === 0) return null;
   return (
     <div className={cn('flex w-full flex-col gap-2', className)}>

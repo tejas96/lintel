@@ -2,8 +2,8 @@ import type { TaskDetail } from '@lintel/api-contracts';
 import { Avatar, PriorityMarker } from '@lintel/design-system/web';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { formatCalendarDate } from '@/lib/format/dates';
-import { describeTaskDue } from '@/lib/format/task-due';
+import { daysBetween, describeDue, formatCalendarDate } from '@/lib/format/dates';
+import { describeTaskDue, formatTimeOfDay } from '@/lib/format/task-due';
 import { ProjectChip, TaskNumber, TaskStatusPill } from '../task-presentation';
 
 function Fact({ label, children }: { readonly label: string; readonly children: ReactNode }) {
@@ -13,6 +13,11 @@ function Fact({ label, children }: { readonly label: string; readonly children: 
       <dd className="flex min-h-7 items-center gap-2 type-body-sm text-ink">{children}</dd>
     </div>
   );
+}
+
+/** "Due tomorrow", "2 days late", "Was due today": only near deadlines, never the date again. */
+function relativeDue(dueDate: string, today: string, late: boolean): string {
+  return late && dueDate === today ? 'Was due today' : describeDue(dueDate, today).text;
 }
 
 /** Where the task sits, who owns it and when it is due. */
@@ -31,8 +36,14 @@ export function TaskFacts({ task, today }: { readonly task: TaskDetail; readonly
         {task.dueDate && due ? (
           <span className="flex flex-col">
             <span className={due.late ? 'font-medium text-overdue' : undefined}>
-              {formatCalendarDate(task.dueDate, today)}, {due.text.toLowerCase()}
+              {formatCalendarDate(task.dueDate, today)}
+              {task.dueTime ? `, ${formatTimeOfDay(task.dueTime)}` : ''}
             </span>
+            {daysBetween(today, task.dueDate) < 7 && (
+              <span className={due.late ? 'text-overdue' : 'text-ink-faint'}>
+                {relativeDue(task.dueDate, today, due.late)}
+              </span>
+            )}
             {moved && task.baselineDueDate && (
               <span className="text-ink-faint">
                 Planned {formatCalendarDate(task.baselineDueDate, today)}

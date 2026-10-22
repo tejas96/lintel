@@ -52,7 +52,7 @@ export async function sendScopeDecisionNotices(
       recipientUserId: ownerUserId,
       kind: 'scope_change_decided',
       title: `Changes to your work in ${projectName}`,
-      body: `Approved scope change "${change.title}" moved or cancelled ${count} of your task(s).`,
+      body: `Approved scope change "${change.title}" moved or cancelled ${count === 1 ? 'one of your tasks' : `${count} of your tasks`}.`,
       linkPath: link,
       subjectType: 'scope_change',
       subjectId: change.id,

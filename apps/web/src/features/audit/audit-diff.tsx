@@ -1,16 +1,19 @@
 import { cn } from '@lintel/design-system/web';
-import { fieldChanges, fieldLabel, formatValue } from './audit-presentation';
+import { fieldChanges, fieldLabel } from './audit-presentation';
+import { AuditValue } from './audit-value';
 
 interface AuditDiffProps {
   readonly before: Readonly<Record<string, unknown>> | null;
   readonly after: Readonly<Record<string, unknown>> | null;
+  /** Names for ids recorded in the snapshots, resolved by the server. */
+  readonly names: Readonly<Record<string, string>>;
 }
 
 /**
  * Before and after side by side, field by field. Changed fields lead; a
  * value that was only recorded on one side shows a dash on the other.
  */
-export function AuditDiff({ before, after }: AuditDiffProps) {
+export function AuditDiff({ before, after, names }: AuditDiffProps) {
   const changes = fieldChanges(before, after);
   if (changes.length === 0) {
     return (
@@ -59,21 +62,21 @@ export function AuditDiff({ before, after }: AuditDiffProps) {
               {!onlyAfter && (
                 <td
                   className={cn(
-                    'border-b border-hairline px-3 py-2 align-top font-mono text-[0.75rem] break-all',
+                    'border-b border-hairline px-3 py-2 align-top break-words',
                     change.changed &&
                       'bg-sunken/70 text-ink-muted line-through decoration-ink-faint',
                   )}
                 >
-                  {formatValue(change.before)}
+                  <AuditValue field={change.field} value={change.before} names={names} />
                 </td>
               )}
               <td
                 className={cn(
-                  'border-b border-hairline px-3 py-2 align-top font-mono text-[0.75rem] break-all',
+                  'border-b border-hairline px-3 py-2 align-top break-words',
                   change.changed && 'font-medium text-ink',
                 )}
               >
-                {formatValue(change.after)}
+                <AuditValue field={change.field} value={change.after} names={names} />
               </td>
             </tr>
           ))}

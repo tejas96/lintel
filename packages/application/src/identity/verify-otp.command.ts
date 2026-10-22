@@ -89,6 +89,8 @@ export class VerifyOtpCommand {
       ipHash,
       expiresAt: new Date(now.getTime() + lifetimeDays * 86_400_000),
     });
+    // Signing in is activity: "Last active" must not read "Not yet" for someone who just arrived.
+    await this.store.touchSession(session.id, now);
     await this.records.appendAudit({
       actorUserId: user.id,
       action: 'auth.signed_in',

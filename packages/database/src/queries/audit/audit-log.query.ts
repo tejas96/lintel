@@ -3,6 +3,7 @@ import type { DatabaseExecutor } from '../../client';
 import { auditLog } from '../../schema';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import type { UserSummaryView } from '../shared/view-types';
+import { loadAuditNames, referencedIds } from './audit-names.query';
 
 export interface AuditEntryView {
   readonly id: string;
@@ -12,6 +13,8 @@ export interface AuditEntryView {
   readonly entityId: string | null;
   readonly before: Record<string, unknown> | null;
   readonly after: Record<string, unknown> | null;
+  /** Names for ids that appear in `before`/`after` ("#12 Measure the site", "Kavya Rao"). */
+  readonly names: Record<string, string>;
   readonly createdAt: string;
 }
 
@@ -41,10 +44,13 @@ export async function queryAuditLog(
       .limit(filter.pageSize)
       .offset((filter.page - 1) * filter.pageSize),
   ]);
-  const actors = await loadUserSummaries(
-    db,
-    rows.map((row) => row.actorUserId),
-  );
+  const [actors, names] = await Promise.all([
+    loadUserSummaries(
+      db,
+      rows.map((row) => row.actorUserId),
+    ),
+    loadAuditNames(db, referencedIds(rows.flatMap((row) => [row.before, row.after]))),
+  ]);
   return {
     items: rows.map((row) => ({
       id: row.id,
@@ -54,8 +60,22 @@ export async function queryAuditLog(
       entityId: row.entityId,
       before: row.before,
       after: row.after,
+      names: namesFor(names, [row.before, row.after]),
       createdAt: row.createdAt.toISOString(),
     })),
     totalItems: totals?.total ?? 0,
   };
+}
+
+/** Only the names one entry refers to, so each item stays self-contained. */
+function namesFor(
+  all: Record<string, string>,
+  snapshots: readonly unknown[],
+): Record<string, string> {
+  const picked: Record<string, string> = {};
+  for (const id of referencedIds(snapshots)) {
+    const name = all[id];
+    if (name !== undefined) picked[id] = name;
+  }
+  return picked;
 }

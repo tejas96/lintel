@@ -1,4 +1,4 @@
-import { type CalendarDate, daysBetween } from '@lintel/shared';
+import { type CalendarDate, daysBetween, pluralize } from '@lintel/shared';
 import type { ProjectCriticality } from '../projects/project-status';
 import {
   deadlineSignal,
@@ -125,7 +125,7 @@ function collectReasons(
     reasons.push({
       code: 'UNBLOCKS_OTHERS',
       points: Math.min(input.openDependentCount * 4, 12),
-      explanation: `${input.openDependentCount} other task(s) wait for it.`,
+      explanation: `${pluralize(input.openDependentCount, 'other task')} ${input.openDependentCount === 1 ? 'waits' : 'wait'} for it.`,
     });
   }
   const criticality = CRITICALITY_POINTS[input.projectCriticality];

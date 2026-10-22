@@ -1,4 +1,4 @@
-import { addDays, type CalendarDate } from '@lintel/shared';
+import { addDays, type CalendarDate, formatCalendarDateWords } from '@lintel/shared';
 import { and, asc, eq, inArray, isNull, ne, or } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import {
@@ -116,7 +116,7 @@ export async function taskReviews(
     type: 'task_review',
     id: task.id,
     title: task.title,
-    subtitle: `${project.reference} · #${task.number}${task.dueDate ? ` · due ${task.dueDate}` : ''}`,
+    subtitle: `${project.reference} · #${task.number}${task.dueDate ? ` · due ${formatCalendarDateWords(task.dueDate)}` : ''}`,
     requestedByUserId: task.ownerUserId,
     requestedAt: task.submittedAt ?? task.updatedAt,
     project,

@@ -1,4 +1,4 @@
-import { type CalendarDate, daysBetween, spokenTimeOfDay } from '@lintel/shared';
+import { type CalendarDate, daysBetween, pluralize, spokenTimeOfDay } from '@lintel/shared';
 import {
   type BusinessMoment,
   deadlineTimeOf,
@@ -71,7 +71,7 @@ export function deadlineSignal(
   if (daysLeft < 0) {
     const late = -daysLeft;
     const points = 35 + Math.min(late * 2, 10);
-    return { code: 'OVERDUE', points, explanation: `It is ${late} day(s) overdue.` };
+    return { code: 'OVERDUE', points, explanation: `It is ${pluralize(late, 'day')} overdue.` };
   }
   if (daysLeft === 0) {
     if (isOverdueAt(task, today, clock)) {

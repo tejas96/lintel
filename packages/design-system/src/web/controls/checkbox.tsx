@@ -115,12 +115,18 @@ export function Switch({
         <span id={`${id}-label`} className="type-body text-ink">
           {label}
         </span>
-        {description && <span className="type-body-sm text-ink-faint">{description}</span>}
+        {description && (
+          <span id={`${id}-description`} className="type-body-sm text-ink-faint">
+            {description}
+          </span>
+        )}
       </label>
       <SwitchPrimitive.Root
         id={id}
         aria-labelledby={`${id}-label`}
+        // A plain-text name too, for tools that do not follow aria-labelledby.
         aria-label={typeof label === 'string' ? label : undefined}
+        aria-describedby={description ? `${id}-description` : undefined}
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}

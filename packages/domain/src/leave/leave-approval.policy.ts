@@ -1,4 +1,4 @@
-import { type CalendarDate, daysBetween } from '@lintel/shared';
+import { type CalendarDate, daysBetween, pluralize } from '@lintel/shared';
 
 export interface LeaveTypeRules {
   readonly requiresReason: boolean;
@@ -57,12 +57,12 @@ function warningsFor(rules: LeaveTypeRules, facts: LeaveApprovalFacts): string[]
   const warnings: string[] = [];
   const notice = daysBetween(facts.today, facts.startDate);
   if (!facts.isUrgentAbsence && notice < rules.minimumNoticeDays) {
-    warnings.push(`Less than ${rules.minimumNoticeDays} days of notice was given.`);
+    warnings.push(`Less than ${pluralize(rules.minimumNoticeDays, 'day')} of notice was given.`);
   }
   if (rules.annualAllowanceHalfDays !== null) {
     const remaining = rules.annualAllowanceHalfDays - facts.usedHalfDaysThisYear;
     if (facts.requestedHalfDays > remaining) {
-      warnings.push(`This exceeds the remaining allowance of ${remaining / 2} day(s).`);
+      warnings.push(`This exceeds the remaining allowance of ${pluralize(remaining / 2, 'day')}.`);
     }
   }
   if (facts.hasCriticalConflicts) {

@@ -19,13 +19,25 @@ import { useWorkTracking } from '@/features/tasks/work-tracking';
 
 interface QuickActionProps {
   readonly task: TaskSummary;
+  /** Waits on unfinished prerequisites: the domain refuses to start it, so Start is not offered. */
+  readonly waiting?: boolean;
   /** Called before a change this person makes, so the list may reorder. */
   readonly onBeforeChange: () => void;
   readonly onReportBlocker: (task: TaskSummary) => void;
 }
 
+/** Ready (or sent back) and not waiting on unfinished prerequisites, which the domain refuses. */
+function canStart(task: TaskSummary, waiting: boolean): boolean {
+  return !waiting && (task.status === 'ready' || task.status === 'changes_requested');
+}
+
 /** The one obvious next step for a task, chosen from its status. */
-export function TaskQuickAction({ task, onBeforeChange, onReportBlocker }: QuickActionProps) {
+export function TaskQuickAction({
+  task,
+  waiting = false,
+  onBeforeChange,
+  onReportBlocker,
+}: QuickActionProps) {
   const actions = useTaskActions();
   const tracking = useWorkTracking();
   const finishTo = task.requiresReview ? 'in_review' : 'done';
@@ -41,7 +53,7 @@ export function TaskQuickAction({ task, onBeforeChange, onReportBlocker }: Quick
       icon: <Hand aria-hidden />,
       run: () => actions.acknowledge.mutate(task.id),
     };
-  } else if (task.status === 'ready' || task.status === 'changes_requested') {
+  } else if (canStart(task, waiting)) {
     primary = {
       label: 'Start',
       icon: <Play aria-hidden />,

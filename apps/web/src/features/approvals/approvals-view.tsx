@@ -11,6 +11,7 @@ import {
   Skeleton,
   SkeletonGroup,
 } from '@lintel/design-system/web';
+import { withCalendarDateWords } from '@lintel/shared';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
 import Link from 'next/link';
@@ -108,8 +109,8 @@ export function ApprovalsView() {
               <ApprovalCard
                 key={`${item.type}-${item.id}`}
                 kind={kind.label}
-                title={item.title}
-                subtitle={item.subtitle}
+                title={withCalendarDateWords(item.title)}
+                subtitle={withCalendarDateWords(item.subtitle)}
                 requestedBy={item.requestedBy}
                 requestedWhen={formatRelativeInstant(item.requestedAt)}
                 urgent={item.urgency === 'high'}

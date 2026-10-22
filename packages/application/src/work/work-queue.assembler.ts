@@ -17,7 +17,7 @@ import {
 } from '@lintel/domain';
 import type { CalendarDate } from '@lintel/shared';
 import { isFinishedTaskStatus } from '../tasks/task-decision';
-import type { WorkQueueSnapshot, WorkQueueTaskRow } from './work-queue.source';
+import type { WorkQueueNode, WorkQueueSnapshot, WorkQueueTaskRow } from './work-queue.source';
 
 export interface WorkQueueItem<TSummary> {
   readonly task: TSummary;
@@ -25,6 +25,12 @@ export interface WorkQueueItem<TSummary> {
   readonly bucket: WorkQueueBucket;
   readonly headline: string;
   readonly reasons: readonly PriorityReason[];
+  /** Unfinished tasks this one waits on (its `waiting` bucket), so screens can name them. */
+  readonly waitingOn: readonly WaitingOnTask[];
+}
+
+export interface WaitingOnTask extends Omit<WorkQueueNode, 'milestoneId'> {
+  readonly id: string;
 }
 
 export interface WorkQueueCounts {
@@ -103,12 +109,31 @@ export function assembleWorkQueue<T>(
   clock?: PriorityClock,
 ): { items: WorkQueueItem<T>[]; next: WorkQueueItem<T> | null; counts: WorkQueueCounts } {
   const summaries = new Map(snapshot.tasks.map((entry) => [entry.row.taskId, entry.summary]));
+  const isFinished = (id: string) => {
+    const status = snapshot.nodes.get(id)?.status;
+    return status !== undefined && isFinishedTaskStatus(status);
+  };
+  const waitingOnOf = (taskId: string): WaitingOnTask[] =>
+    unmetPrerequisites(taskId, snapshot.edges, isFinished).flatMap((id) => {
+      const node = snapshot.nodes.get(id);
+      return node
+        ? [
+            {
+              id,
+              number: node.number,
+              title: node.title,
+              status: node.status,
+              dueDate: node.dueDate,
+            },
+          ]
+        : [];
+    });
   const items: WorkQueueItem<T>[] = [];
   for (const ranked of rankWorkQueue(prioritizationInputs(snapshot), today, strategy, clock)) {
     const task = summaries.get(ranked.taskId);
     if (task === undefined) continue;
     const { score, bucket, headline, reasons } = ranked;
-    items.push({ task, score, bucket, headline, reasons });
+    items.push({ task, score, bucket, headline, reasons, waitingOn: waitingOnOf(ranked.taskId) });
   }
   const count = (bucket: WorkQueueBucket) => items.filter((item) => item.bucket === bucket).length;
   return {

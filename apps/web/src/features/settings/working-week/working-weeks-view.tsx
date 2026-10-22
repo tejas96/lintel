@@ -142,7 +142,12 @@ export function WorkingWeeksView() {
           </ul>
         )}
       </section>
-      <WorkingWeekSheet mode={sheet} onClose={() => setSheet(null)} onRefresh={refresh} />
+      <WorkingWeekSheet
+        mode={sheet}
+        studio={studio}
+        onClose={() => setSheet(null)}
+        onRefresh={refresh}
+      />
     </div>
   );
 }

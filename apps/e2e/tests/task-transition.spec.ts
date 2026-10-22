@@ -50,7 +50,7 @@ test.describe('task status changes', () => {
     await page.getByRole('button', { name: 'Start work' }).first().click();
     await expect(page.getByRole('button', { name: /^Pause/ })).toBeVisible();
     const refusal = page.getByText(
-      'Mark done isn’t available yet: 2 required checklist item(s) are not done.',
+      'Mark done isn’t available yet: 2 required checklist items are not done.',
     );
     await expect(refusal).toBeVisible();
     await expect(page.getByRole('button', { name: 'Mark done' })).toHaveCount(0);
@@ -58,7 +58,7 @@ test.describe('task status changes', () => {
 
     await page.getByRole('checkbox', { name: 'Balcony measured' }).click();
     await expect(
-      page.getByText('Mark done isn’t available yet: 1 required checklist item(s) are not done.'),
+      page.getByText('Mark done isn’t available yet: 1 required checklist item is not done.'),
     ).toBeVisible();
     await page.getByRole('checkbox', { name: 'Drainage points photographed' }).click();
     await expect(page.getByText(/Mark done isn’t available yet/)).toHaveCount(0);

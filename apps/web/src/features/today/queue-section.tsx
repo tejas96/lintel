@@ -88,6 +88,7 @@ export function QueueSection({
               <TaskRow
                 key={item.task.id}
                 task={item.task}
+                waitingOn={item.waitingOn}
                 today={today}
                 onBeforeChange={onBeforeChange}
                 onReportBlocker={onReportBlocker}

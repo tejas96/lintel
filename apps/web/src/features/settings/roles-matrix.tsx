@@ -33,6 +33,46 @@ function describeCapability(capability: Capability): { area: string; action: str
   return { area: AREAS[area] ?? area, action: words.charAt(0).toUpperCase() + words.slice(1) };
 }
 
+/** One role × capability cell. Its name says the state in words, not only as an icon. */
+function CapabilityToggle({
+  role,
+  name,
+  held,
+  disabled,
+  onToggle,
+}: {
+  readonly role: Role;
+  readonly name: string;
+  readonly held: boolean;
+  readonly disabled: boolean;
+  readonly onToggle: (held: boolean) => void;
+}) {
+  const locked = role === 'owner';
+  const state = locked ? 'always allowed (owner)' : held ? 'allowed' : 'not allowed';
+  return (
+    <button
+      type="button"
+      aria-label={`${ROLE_LABELS[role]}: ${name}, ${state}`}
+      aria-pressed={locked ? undefined : held}
+      disabled={locked || disabled}
+      onClick={() => onToggle(held)}
+      className={cn(
+        'inline-flex size-9 items-center justify-center rounded-md transition-colors',
+        held ? 'text-accent hover:bg-accent-soft' : 'text-ink-faint/40 hover:bg-sunken',
+        locked && 'cursor-not-allowed',
+      )}
+    >
+      {locked ? (
+        <Lock aria-hidden className="size-3.5 text-ink-faint" />
+      ) : held ? (
+        <Check aria-hidden className="size-4" />
+      ) : (
+        <span aria-hidden className="size-1.5 rounded-full bg-current" />
+      )}
+    </button>
+  );
+}
+
 /** Who can do what. The owner always keeps everything. */
 export function RolesMatrix() {
   const queryClient = useQueryClient();
@@ -112,39 +152,20 @@ export function RolesMatrix() {
                   <span className="type-body-sm text-ink">{action}</span>
                   <span className="ml-2 type-body-sm text-ink-faint">{area}</span>
                 </th>
-                {roles.data.map((entry) => {
-                  const held = entry.capabilities.includes(capability);
-                  const locked = entry.role === 'owner';
-                  return (
-                    <td
-                      key={entry.role}
-                      className="border-b border-hairline/70 px-2 py-1 text-center"
-                    >
-                      <button
-                        type="button"
-                        aria-pressed={held}
-                        aria-label={`${ROLE_LABELS[entry.role]}: ${action} (${area})`}
-                        disabled={locked || update.isPending}
-                        onClick={() => toggle(entry.role, capability, held)}
-                        className={cn(
-                          'inline-flex size-9 items-center justify-center rounded-md transition-colors',
-                          held
-                            ? 'text-accent hover:bg-accent-soft'
-                            : 'text-ink-faint/40 hover:bg-sunken',
-                          locked && 'cursor-not-allowed',
-                        )}
-                      >
-                        {locked ? (
-                          <Lock aria-hidden className="size-3.5 text-ink-faint" />
-                        ) : held ? (
-                          <Check aria-hidden className="size-4" />
-                        ) : (
-                          <span aria-hidden className="size-1.5 rounded-full bg-current" />
-                        )}
-                      </button>
-                    </td>
-                  );
-                })}
+                {roles.data.map((entry) => (
+                  <td
+                    key={entry.role}
+                    className="border-b border-hairline/70 px-2 py-1 text-center"
+                  >
+                    <CapabilityToggle
+                      role={entry.role}
+                      name={`${action} (${area})`}
+                      held={entry.capabilities.includes(capability)}
+                      disabled={update.isPending}
+                      onToggle={(held) => toggle(entry.role, capability, held)}
+                    />
+                  </td>
+                ))}
               </tr>
             );
           })}

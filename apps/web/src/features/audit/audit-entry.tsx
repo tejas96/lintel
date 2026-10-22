@@ -78,7 +78,7 @@ export function AuditEntry({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 sm:pl-[4.75rem]">
-              <AuditDiff before={item.before} after={item.after} />
+              <AuditDiff before={item.before} after={item.after} names={item.names} />
             </div>
           </motion.div>
         )}

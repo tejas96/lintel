@@ -1,3 +1,4 @@
+import { isOrAre, pluralize } from '@lintel/shared';
 import { isLegalTaskTransition, TASK_STATUS_LABELS, type TaskStatus } from './task-status';
 
 /** How the actor relates to the task. Computed on the server, never sent by clients. */
@@ -78,7 +79,7 @@ const requireChecklistComplete: Guard = ({ incompleteRequiredChecklistItems }) =
     ? null
     : {
         code: 'CHECKLIST_INCOMPLETE',
-        message: `${incompleteRequiredChecklistItems} required checklist item(s) are not done.`,
+        message: `${pluralize(incompleteRequiredChecklistItems, 'required checklist item')} ${isOrAre(incompleteRequiredChecklistItems)} not done.`,
       };
 
 const requireDeliverablesSubmitted: Guard = ({ missingRequiredDeliverables }) =>

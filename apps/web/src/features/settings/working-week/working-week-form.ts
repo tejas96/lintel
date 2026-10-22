@@ -42,7 +42,9 @@ export function weekValuesOf(calendar: ManagedWorkingCalendar): WorkingWeekValue
   };
 }
 
-export function emptyWorkingWeek(): WorkingWeekValues {
+/** A new week starts from the studio week (its days and hours), with no name yet. */
+export function emptyWorkingWeek(studio?: ManagedWorkingCalendar): WorkingWeekValues {
+  if (studio) return { ...weekValuesOf(studio), name: '' };
   return {
     name: '',
     workingWeekdays: [1, 2, 3, 4, 5],

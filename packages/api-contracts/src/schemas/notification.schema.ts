@@ -32,6 +32,8 @@ export const notificationPreferencesObject = z.object({
   quietHours: z.object({ start: z.string(), end: z.string() }).nullable(),
   channels: preferenceRows,
   emailDigest: emailDigestSchema,
+  /** The kinds this person's role and projects can ever receive; settings show only these rows. */
+  receivableKinds: z.array(notificationKindSchema),
   /** What the studio has switched on, so apps only offer channels that can deliver. */
   delivery: z.object({
     sms: z.boolean(),

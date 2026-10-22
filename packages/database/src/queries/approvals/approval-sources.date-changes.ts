@@ -1,4 +1,5 @@
 import type { CalendarDate } from '@lintel/shared';
+import { formatCalendarDateWords } from '@lintel/shared';
 import { and, asc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { projects, taskDateChangeRequests, tasks } from '../../schema';
@@ -62,7 +63,7 @@ export async function dateChangeApprovals(
     type: 'date_change_request',
     id: request.id,
     title: taskTitle,
-    subtitle: `${project.name} · #${taskNumber}: due ${request.previousDueDate ?? 'not set'} → ${request.proposedDueDate}`,
+    subtitle: `${project.name} · #${taskNumber}: due ${request.previousDueDate ? formatCalendarDateWords(request.previousDueDate) : 'not set'} → ${formatCalendarDateWords(request.proposedDueDate)}`,
     requestedByUserId: request.requestedByUserId,
     requestedAt: request.createdAt,
     project,

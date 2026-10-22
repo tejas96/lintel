@@ -23,7 +23,8 @@ export function FirstRunTip({
   const markSeen = useMarkTipSeen();
   const content = guidance.data?.tips.find((candidate) => candidate.key === tip);
   // Decided once per visit: whether this screen greets the person with its tip.
-  const [showing, setShowing] = useState<boolean | null>(null);
+  // Seeded from the server render, so it is usually known on the first render: no late shift.
+  const [showing, setShowing] = useState<boolean | null>(() => (content ? !content.seen : null));
   const marked = useRef(false);
 
   useEffect(() => {

@@ -3,6 +3,7 @@ import {
   type CalendarDate,
   calendarDateInTimeZone,
   isCalendarDate,
+  pluralize,
   ValidationFailedError,
 } from '@lintel/shared';
 import { requireCapability } from '../common/capability-guard';
@@ -141,7 +142,7 @@ export class CreateProjectCommand {
       taskId: null,
       actorUserId: context.actor.userId,
       type: 'project.created',
-      summary: `Created ${project.reference}${source} with ${plan.tasks.length} task(s).${changes}`,
+      summary: `Created ${project.reference}${source} with ${pluralize(plan.tasks.length, 'task')}.${changes}`,
       payload: {
         templateVersionId: chosen?.version.id ?? null,
         taskCount: plan.tasks.length,

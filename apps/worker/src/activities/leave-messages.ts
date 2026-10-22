@@ -1,5 +1,6 @@
 import type { LeaveRequestFacts, NewNotification, PendingHandoverFact } from '@lintel/application';
 import { type LeaveTaskConflict, notificationDedupeKey } from '@lintel/domain';
+import { pluralize } from '@lintel/shared';
 import { formatCalendarDate, summariseList } from './working-time';
 
 function leavePeriod(leave: LeaveRequestFacts): string {
@@ -36,7 +37,7 @@ export function absenceReassessmentNotification(
   return {
     recipientUserId: managerUserId,
     kind: 'absence_reassessment',
-    title: `${leave.fullName} ${away}: ${conflicts.length} task(s) to reassess`,
+    title: `${leave.fullName} ${away}: ${pluralize(conflicts.length, 'task')} to reassess`,
     body: `${leave.fullName} ${away} (${leavePeriod(leave)}). Affected work: ${titles}.${criticalNote} Nothing has been reassigned.`,
     linkPath: `/leave/requests/${leave.id}`,
     subjectType: 'leave_request',

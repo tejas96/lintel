@@ -39,18 +39,11 @@ export function actionLabel(action: string): string {
   return humanize(rest.length > 0 ? rest.join(' ') : action);
 }
 
-/** A field name as words: "ownerUserId" → "Owner user id". */
+/** A field name as words: "ownerUserId" → "Owner user", "taskIds" → "Tasks", "budgetMinor" → "Budget". */
 export function fieldLabel(field: string): string {
-  const spaced = field.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
+  const stem = field.replace(/(Ids|_ids)$/, 's').replace(/(Id|_id|Minor|_minor)$/, '') || field;
+  const spaced = stem.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
-}
-
-/** A stored value as short text; objects and lists as compact JSON. */
-export function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return '—';
-  if (typeof value === 'string') return value.length > 0 ? value : '(empty)';
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  return JSON.stringify(value, null, 1).replace(/\n\s*/g, ' ');
 }
 
 export interface FieldChange {

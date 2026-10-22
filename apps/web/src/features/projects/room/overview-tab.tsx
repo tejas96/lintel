@@ -8,6 +8,7 @@ import {
   MilestoneTimeline,
   SkeletonText,
 } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { ProjectProfitabilityPanel } from '@/features/finances/project-profitability-panel';
 import { MilestonesPanel } from '@/features/projects/milestones/milestones-panel';
 import { TemplateUpdateBanner } from '@/features/projects/template-update/template-update-banner';
@@ -66,7 +67,7 @@ export function OverviewTab({ projectId }: { readonly projectId: string }) {
         <KpiTile
           label="Done"
           value={health.completedTaskCount}
-          detail={`of ${health.completedTaskCount + health.openTaskCount} tasks`}
+          detail={`of ${pluralize(health.completedTaskCount + health.openTaskCount, 'task')}`}
         />
       </div>
       <OverviewRiskCards projectId={projectId} today={today} />
