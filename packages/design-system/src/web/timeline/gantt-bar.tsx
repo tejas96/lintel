@@ -2,9 +2,10 @@
 
 import { motion } from 'motion/react';
 import type { PillTone } from '../data/status-pill';
-import { daysFrom, shortDate } from '../lib/calendar-math';
+import { shortDate } from '../lib/calendar-math';
 import { cn } from '../lib/cn';
 import { easing, layoutSpring, seconds } from '../motion/presets';
+import { ganttBarLabel } from './bar-label';
 import type { TimelineScale } from './timeline-scale';
 
 export const BAR_TONES: Readonly<Record<PillTone, string>> = {
@@ -43,13 +44,12 @@ export function GanttBar({
 }: GanttBarProps) {
   const left = scale.x(start);
   const width = Math.max(scale.dayWidth, scale.x(end) + scale.dayWidth - left);
-  const days = daysFrom(start, end) + 1;
   return (
     <motion.button
       type="button"
       layout
       onClick={onSelect}
-      aria-label={`${title}, ${statusLabel}, ${shortDate(start)} to ${shortDate(end)}, ${days} days`}
+      aria-label={ganttBarLabel(title, statusLabel, start, end)}
       className={cn(
         'absolute top-2.5 flex h-6 origin-left items-center overflow-hidden rounded-md border text-left shadow-e1',
         'transition-shadow hover:shadow-e2',
