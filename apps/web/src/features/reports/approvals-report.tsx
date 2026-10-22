@@ -23,11 +23,14 @@ const KIND_WORDS: Readonly<Record<Kind, { title: string; one: string; many: stri
   deliverable_review: { title: 'Deliverable reviews', one: 'review', many: 'reviews' },
   leave_decision: { title: 'Leave decisions', one: 'decision', many: 'decisions' },
   scope_change: { title: 'Scope changes', one: 'decision', many: 'decisions' },
+  date_change: { title: 'New-date requests', one: 'decision', many: 'decisions' },
+  reassignment: { title: 'Handover requests', one: 'decision', many: 'decisions' },
 };
 
 function linkTo(row: ApprovalsReport['slowest'][number]): string {
   if (row.kind === 'deliverable_review') return `/deliverables/${row.recordId}`;
   if (row.kind === 'leave_decision') return `/leave/${row.recordId}`;
+  if (row.kind === 'date_change' || row.kind === 'reassignment') return `/tasks/${row.recordId}`;
   return row.projectId ? `/projects/${row.projectId}/scope` : '/approvals';
 }
 
@@ -190,7 +193,7 @@ function ByDecider({ data }: { readonly data: ApprovalsReport }) {
   );
 }
 
-/** Approvals turnaround: how long reviews, leave and scope decisions take, and who is waiting. */
+/** Approvals turnaround: how long reviews, leave, scope, new-date and handover decisions take. */
 export function ApprovalsReportView() {
   const report = useApprovalsReport();
   return (
@@ -206,7 +209,7 @@ export function ApprovalsReportView() {
     >
       {(data) => (
         <>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
             {data.kinds.map((row, index) => (
               <KindCard key={row.kind} row={row} index={index} />
             ))}
@@ -218,7 +221,8 @@ export function ApprovalsReportView() {
           <p className="type-body-sm text-ink-faint">
             Turnaround = decided − requested, in elapsed hours (nights and weekends included).
             Reviews count from each submitted version; leave from the request to its final decision;
-            scope changes from proposal to approval or rejection.
+            scope changes from proposal to approval or rejection; new-date and handover requests
+            from asking to acceptance or decline.
           </p>
         </>
       )}

@@ -83,6 +83,7 @@ export async function loadWorkloadReport(
     scope: plan.scope,
     range: { start: plan.range.start, end: plan.range.end },
     granularity: plan.granularity,
+    studioStartDate: plan.studioStartDate,
     totals: summarizeWorkload(sumWorkload([...teams.values()].map((team) => team.minutes))),
     byPeriod: plan.periods.map((period, index) => ({
       start: period.start,

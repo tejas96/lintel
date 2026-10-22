@@ -1,6 +1,7 @@
 import {
   type ApplicationStores,
   type DateChangeDependencies,
+  DateChangeImpactQuery,
   DateChangeViewerQuery,
   DecideDateChangeCommand,
   type OperationsDependencies,
@@ -46,6 +47,11 @@ const DATE_CHANGE_DEPENDENCIES = Symbol('DATE_CHANGE_DEPENDENCIES');
       provide: DateChangeViewerQuery,
       inject: [UNIT_OF_WORK],
       useFactory: (uow: UnitOfWork<ApplicationStores>) => new DateChangeViewerQuery(uow.stores),
+    },
+    {
+      provide: DateChangeImpactQuery,
+      inject: [UNIT_OF_WORK],
+      useFactory: (uow: UnitOfWork<ApplicationStores>) => new DateChangeImpactQuery(uow.stores),
     },
   ],
 })

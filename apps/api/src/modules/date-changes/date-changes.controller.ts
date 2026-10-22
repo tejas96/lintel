@@ -1,4 +1,5 @@
 import {
+  DateChangeImpactQuery,
   DateChangeViewerQuery,
   DecideDateChangeCommand,
   type RequestContext,
@@ -28,6 +29,7 @@ export class DateChangesController {
     private readonly requests: RequestDateChangeCommands,
     private readonly decide: DecideDateChangeCommand,
     private readonly viewer: DateChangeViewerQuery,
+    private readonly impact: DateChangeImpactQuery,
     private readonly business: BusinessContextService,
     @Inject(DATABASE_CONNECTION) private readonly database: DatabaseConnection,
   ) {}
@@ -66,6 +68,10 @@ export class DateChangesController {
       getDateChange: async ({ params }) => ({
         status: 200,
         body: await this.present(actor, params.id),
+      }),
+      getDateChangeImpact: async ({ params }) => ({
+        status: 200,
+        body: await this.impact.execute(actor, params.id),
       }),
       decideDateChange: async ({ params, body }) => {
         await this.decide.execute(context, params.id, body);

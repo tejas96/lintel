@@ -19,12 +19,13 @@ import {
 } from './approval-facts';
 import { type LeaveReportSources, leavePeople } from './leave-report.query';
 import { resolveReportScope } from './report-scope';
+import { dateChangeFacts, reassignmentFacts } from './task-request-facts';
 
 const SLOWEST_LIMIT = 8;
 
 /**
- * Approvals turnaround: deliverable reviews and scope changes on the scoped
- * projects, and leave decisions for the same people the leave report covers.
+ * Approvals turnaround: deliverable reviews, scope changes, new-date and
+ * handover requests on the scoped projects, and leave decisions for the same people the leave report covers.
  * Formulas: `approval-turnaround.metrics.ts` (elapsed clock hours).
  */
 export async function loadApprovalsReport(
@@ -34,14 +35,16 @@ export async function loadApprovalsReport(
 ) {
   const scope = await resolveReportScope(db, plan);
   const window = reportInstantWindow(plan.range, sources.timeZone);
-  const [reviews, changes, leave] = await Promise.all([
+  const [reviews, changes, dates, handovers, leave] = await Promise.all([
     deliverableReviewFacts(db, scope.projectIds, window),
     scopeChangeFacts(db, scope.projectIds, window),
+    dateChangeFacts(db, scope.projectIds, window),
+    reassignmentFacts(db, scope.projectIds, window),
     leavePeople(db, plan, sources.audience).then((people) =>
       leaveDecisionFacts(db, people, window),
     ),
   ]);
-  const facts: NamedDecisionFact[] = [...reviews, ...changes, ...leave];
+  const facts: NamedDecisionFact[] = [...reviews, ...changes, ...dates, ...handovers, ...leave];
   const decided = facts.filter((fact) => decidedWithin(fact, window));
   const people = await loadUserSummaries(
     db,
@@ -60,6 +63,7 @@ export async function loadApprovalsReport(
     scope: plan.scope,
     range: { start: plan.range.start, end: plan.range.end },
     granularity: plan.granularity,
+    studioStartDate: plan.studioStartDate,
     kinds: APPROVAL_KINDS.map((kind) => {
       const summary = summarizeTurnaround(
         facts.filter((fact) => fact.kind === kind),

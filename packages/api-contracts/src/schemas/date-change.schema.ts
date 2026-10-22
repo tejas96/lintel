@@ -7,6 +7,7 @@ import {
   type ResponseSchema,
 } from '../common/primitives';
 import { userSummarySchema } from './people.schema';
+import { previewedMoveSchema } from './planning.schema';
 import { projectRefSchema } from './project.schema';
 import { taskRefSchema } from './task.schema';
 
@@ -45,3 +46,37 @@ export const taskDateChangesObject = z.object({
 });
 export type TaskDateChanges = z.infer<typeof taskDateChangesObject>;
 export const taskDateChangesSchema: ResponseSchema<TaskDateChanges> = taskDateChangesObject;
+
+export const dateChangeImpactObject = z.object({
+  requestId: idSchema,
+  /** Tasks that wait on this one and would start before it ends if only this task moves. */
+  waitingTasks: z.array(
+    z.object({
+      taskId: idSchema,
+      title: z.string(),
+      plannedStartDate: calendarDateSchema.nullable(),
+      dueDate: calendarDateSchema.nullable(),
+    }),
+  ),
+  /** What "accept and move the waiting tasks too" moves, knock-on included. */
+  dependentMoves: z.array(previewedMoveSchema),
+  /** Milestones whose work would end after them. */
+  slippingMilestones: z.array(
+    z.object({
+      id: idSchema,
+      name: z.string(),
+      dueDate: calendarDateSchema,
+      forecastDueDate: calendarDateSchema,
+      slipWorkingDays: z.number().int(),
+    }),
+  ),
+  plannedEndDate: calendarDateSchema,
+  currentForecastEndDate: calendarDateSchema.nullable(),
+  forecastEndDate: calendarDateSchema.nullable(),
+  forecastShiftWorkingDays: z.number().int(),
+  projectEndImpactDays: z.number().int(),
+  /** Moving the waiting tasks would pass the agreed end: that needs a scope change. */
+  movingWaitingTasksNeedsScopeChange: z.boolean(),
+});
+export type DateChangeImpact = z.infer<typeof dateChangeImpactObject>;
+export const dateChangeImpactSchema: ResponseSchema<DateChangeImpact> = dateChangeImpactObject;

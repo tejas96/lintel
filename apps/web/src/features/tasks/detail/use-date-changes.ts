@@ -15,6 +15,16 @@ export function useTaskDateChanges(taskId: string) {
   });
 }
 
+/** What accepting would do to the rest of the plan; fetched only for people who decide. */
+export function useDateChangeImpact(request: DateChangeRequest, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.dateChangeImpact(request.task.id, request.id),
+    queryFn: () =>
+      expectStatus(api.dateChanges.getDateChangeImpact({ params: { id: request.id } }), 200),
+    enabled,
+  });
+}
+
 export interface DateChangeAsk {
   readonly reason: string;
   readonly proposedStartDate: string | null;
@@ -56,11 +66,17 @@ export function useDateChangeMutations(taskId: string) {
       request: DateChangeRequest;
       decision: 'accepted' | 'declined';
       note: string | null;
+      moveWaitingTasks?: boolean;
     }) =>
       expectStatus(
         api.dateChanges.decideDateChange({
           params: { id: input.request.id },
-          body: { decision: input.decision, note: input.note, version: input.request.version },
+          body: {
+            decision: input.decision,
+            note: input.note,
+            version: input.request.version,
+            moveWaitingTasks: input.moveWaitingTasks === true,
+          },
         }),
         200,
       ),

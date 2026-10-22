@@ -37,6 +37,8 @@ export const queryKeys = {
   document: (documentId: string) => ['documents', documentId] as const,
   taskReassignments: (taskId: string) => ['tasks', 'detail', taskId, 'reassignments'] as const,
   taskDateChanges: (taskId: string) => ['tasks', 'detail', taskId, 'date-changes'] as const,
+  dateChangeImpact: (taskId: string, requestId: string) =>
+    ['tasks', 'detail', taskId, 'date-changes', requestId, 'impact'] as const,
   briefing: (query: Record<string, unknown>) => ['dashboard', 'briefing', query] as const,
   allBriefings: ['dashboard', 'briefing'] as const,
   projectRisks: (projectId: string) => ['projects', 'detail', projectId, 'risks'] as const,

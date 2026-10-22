@@ -13,7 +13,8 @@ import {
 import { ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { formatCalendarDate, formatRelativeInstant } from '@/lib/format/dates';
-import { useDateChangeMutations } from './use-date-changes';
+import { DateChangeImpactSummary } from './date-change-impact';
+import { useDateChangeImpact, useDateChangeMutations } from './use-date-changes';
 
 const STATUS: Readonly<
   Record<DateChangeRequest['status'], { tone: PillTone; glyph: StatusGlyphName; label: string }>
@@ -39,19 +40,41 @@ function DateMove({ from, to, today }: { from: string | null; to: string; today:
   );
 }
 
-/** The project manager accepts the new dates or declines with a note. */
-function DecisionPanel({ request }: { readonly request: DateChangeRequest }) {
+type Choice = 'accept-all' | 'accept-one' | 'decline';
+
+/**
+ * The project manager sees what accepting does to the rest of the plan, then
+ * accepts (only this task, or with the tasks that wait on it) or declines.
+ */
+function DecisionPanel({
+  request,
+  today,
+}: {
+  readonly request: DateChangeRequest;
+  readonly today: string;
+}) {
   const { decide } = useDateChangeMutations(request.task.id);
+  const impact = useDateChangeImpact(request, true);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const run = (decision: 'accepted' | 'declined') => {
-    if (decision === 'declined' && note.trim().length < 3) {
+  const [choice, setChoice] = useState<Choice | null>(null);
+  const run = (next: Choice) => {
+    if (next === 'decline' && note.trim().length < 3) {
       setError('Say why, so they know what to do next.');
       return;
     }
     setError(null);
-    decide.mutate({ request, decision, note: note.trim() || null });
+    setChoice(next);
+    decide.mutate({
+      request,
+      decision: next === 'decline' ? 'declined' : 'accepted',
+      note: note.trim() || null,
+      moveWaitingTasks: next === 'accept-all',
+    });
   };
+  const moves = impact.data?.dependentMoves.length ?? 0;
+  const canMoveAll = moves > 0 && impact.data?.movingWaitingTasksNeedsScopeChange === false;
+  const pending = (which: Choice) => decide.isPending && choice === which;
   return (
     <div className="flex flex-col gap-3 border-t border-hairline pt-4">
       <Field label="Note" hint="Optional to accept, needed to decline." error={error}>
@@ -62,24 +85,32 @@ function DecisionPanel({ request }: { readonly request: DateChangeRequest }) {
           maxLength={2000}
         />
       </Field>
-      <p className="type-body-sm text-ink-faint">
-        Accepting moves only this task; the history keeps the old date. Later tasks keep theirs: use
-        a scope change to move them too.
-      </p>
+      <DateChangeImpactSummary impact={impact.data} loading={impact.isPending} today={today} />
       <div className="flex flex-wrap gap-2">
+        {canMoveAll && (
+          <Button
+            variant="primary"
+            size="sm"
+            pending={pending('accept-all')}
+            onClick={() => run('accept-all')}
+          >
+            {moves === 1 ? 'Accept and move the waiting task' : `Accept and move ${moves} tasks`}
+          </Button>
+        )}
         <Button
-          variant="primary"
+          variant={canMoveAll ? 'secondary' : 'primary'}
           size="sm"
-          pending={decide.isPending && decide.variables?.decision === 'accepted'}
-          onClick={() => run('accepted')}
+          disabled={impact.isPending}
+          pending={pending('accept-one')}
+          onClick={() => run('accept-one')}
         >
-          Accept the new date
+          {moves > 0 ? 'Accept only this task' : 'Accept the new date'}
         </Button>
         <Button
           variant="danger"
           size="sm"
-          pending={decide.isPending && decide.variables?.decision === 'declined'}
-          onClick={() => run('declined')}
+          pending={pending('decline')}
+          onClick={() => run('decline')}
         >
           Decline
         </Button>
@@ -141,7 +172,7 @@ export function DateChangeRequestCard({
           <span className="text-ink">“{request.decisionNote}”</span>
         </p>
       )}
-      {request.viewerCanDecide && <DecisionPanel request={request} />}
+      {request.viewerCanDecide && <DecisionPanel request={request} today={today} />}
       {request.viewerCanWithdraw && (
         <Button
           variant="quiet"

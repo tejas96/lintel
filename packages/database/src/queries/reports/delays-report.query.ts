@@ -85,6 +85,7 @@ export async function loadDelaysReport(
     scope: plan.scope,
     range: { start: plan.range.start, end: plan.range.end },
     granularity: plan.granularity,
+    studioStartDate: plan.studioStartDate,
     delayedAfterHours: DELAYED_AFTER_HOURS,
     recurringAfter: RECURRING_DELAY_COUNT,
     kinds: DELAY_KINDS.map((kind) => ({

@@ -19,6 +19,7 @@ interface TaskRow {
   readonly title: string;
   readonly status: string;
   readonly priority: string;
+  readonly plannedStartDate: string;
   readonly dueDate: string;
   readonly version: number;
 }
@@ -58,6 +59,17 @@ function secondVersion(definition: Definition): Definition {
     priority: 'high',
     requiresReview: false,
     checklist: [{ label: 'Mark every switch', required: true }],
+    deliverables: [],
+  });
+  development?.tasks.push({
+    key: 'material-samples',
+    title: 'Get client approval on material samples',
+    responsibleRole: 'designer',
+    durationDays: 2,
+    dependsOn: [],
+    priority: 'medium',
+    requiresReview: false,
+    checklist: [],
     deliverables: [],
   });
   const handover = next.stages.findIndex((stage) => stage.key === 'design-handover');
@@ -137,6 +149,12 @@ describe('moving a project to a newer template version', () => {
     );
     const before = await tasksByTitle();
     expect(before.get('Build the mood board')?.status).toBe('ready');
+    // A new task that waits for nothing still sits inside its stage, never at "today".
+    const conceptDue = before.get('Present the concept to the client')?.dueDate ?? '';
+    const stageStart = before.get('Prepare working drawings')?.plannedStartDate;
+    expect(item('task:material-samples').schedule.plannedStartDate).toBe(stageStart);
+    expect(item('task:material-samples').schedule.plannedStartDate > conceptDue).toBe(true);
+    expect(preview.body.forecastEndDate).toEqual(expect.any(String));
   });
 
   it('applies new and unstarted work, holds started work and committed dates unless ticked', async () => {
@@ -156,7 +174,7 @@ describe('moving a project to a newer template version', () => {
       .expect(409);
     await as.designer.post(`/v1/projects/${projectId}/template-update`, body).expect(403);
     const applied = await as.pm.post(`/v1/projects/${projectId}/template-update`, body).expect(200);
-    expect(applied.body).toMatchObject({ toVersionNumber: 2, added: 4, cancelled: 1 });
+    expect(applied.body).toMatchObject({ toVersionNumber: 2, added: 5, cancelled: 1 });
 
     const after = await tasksByTitle();
     expect(after.get('Build the mood board and palette')?.status).toBe('ready');
@@ -167,6 +185,16 @@ describe('moving a project to a newer template version', () => {
     expect(after.get('Review the site survey')?.status).toBe('cancelled');
     expect(after.get('Prepare the lighting plan')?.status).toBe('ready');
     expect(after.get('Hold the sign-off meeting')).toBeDefined();
+    const samples = after.get('Get client approval on material samples');
+    expect(samples?.plannedStartDate).toBe(
+      before.get('Prepare working drawings')?.plannedStartDate,
+    );
+    const lighting = await as.pm
+      .get(`/v1/tasks/${after.get('Prepare the lighting plan')?.id}`)
+      .expect(200);
+    expect(lighting.body.prerequisites.map((task: { title: string }) => task.title)).toEqual([
+      'Prepare working drawings',
+    ]);
     const planning = after.get('Prepare space planning options');
     const plannedBefore = before.get('Prepare space planning options')?.dueDate ?? '';
     expect((planning?.dueDate ?? '') > plannedBefore).toBe(true);

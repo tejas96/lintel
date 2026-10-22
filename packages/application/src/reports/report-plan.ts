@@ -4,6 +4,7 @@ import {
   type CalendarDate,
   daysBetween,
   ForbiddenError,
+  maxCalendarDate,
   toCalendarDate,
   ValidationFailedError,
   zonedTimeToInstant,
@@ -28,7 +29,9 @@ export interface ReportPlan {
   readonly scope: 'business' | 'managed';
   readonly viewerUserId: string;
   readonly today: CalendarDate;
+  /** Never starts before `studioStartDate`: days before the studio existed hold no work. */
   readonly range: ReportSpan;
+  readonly studioStartDate: CalendarDate | null;
   readonly granularity: ReportGranularity;
   readonly periods: readonly ReportPeriod[];
   readonly projectId: string | null;
@@ -64,13 +67,16 @@ export function canOpenReports(actor: Actor, managesProjects: boolean): boolean 
  * the whole studio; project managers see the same reports limited to the
  * projects they manage (and, for leave, the people whose leave they can see);
  * everyone else is refused. The range defaults to the last 90 days, today
- * included, and may span up to 366 days.
+ * included, and may span up to 366 days. It never starts before the studio
+ * did (`studioStart`: its first records), so a new studio's capacity and
+ * weekly charts hold no empty weeks from before it existed.
  */
 export function planReport(
   actor: Actor,
   filters: ReportFilters,
   today: CalendarDate,
   managesProjects: boolean,
+  studioStart: CalendarDate | null = null,
 ): ReportPlan {
   if (!canOpenReports(actor, managesProjects)) {
     throw new ForbiddenError('Reports are for owners, administrators and project managers.');
@@ -84,13 +90,18 @@ export function planReport(
       { field: 'from', message: 'The start must be on or before the end, within a year.' },
     ]);
   }
-  const range = { start, end };
-  const granularity: ReportGranularity = length <= REPORT_WEEKLY_MAX_DAYS ? 'week' : 'month';
+  const range =
+    studioStart && studioStart <= end
+      ? { start: maxCalendarDate(start, studioStart), end }
+      : { start, end };
+  const counted = daysBetween(range.start, range.end) + 1;
+  const granularity: ReportGranularity = counted <= REPORT_WEEKLY_MAX_DAYS ? 'week' : 'month';
   return {
     scope: business ? 'business' : 'managed',
     viewerUserId: actor.userId,
     today,
     range,
+    studioStartDate: studioStart,
     granularity,
     periods: reportPeriods(range, granularity),
     projectId: filters.projectId ?? null,

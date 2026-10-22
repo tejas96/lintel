@@ -119,7 +119,10 @@ export async function applyStages(
   }
 }
 
-/** The due date of a new milestone: its latest linked task, else its stage's latest task. */
+/**
+ * The due date of a new milestone: its latest linked task, else its stage's
+ * latest task, else the first day its stage can hold work.
+ */
 function milestoneDueDate(
   context: TemplateUpdateContext,
   milestoneKey: string,
@@ -141,7 +144,8 @@ function milestoneDueDate(
   const dates = (linked.some((date) => date !== null) ? linked : inStage).filter(
     (date): date is string => date !== null,
   );
-  return dates.reduce((max, date) => (date > max ? date : max), context.today as string);
+  const floor: string = context.stageStarts.get(stageKey) ?? context.today;
+  return dates.reduce((max, date) => (date > max ? date : max), floor);
 }
 
 /** Adds new milestones, updates changed pending ones, cancels removed pending ones. */

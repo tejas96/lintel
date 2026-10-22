@@ -28,6 +28,8 @@ const APPROVAL_WORDS = {
   deliverable_review: 'Deliverable review',
   leave_decision: 'Leave decision',
   scope_change: 'Scope change',
+  date_change: 'New-date request',
+  reassignment: 'Handover request',
 } as const;
 
 /** "2026-10-21 14:05" in the studio timezone. */

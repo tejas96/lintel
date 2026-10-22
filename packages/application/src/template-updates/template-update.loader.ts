@@ -1,12 +1,13 @@
 import {
   type AddedTaskSchedule,
+  existingStageSpans,
   fieldsToApply,
   isOpenTaskStatus,
   itemWillApply,
   type ProjectRole,
   type ProjectWorkflowSnapshot,
   planTemplateUpdate,
-  scheduleAddedTasks,
+  scheduleAddedWork,
   type TemplateUpdateInput,
   type TemplateUpdatePlan,
 } from '@lintel/domain';
@@ -31,6 +32,8 @@ export interface TemplateUpdateContext {
   readonly plan: TemplateUpdatePlan;
   /** Dates and people for the added tasks that can be added. */
   readonly schedule: ReadonlyMap<string, AddedTaskSchedule>;
+  /** The first day each stage of the new version can hold work, by stage key. */
+  readonly stageStarts: ReadonlyMap<string, CalendarDate>;
   readonly today: CalendarDate;
 }
 
@@ -116,15 +119,25 @@ export async function loadTemplateUpdate(
   const addable = plan.items.filter(
     (item) => item.kind === 'task' && item.change === 'added' && item.blocked === null,
   );
-  const schedule = scheduleAddedTasks({
+  const added = scheduleAddedWork({
     definition: input.to,
     addedKeys: addable.map((item) => item.templateKey),
     existingDueByKey: existingDueDates(snapshot),
+    existingStageSpans: existingStageSpans(snapshot),
     earliestStart: today,
     calendar: input.calendar,
     assignees: await roleAssignees(stores, project),
   });
-  return { ...versions, target: versions.latest, project, input, plan, schedule, today };
+  return {
+    ...versions,
+    target: versions.latest,
+    project,
+    input,
+    plan,
+    schedule: added.tasks,
+    stageStarts: added.stageStarts,
+    today,
+  };
 }
 
 /**

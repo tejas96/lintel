@@ -13,13 +13,21 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { describeError } from '@/lib/api/describe-error';
+import { formatCalendarDate } from '@/lib/format/dates';
+
+/** What every report answers with: the range it counted and when the studio started. */
+interface ReportMetaLike {
+  readonly range: { readonly start: string; readonly end: string };
+  readonly studioStartDate: string | null;
+}
 
 /**
  * Loading, failure and the dimmed "updating" state shared by every report.
  * Children render only with data; `empty` replaces them when the report has
- * nothing to show for these filters.
+ * nothing to show for these filters. A range cut short at the studio's
+ * first day says so, so the numbers are not read as covering more.
  */
-export function ReportBody<T>({
+export function ReportBody<T extends ReportMetaLike>({
   query,
   label,
   isEmpty,
@@ -63,6 +71,12 @@ export function ReportBody<T>({
         query.isPlaceholderData && 'opacity-60',
       )}
     >
+      {data.studioStartDate !== null && data.range.start === data.studioStartDate && (
+        <p className="type-body-sm text-ink-muted">
+          Counted from {formatCalendarDate(data.studioStartDate, data.range.end)}, when the studio
+          started: there is nothing to count before it.
+        </p>
+      )}
       {isEmpty(data) ? (
         <EmptyState drawing="plan" title={empty.title} description={empty.description} />
       ) : (

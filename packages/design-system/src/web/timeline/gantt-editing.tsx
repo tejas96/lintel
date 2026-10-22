@@ -3,9 +3,10 @@
 import { motion } from 'motion/react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import type { PillTone } from '../data/status-pill';
-import { daysFrom, shortDate } from '../lib/calendar-math';
+import { shortDate } from '../lib/calendar-math';
 import { cn } from '../lib/cn';
 import { layoutSpring } from '../motion/presets';
+import { ganttBarLabel } from './bar-label';
 import { BAR_TONES } from './gantt-bar';
 import type { TimelineScale } from './timeline-scale';
 
@@ -52,8 +53,6 @@ const HANDLE =
 export function GanttEditableBar(props: GanttEditableBarProps) {
   const { scale, start, end, tone, title, statusLabel, progress, from, state } = props;
   const box = span(scale, start, end);
-  const days = daysFrom(start, end) + 1;
-  const dates = `${shortDate(start)} – ${shortDate(end)}`;
   return (
     <>
       {from && (from.start !== start || from.end !== end) && (
@@ -69,7 +68,7 @@ export function GanttEditableBar(props: GanttEditableBarProps) {
         onClick={props.onSelect}
         onKeyDown={props.onKeyDown}
         onPointerDown={(event) => props.onPointerDownPart('move', event)}
-        aria-label={`${title}, ${statusLabel}, ${dates}, ${days} days`}
+        aria-label={ganttBarLabel(title, statusLabel, start, end)}
         aria-describedby={props.describedBy}
         data-gantt-key={props.barKey}
         className={cn(
@@ -111,7 +110,7 @@ export function GanttEditableBar(props: GanttEditableBarProps) {
         </span>
         {state === 'dragging' && (
           <span className="pointer-events-none absolute -top-6 left-0 rounded-sm bg-ink px-1.5 py-0.5 font-mono text-[0.6875rem] whitespace-nowrap text-canvas shadow-e2">
-            {dates}
+            {start === end ? shortDate(start) : `${shortDate(start)} – ${shortDate(end)}`}
           </span>
         )}
       </motion.button>

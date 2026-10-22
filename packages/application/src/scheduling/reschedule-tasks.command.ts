@@ -1,14 +1,14 @@
-import { PreconditionFailedError, StaleVersionError, ValidationFailedError } from '@lintel/shared';
+import { PreconditionFailedError, ValidationFailedError } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import type { ProjectCommandDependencies } from '../projects/command-dependencies';
 import type { ProjectScheduleFacts } from '../scope-changes/scope-change.store';
 import type { TaskDateRequest } from '../scope-changes/scope-change-additions';
-import type { TaskRecord } from '../tasks/task.store';
 import { notifyAboutTask, quoted } from '../tasks/task-records';
-import { deadlineText, recordScheduleChange } from '../tasks/task-schedule-records';
-import { type PreviewedMove, previewReschedule, type ReschedulePreview } from './reschedule-plan';
+import { deadlineText } from '../tasks/task-schedule-records';
+import { type AppliedMove, applyTaskMoves } from './apply-task-moves';
+import { previewReschedule, type ReschedulePreview } from './reschedule-plan';
 
 export interface RescheduleInput {
   readonly changes: readonly TaskDateRequest[];
@@ -16,25 +16,6 @@ export interface RescheduleInput {
   readonly reason: string | null;
   /** The versions the person saw of the tasks they moved (stale views are refused). */
   readonly expectedVersions: readonly { readonly taskId: string; readonly version: number }[];
-}
-
-interface AppliedMove {
-  readonly move: PreviewedMove;
-  readonly before: TaskRecord;
-  readonly after: TaskRecord;
-}
-
-/**
- * The locked task still has the dates and status the plan was worked out
- * from. Tasks pushed along by a move carry no version from the person, so a
- * change made since the plan was read must refuse the move, not be overwritten.
- */
-function isAsPlanned(task: TaskRecord, move: PreviewedMove): boolean {
-  return (
-    task.status === move.status &&
-    task.plannedStartDate === move.currentStartDate &&
-    task.dueDate === move.currentDueDate
-  );
 }
 
 async function scheduleFacts(stores: ApplicationStores, projectId: string) {
@@ -88,43 +69,18 @@ export class RescheduleTasksCommand {
           { field: 'reason', message: 'Add the reason for the new dates.' },
         ]);
       }
-      const moved = await this.applyMoves(stores, context, preview.moves, input, reason);
+      const moved = await applyTaskMoves(stores, context, preview.moves, {
+        expectedVersions: new Map(
+          input.expectedVersions.map((entry) => [entry.taskId, entry.version]),
+        ),
+        reasonFor: (move) =>
+          move.isDownstream
+            ? `Moved because work it waits for was rescheduled: ${reason}`
+            : `Rescheduled on the timeline: ${reason}`,
+      });
       await this.record(stores, context, facts, { moved, reason, preview });
       return { moved: moved.length };
     });
-  }
-
-  /** Moves each task (the dragged ones must still be at the version the person saw). */
-  private async applyMoves(
-    stores: ApplicationStores,
-    context: RequestContext,
-    moves: readonly PreviewedMove[],
-    input: RescheduleInput,
-    reason: string,
-  ): Promise<AppliedMove[]> {
-    const versions = new Map(input.expectedVersions.map((entry) => [entry.taskId, entry.version]));
-    const moved: AppliedMove[] = [];
-    for (const move of moves) {
-      const before = await stores.tasks.findForUpdate(move.taskId);
-      if (!before) continue;
-      const expected = versions.get(move.taskId) ?? before.version;
-      const after =
-        expected === before.version && isAsPlanned(before, move)
-          ? await stores.tasks.update(before.id, before.version, {
-              plannedStartDate: move.proposedStartDate,
-              dueDate: move.proposedDueDate,
-            })
-          : null;
-      if (!after) throw new StaleVersionError(`"${before.title}"`);
-      if (move.committed) {
-        const why = move.isDownstream
-          ? `Moved because work it waits for was rescheduled: ${reason}`
-          : `Rescheduled on the timeline: ${reason}`;
-        await recordScheduleChange(stores, context, before, after, why);
-      }
-      moved.push({ move, before, after });
-    }
-    return moved;
   }
 
   private async record(

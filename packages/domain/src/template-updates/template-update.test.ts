@@ -1,14 +1,11 @@
-import { toCalendarDate } from '@lintel/shared';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_WORKING_CALENDAR } from '../calendar/working-calendar';
-import { scheduleAddedTasks } from './added-task.scheduler';
 import {
   fieldsToApply,
   itemWillApply,
   planTemplateUpdate,
   presentTemplateUpdatePlan,
 } from './template-update.diff';
-import { NEW_VERSION, PROJECT, templateTask, UPDATE_INPUT } from './template-update.fixtures';
+import { NEW_VERSION, templateTask, UPDATE_INPUT } from './template-update.fixtures';
 import type { TemplateItemChange } from './template-update.types';
 
 const plan = planTemplateUpdate(UPDATE_INPUT);
@@ -180,50 +177,5 @@ describe('presenting the plan', () => {
       expect.objectContaining({ from: 'Design', to: 'Procurement' }),
       expect.objectContaining({ added: ['Capture the brief'] }),
     ]);
-  });
-});
-
-describe('scheduling added tasks', () => {
-  it('starts each new task after its prerequisites and never before today', () => {
-    const schedule = scheduleAddedTasks({
-      definition: NEW_VERSION,
-      addedKeys: ['site-photos', 'orders'],
-      existingDueByKey: new Map([
-        ['brief', '2026-10-27'],
-        ['drawings', '2026-11-03'],
-      ]),
-      earliestStart: toCalendarDate('2026-10-29'),
-      calendar: DEFAULT_WORKING_CALENDAR,
-      assignees: new Map([['designer', 'meera']]),
-    });
-    expect(schedule.get('site-photos')).toEqual({
-      plannedStartDate: '2026-10-29',
-      dueDate: '2026-10-29',
-      ownerUserId: 'meera',
-      reviewerUserId: null,
-    });
-    expect(schedule.get('orders')).toMatchObject({
-      plannedStartDate: '2026-11-04',
-      dueDate: '2026-11-05',
-    });
-  });
-
-  it('leaves tasks unassigned when nobody holds the role', () => {
-    const schedule = scheduleAddedTasks({
-      definition: NEW_VERSION,
-      addedKeys: ['welcome'],
-      existingDueByKey: new Map(),
-      earliestStart: toCalendarDate('2026-11-01'),
-      calendar: DEFAULT_WORKING_CALENDAR,
-      assignees: new Map(),
-    });
-    expect(schedule.get('welcome')).toMatchObject({
-      plannedStartDate: '2026-11-02',
-      ownerUserId: null,
-    });
-  });
-
-  it('uses the project snapshot fixture consistently', () => {
-    expect(PROJECT.tasks.filter((task) => task.status === 'ready')).toHaveLength(3);
   });
 });
