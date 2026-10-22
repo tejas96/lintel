@@ -5,6 +5,7 @@ import {
   NotFoundError,
   type Patch,
   PreconditionFailedError,
+  pluralize,
   StaleVersionError,
 } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
@@ -104,7 +105,7 @@ export class ManageProjectCommands {
         const open = await stores.projects.openTasks(projectId);
         if (open.length > 0) {
           throw new PreconditionFailedError(
-            `${open.length} open task(s) must be done or cancelled before the project can be completed.`,
+            `${pluralize(open.length, 'open task')} must be done or cancelled before the project can be completed.`,
             [{ field: 'status', message: `Still open: ${taskList(open)}` }],
           );
         }
@@ -209,7 +210,7 @@ export class ManageProjectCommands {
       return [
         {
           field: 'members',
-          message: `${name} owns ${owned.length} open task(s): ${taskList(owned)}`,
+          message: `${name} owns ${pluralize(owned.length, 'open task')}: ${taskList(owned)}`,
         },
       ];
     });

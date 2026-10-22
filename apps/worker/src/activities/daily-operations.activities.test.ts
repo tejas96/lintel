@@ -24,7 +24,7 @@ function project(status: ProjectHealthStatus, milestones: MilestoneRiskFact[]): 
     health: {
       status,
       reasons:
-        status === 'off_track' ? [{ severity: 'critical', message: '3 task(s) are overdue.' }] : [],
+        status === 'off_track' ? [{ severity: 'critical', message: '3 tasks are overdue.' }] : [],
       openTaskCount: 4,
       overdueTaskCount: 3,
       blockedTaskCount: 0,

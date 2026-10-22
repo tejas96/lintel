@@ -1,5 +1,5 @@
 import { checkDateChangeDecision, type DateChangeDecision, domainEvent } from '@lintel/domain';
-import { NotFoundError, StaleVersionError } from '@lintel/shared';
+import { formatCalendarDateWords, NotFoundError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import { mayDecideReassignment } from '../reassignments/reassignment-deciders';
@@ -94,7 +94,7 @@ export class DecideDateChangeCommand {
         action: `date_change_${input.decision}`,
         summary:
           input.decision === 'accepted'
-            ? `Moved ${quoted(loaded.task.title)} to ${request.proposedDueDate} as asked.`
+            ? `Moved ${quoted(loaded.task.title)} to ${formatCalendarDateWords(request.proposedDueDate)} as asked.`
             : `Declined the new date for ${quoted(loaded.task.title)}.`,
         after: { status: input.decision, note, dueDate: request.proposedDueDate },
       });
@@ -141,8 +141,8 @@ export class DecideDateChangeCommand {
     const decider = names.get(context.actor.userId) ?? 'The project manager';
     const accepted = request.status === 'accepted';
     const body = accepted
-      ? `${decider} moved ${quoted(task.title)} to ${request.proposedDueDate}.${request.decisionNote ? ` ${request.decisionNote}` : ''}`
-      : `${decider} kept ${quoted(task.title)} due ${request.previousDueDate ?? 'as planned'}: ${request.decisionNote ?? ''}`;
+      ? `${decider} moved ${quoted(task.title)} to ${formatCalendarDateWords(request.proposedDueDate)}.${request.decisionNote ? ` ${request.decisionNote}` : ''}`
+      : `${decider} kept ${quoted(task.title)} due ${request.previousDueDate ? formatCalendarDateWords(request.previousDueDate) : 'as planned'}: ${request.decisionNote ?? ''}`;
     const recipients = new Set([request.requestedByUserId, task.ownerUserId]);
     recipients.delete(context.actor.userId);
     const notifier = await this.deps.operations.notifierFor(stores);

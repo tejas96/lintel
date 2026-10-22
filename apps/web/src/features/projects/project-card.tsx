@@ -3,6 +3,7 @@
 import type { ProjectSummary } from '@lintel/api-contracts';
 import { Avatar, cn, listItemEnter, StageTracker } from '@lintel/design-system/web';
 import { PROJECT_TYPE_LABELS } from '@lintel/domain';
+import { pluralWord } from '@lintel/shared';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { swatchClass } from '@/features/tasks/task-presentation';
@@ -111,7 +112,9 @@ export function ProjectCard({
           </span>
           <span className="type-body-sm text-ink-faint tabular-nums">
             {project.health.completedTaskCount} of{' '}
-            {project.health.completedTaskCount + project.health.openTaskCount} tasks done
+            {project.health.completedTaskCount + project.health.openTaskCount}{' '}
+            {pluralWord(project.health.completedTaskCount + project.health.openTaskCount, 'task')}{' '}
+            done
           </span>
         </div>
       </div>

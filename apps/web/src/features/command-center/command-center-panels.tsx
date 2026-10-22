@@ -9,6 +9,7 @@ import {
   LOAD_LABELS,
   StatusPill,
 } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { ProjectChip } from '@/features/tasks/task-presentation';
@@ -186,7 +187,7 @@ export function TeamPulse({ data }: { readonly data: CommandCenter }) {
     <Card>
       <CardHeader
         title="Team today"
-        description={`${team.availableToday} of ${team.headcount} people available`}
+        description={`${team.availableToday} of ${pluralize(team.headcount, 'person', 'people')} available`}
       />
       <div className="flex flex-col gap-4 px-5 pb-5">
         {team.overloaded.length === 0 ? (

@@ -1,4 +1,5 @@
 import { domainEvent, unmetPrerequisites } from '@lintel/domain';
+import { formatCalendarDateWords } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { Notifier } from '../notifications/notifier';
 import type { OperationsStores } from './operations-context';
@@ -97,7 +98,9 @@ function noticesFor(outcome: TransitionOutcome): TaskNotice[] {
               kind: 'task_assigned',
               recipientUserId: after.ownerUserId,
               title: `New task: ${name}`,
-              body: after.dueDate ? `Due ${after.dueDate}.` : 'A task was assigned to you.',
+              body: after.dueDate
+                ? `Due ${formatCalendarDateWords(after.dueDate)}.`
+                : 'A task was assigned to you.',
             },
           ]
         : [];

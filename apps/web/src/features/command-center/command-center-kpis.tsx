@@ -2,6 +2,7 @@
 
 import type { CommandCenter } from '@lintel/api-contracts';
 import { KpiTile, TrendBars } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { formatCalendarDate } from '@/lib/format/dates';
 
 const percent = (value: number) => `${Math.round(value * 100)}%`;
@@ -50,7 +51,7 @@ export function CommandCenterKpis({
         format={(value) => (deliveredAny ? percent(value) : '–')}
         detail={
           deliveredAny
-            ? `${kpis.onTimeDeliveryRate.sampleSize} tasks finished in this period`
+            ? `${pluralize(kpis.onTimeDeliveryRate.sampleSize ?? 0, 'task')} finished in this period`
             : `Nothing finished in this period${data.range.end >= today ? ' yet' : ''}`
         }
         chart={
@@ -89,7 +90,7 @@ export function CommandCenterKpis({
         value={team.availableToday}
         goodDirection="up"
         format={whole}
-        detail={`of ${team.headcount} people`}
+        detail={`of ${pluralize(team.headcount, 'person', 'people')}`}
       />
     </div>
   );

@@ -113,7 +113,7 @@ describe.skipIf(!url)('task transitions against PostgreSQL', () => {
       command.execute(owner, fixture.tasks.measure, { to: 'done', note: null, version: 2 }),
     ).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
-      message: '2 required checklist item(s) are not done.',
+      message: '2 required checklist items are not done.',
     });
     const items = await connection.db
       .select()

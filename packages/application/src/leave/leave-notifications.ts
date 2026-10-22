@@ -1,4 +1,5 @@
 import { type NotificationKind, notificationDedupeKey } from '@lintel/domain';
+import { formatCalendarRangeWords } from '@lintel/shared';
 import type { NewNotification } from '../notifications/notification.store';
 
 export interface LeaveSummaryFacts {
@@ -13,9 +14,7 @@ export interface LeaveSummaryFacts {
 const leavePath = (requestId: string) => `/leave/${requestId}`;
 
 function datesOf(facts: LeaveSummaryFacts): string {
-  return facts.startDate === facts.endDate
-    ? facts.startDate
-    : `${facts.startDate} to ${facts.endDate}`;
+  return formatCalendarRangeWords(facts.startDate, facts.endDate);
 }
 
 function build(

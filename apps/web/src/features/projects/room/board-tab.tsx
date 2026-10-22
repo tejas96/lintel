@@ -10,6 +10,7 @@ import {
   StatusGlyph,
 } from '@lintel/design-system/web';
 import type { TaskStatus } from '@lintel/domain';
+import { pluralize } from '@lintel/shared';
 import { LayoutGroup } from 'motion/react';
 import { useState } from 'react';
 import { useSession } from '@/features/session/session-provider';
@@ -90,7 +91,7 @@ export function BoardTab({ projectId }: { readonly projectId: string }) {
               <section
                 key={status}
                 data-board-column={status}
-                aria-label={`${presentation.label}, ${columnTasks.length} tasks`}
+                aria-label={`${presentation.label}, ${pluralize(columnTasks.length, 'task')}`}
                 className={cn(
                   'flex w-72 shrink-0 flex-col gap-3 rounded-lg border p-3 transition-[background-color,border-color,opacity] duration-(--duration-fast)',
                   'border-transparent bg-sunken/60',

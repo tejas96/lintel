@@ -1,6 +1,7 @@
 import type { TemplateUpdateItem } from '@lintel/api-contracts';
 import { cn } from '@lintel/design-system/web';
 import type { TaskPriority } from '@lintel/domain';
+import { pluralize } from '@lintel/shared';
 import { ArrowRight, Check, Lock } from 'lucide-react';
 import { PRIORITY_LABELS } from '@/features/templates/template-types';
 import { formatCalendarDate, formatMinutes } from '@/lib/format/dates';
@@ -30,7 +31,8 @@ function readable(field: Field['field'], value: string | null): string {
   if (field === 'requiresReview') return value === 'true' ? 'Needed' : 'Not needed';
   if (field === 'requiresClientApproval') return value === 'true' ? 'Needed' : 'Not needed';
   if (field === 'estimateMinutes') return formatMinutes(Number(value));
-  if (field === 'escalateAfterOverdueDays') return `After ${value} working day(s) overdue`;
+  if (field === 'escalateAfterOverdueDays')
+    return `After ${pluralize(Number(value), 'working day')} overdue`;
   if (field === 'duration') return `${value} working ${value === '1' ? 'day' : 'days'}`;
   return value;
 }

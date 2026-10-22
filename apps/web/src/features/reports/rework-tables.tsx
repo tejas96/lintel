@@ -9,6 +9,7 @@ import {
   ResponsiveTable,
   type TableColumn,
 } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
@@ -165,7 +166,7 @@ export function MostSentBack({ data }: { readonly data: ReworkReport }) {
                   {[
                     row.kind === 'task' ? 'Task' : 'Deliverable without a task',
                     row.context,
-                    `${row.changesRequested} changes requested, ${row.rejected} rejected`,
+                    `${pluralize(row.changesRequested, 'change')} requested, ${row.rejected} rejected`,
                   ].join(' · ')}
                 </span>
               </span>

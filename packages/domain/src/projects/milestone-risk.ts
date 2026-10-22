@@ -1,4 +1,10 @@
-import { type CalendarDate, daysBetween } from '@lintel/shared';
+import {
+  type CalendarDate,
+  daysBetween,
+  formatCalendarDateWords,
+  isOrAre,
+  pluralize,
+} from '@lintel/shared';
 import type { TaskStatus } from '../tasks/task-status';
 import { isOpenTaskStatus } from '../tasks/task-status';
 
@@ -60,7 +66,9 @@ export function assessMilestoneRisk(
   if (daysLeft < 0) {
     return {
       health: 'missed',
-      reasons: [`"${milestone.name}" was due ${-daysLeft} day(s) ago and is not complete.`],
+      reasons: [
+        `"${milestone.name}" was due ${pluralize(-daysLeft, 'day')} ago and is not complete.`,
+      ],
       openTaskCount: openTasks.length,
     };
   }
@@ -68,7 +76,7 @@ export function assessMilestoneRisk(
   const forecast = milestone.forecast;
   if (forecast && forecast.slipWorkingDays > 0) {
     reasons.push(
-      `Forecast ${workingDays(forecast.slipWorkingDays)} late, on ${forecast.forecastDate} instead of ${milestone.dueDate}.`,
+      `Forecast ${workingDays(forecast.slipWorkingDays)} late, on ${formatCalendarDateWords(forecast.forecastDate, today)} instead of ${formatCalendarDateWords(milestone.dueDate, today)}.`,
     );
   }
   // Always part of the slip above (nothing finishes before its due date); says why.
@@ -76,13 +84,17 @@ export function assessMilestoneRisk(
     (task) => task.dueDate !== null && task.dueDate > milestone.dueDate,
   );
   if (lateTasks.length > 0) {
-    reasons.push(`${lateTasks.length} task(s) are scheduled to finish after the milestone.`);
+    reasons.push(
+      `${pluralize(lateTasks.length, 'task')} ${isOrAre(lateTasks.length)} scheduled to finish after the milestone.`,
+    );
   }
   if (daysLeft <= MILESTONE_RISK_WINDOW_DAYS) {
     const blocked = openTasks.filter((task) => task.status === 'blocked' || task.hasOpenBlocker);
     const overdue = openTasks.filter((task) => task.dueDate !== null && task.dueDate < today);
-    if (blocked.length > 0) reasons.push(`${blocked.length} task(s) are blocked.`);
-    if (overdue.length > 0) reasons.push(`${overdue.length} task(s) are overdue.`);
+    if (blocked.length > 0)
+      reasons.push(`${pluralize(blocked.length, 'task')} ${isOrAre(blocked.length)} blocked.`);
+    if (overdue.length > 0)
+      reasons.push(`${pluralize(overdue.length, 'task')} ${isOrAre(overdue.length)} overdue.`);
   }
   return {
     health: reasons.length > 0 ? 'at_risk' : 'on_track',

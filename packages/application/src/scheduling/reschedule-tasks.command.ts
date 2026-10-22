@@ -1,4 +1,9 @@
-import { PreconditionFailedError, StaleVersionError, ValidationFailedError } from '@lintel/shared';
+import {
+  PreconditionFailedError,
+  pluralize,
+  StaleVersionError,
+  ValidationFailedError,
+} from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
@@ -139,14 +144,14 @@ export class RescheduleTasksCommand {
   ): Promise<void> {
     const { moved, reason } = done;
     const pushed = moved.filter((entry) => entry.move.isDownstream).length;
-    const knockOn = pushed > 0 ? ` (${pushed} waiting task(s) moved with it)` : '';
+    const knockOn = pushed > 0 ? ` (${pluralize(pushed, 'waiting task')} moved with it)` : '';
     const why = reason ? `: ${reason}` : '.';
     await stores.records.appendActivity({
       projectId: facts.projectId,
       taskId: null,
       actorUserId: context.actor.userId,
       type: 'project.rescheduled',
-      summary: `Rescheduled ${moved.length} task(s) on the timeline${knockOn}${why}`,
+      summary: `Rescheduled ${pluralize(moved.length, 'task')} on the timeline${knockOn}${why}`,
       payload: { taskIds: moved.map((entry) => entry.after.id), reason },
     });
     await stores.records.appendAudit({

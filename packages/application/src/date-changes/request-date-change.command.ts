@@ -1,5 +1,10 @@
 import { checkDateChangeRequest, checkDateChangeWithdrawal } from '@lintel/domain';
-import { NotFoundError, StaleVersionError, toCalendarDate } from '@lintel/shared';
+import {
+  formatCalendarDateWords,
+  NotFoundError,
+  StaleVersionError,
+  toCalendarDate,
+} from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
@@ -73,7 +78,7 @@ export class RequestDateChangeCommands {
       });
       await recordDateChangeStep(stores, context, request, {
         action: 'date_change_requested',
-        summary: `Asked for a new due date (${proposedDueDate}) for ${quoted(loaded.task.title)}.`,
+        summary: `Asked for a new due date (${formatCalendarDateWords(proposedDueDate)}) for ${quoted(loaded.task.title)}.`,
         after: { status: 'open', proposedStartDate, proposedDueDate, reason },
       });
       await this.askDeciders(stores, context, request, loaded);
@@ -134,7 +139,7 @@ export class RequestDateChangeCommands {
         kind: 'date_change_requested',
         recipientUserId,
         title: `New date for ${quoted(loaded.task.title)}?`,
-        body: `${requester} asks to move the due date from ${request.previousDueDate ?? 'none'} to ${request.proposedDueDate}: ${request.reason}`,
+        body: `${requester} asks to move the due date from ${request.previousDueDate ? formatCalendarDateWords(request.previousDueDate) : 'none'} to ${formatCalendarDateWords(request.proposedDueDate)}: ${request.reason}`,
         window: 'request',
       });
     }

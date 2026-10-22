@@ -1,4 +1,5 @@
 import type { CalendarDate } from '@lintel/shared';
+import { isOrAre, pluralize, wasOrWere } from '@lintel/shared';
 import { isOpenTaskStatus, type TaskStatus } from '../tasks/task-status';
 import type { CommitmentForecast, MilestoneHealth } from './milestone-risk';
 import type { ProjectStatus } from './project-status';
@@ -58,15 +59,21 @@ function collectReasons(
   const missed = input.milestoneHealth.filter((health) => health === 'missed').length;
   const atRisk = input.milestoneHealth.filter((health) => health === 'at_risk').length;
   if (missed > 0)
-    reasons.push({ severity: 'critical', message: `${missed} milestone(s) were missed.` });
+    reasons.push({
+      severity: 'critical',
+      message: `${pluralize(missed, 'milestone')} ${wasOrWere(missed)} missed.`,
+    });
   if (atRisk > 0)
-    reasons.push({ severity: 'risk', message: `${atRisk} milestone(s) are at risk.` });
+    reasons.push({
+      severity: 'risk',
+      message: `${pluralize(atRisk, 'milestone')} ${isOrAre(atRisk)} at risk.`,
+    });
   if (counts.overdue > 0) {
     const share = counts.open === 0 ? 0 : counts.overdue / counts.open;
     const critical = counts.overdue >= OVERDUE_COUNT_CRITICAL || share >= OVERDUE_SHARE_CRITICAL;
     reasons.push({
       severity: critical ? 'critical' : 'risk',
-      message: `${counts.overdue} task(s) are overdue.`,
+      message: `${pluralize(counts.overdue, 'task')} ${isOrAre(counts.overdue)} overdue.`,
     });
   }
   const staleBlockers = input.openBlockerAgesInDays.filter(
@@ -75,7 +82,7 @@ function collectReasons(
   if (staleBlockers > 0) {
     reasons.push({
       severity: 'risk',
-      message: `${staleBlockers} blocker(s) have been open for ${STALE_BLOCKER_DAYS}+ days.`,
+      message: `${pluralize(staleBlockers, 'blocker')} ${staleBlockers === 1 ? 'has' : 'have'} been open for ${STALE_BLOCKER_DAYS}+ days.`,
     });
   }
   const forecast = input.deliveryForecast;

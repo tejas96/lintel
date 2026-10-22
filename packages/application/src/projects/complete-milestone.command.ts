@@ -1,7 +1,9 @@
 import {
   InvalidTransitionError,
+  isOrAre,
   NotFoundError,
   PreconditionFailedError,
+  pluralize,
   StaleVersionError,
 } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
@@ -41,7 +43,7 @@ export class CompleteMilestoneCommand {
       const open = await stores.projects.openTasksOfMilestone(milestoneId);
       if (open.length > 0) {
         throw new PreconditionFailedError(
-          `${open.length} task(s) of "${milestone.name}" are still open.`,
+          `${pluralize(open.length, 'task')} of "${milestone.name}" ${isOrAre(open.length)} still open.`,
           open.map((task) => ({ field: 'tasks', message: `#${task.number} ${task.title}` })),
         );
       }

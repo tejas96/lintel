@@ -2,13 +2,21 @@
 
 import { Avatar } from '@lintel/design-system/web';
 import { PROJECT_ROLE_LABELS, PROJECT_ROLES, PROJECT_TYPE_LABELS } from '@lintel/domain';
+import { pluralize } from '@lintel/shared';
 import type { ReactNode } from 'react';
+import { formatMoney, rupeesToMinor } from '@/features/finances/finance-presentation';
 import { usePeopleOptions } from '@/features/people/use-people-options';
 import { formatLongDate } from '@/lib/format/dates';
 import { describeDraft } from './plan-draft';
 import { usePlanPreview } from './use-plan-preview';
 import { usePublishedTemplate } from './use-templates';
 import { PLAN_STEP, type WizardState } from './wizard-state';
+
+/** "₹25,00,000" from what was typed; the raw text only when it is not an amount yet. */
+function budgetWords(typed: string): string {
+  const minor = rupeesToMinor(typed);
+  return minor === null ? `₹${typed}` : formatMoney(minor, 'INR');
+}
 
 function Row({
   label,
@@ -67,7 +75,7 @@ export function StepReview({
             {template.version && (
               <span className="block type-body-sm text-ink-muted">
                 Version {template.version.versionNumber},{' '}
-                {template.version.definition.stages.length} stages
+                {pluralize(template.version.definition.stages.length, 'stage')}
               </span>
             )}
           </>
@@ -79,7 +87,8 @@ export function StepReview({
         <Row label="Plan" onEdit={() => goTo(PLAN_STEP)}>
           {preview.data ? (
             <>
-              {preview.data.tasks.length} tasks, ends {formatLongDate(preview.data.plannedEndDate)}
+              {pluralize(preview.data.tasks.length, 'task')}, ends{' '}
+              {formatLongDate(preview.data.plannedEndDate)}
               <span className="block type-body-sm text-ink-muted">
                 {describeDraft(state.plan) ?? 'As the template plans it.'}
               </span>
@@ -120,7 +129,7 @@ export function StepReview({
       )}
       {state.budgetRupees && (
         <Row label="Budget" onEdit={() => goTo(2)}>
-          ₹{state.budgetRupees}
+          {budgetWords(state.budgetRupees)}
         </Row>
       )}
     </dl>

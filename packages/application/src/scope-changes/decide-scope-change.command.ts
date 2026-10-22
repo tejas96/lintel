@@ -4,6 +4,7 @@ import {
   InvalidTransitionError,
   NotFoundError,
   PreconditionFailedError,
+  pluralize,
   StaleVersionError,
 } from '@lintel/shared';
 import { ProjectAccessService } from '../access/project-access.service';
@@ -119,7 +120,7 @@ export class DecideScopeChangeCommand {
     };
     const outcome =
       input.decision === 'approved'
-        ? ` ${counts.movedCount} task(s) rescheduled, ${counts.createdCount} added, ${counts.cancelledCount} cancelled.`
+        ? ` ${pluralize(counts.movedCount, 'task')} rescheduled, ${counts.createdCount} added, ${counts.cancelledCount} cancelled.`
         : '';
     await stores.records.appendActivity({
       projectId: change.projectId,

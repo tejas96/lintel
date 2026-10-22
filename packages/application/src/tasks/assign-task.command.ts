@@ -1,5 +1,5 @@
 import { domainEvent } from '@lintel/domain';
-import { ForbiddenError, StaleVersionError } from '@lintel/shared';
+import { ForbiddenError, formatCalendarDateWords, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type {
   OperationsContext,
@@ -69,7 +69,7 @@ export async function assignTaskOwner(
       kind: 'task_assigned',
       recipientUserId: input.ownerUserId,
       title: `New task: ${quoted(after.title)}`,
-      body: `${after.dueDate ? `Due ${after.dueDate}.` : 'A task was assigned to you.'}${reason}`,
+      body: `${after.dueDate ? `Due ${formatCalendarDateWords(after.dueDate)}.` : 'A task was assigned to you.'}${reason}`,
     },
     {
       kind: 'task_reassigned',

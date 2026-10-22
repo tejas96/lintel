@@ -63,7 +63,7 @@ describe('milestone health on the schedule forecast', () => {
     );
     expect(result.milestoneRisk.get('m1')).toEqual({
       health: 'at_risk',
-      reasons: ['Forecast 1 working day late, on 2026-11-03 instead of 2026-11-02.'],
+      reasons: ['Forecast 1 working day late, on 3 Nov instead of 2 Nov.'],
       openTaskCount: 1,
     });
     expect(result.health).toMatchObject({ status: 'off_track', forecastEndDate: '2026-11-03' });
@@ -74,15 +74,15 @@ describe('milestone health on the schedule forecast', () => {
         message:
           'Open work is forecast to finish 1 working day past the planned delivery date, on 2026-11-03.',
       },
-      { severity: 'risk', message: '1 milestone(s) are at risk.' },
+      { severity: 'risk', message: '1 milestone is at risk.' },
     ]);
   });
 
   it('names work planned after the milestone as the cause of its slip', () => {
     const result = assess(facts([task('a', { dueDate: date('2026-11-04') })], '2026-11-02'));
     expect(result.milestoneRisk.get('m1')?.reasons).toEqual([
-      'Forecast 2 working days late, on 2026-11-04 instead of 2026-11-02.',
-      '1 task(s) are scheduled to finish after the milestone.',
+      'Forecast 2 working days late, on 4 Nov instead of 2 Nov.',
+      '1 task is scheduled to finish after the milestone.',
     ]);
   });
 
@@ -90,14 +90,14 @@ describe('milestone health on the schedule forecast', () => {
     const blocked = task('a', { status: 'blocked', dueDate: date('2026-10-23') });
     expect(assess(facts([blocked], '2026-10-24')).milestoneRisk.get('m1')).toMatchObject({
       health: 'at_risk',
-      reasons: ['1 task(s) are blocked.'],
+      reasons: ['1 task is blocked.'],
     });
   });
 
   it('counts an open blocker like the blocked status', () => {
     const waiting = task('a', { dueDate: date('2026-10-23'), hasOpenBlocker: true });
     expect(assess(facts([waiting], '2026-10-26')).milestoneRisk.get('m1')?.reasons).toEqual([
-      '1 task(s) are blocked.',
+      '1 task is blocked.',
     ]);
   });
 

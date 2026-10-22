@@ -98,7 +98,7 @@ describe('transition facts → options', () => {
     );
     const options = transitionOptions(facts);
     expect(option(options, 'in_review')?.reasons).toEqual([
-      '1 required checklist item(s) are not done.',
+      '1 required checklist item is not done.',
       'Submit the required deliverables: Moodboard PDF.',
     ]);
     expect(option(options, 'done')?.reasons).toContain('Send this task for review instead.');

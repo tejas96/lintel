@@ -1,5 +1,10 @@
 import { type Capability, formatLeaveDuration } from '@lintel/domain';
-import { type CalendarDate, daysBetween, toCalendarDate } from '@lintel/shared';
+import {
+  type CalendarDate,
+  daysBetween,
+  formatCalendarRangeWords,
+  toCalendarDate,
+} from '@lintel/shared';
 import { and, asc, eq, exists, ne, or } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import {
@@ -85,7 +90,7 @@ async function leaveApprovals(
     type: 'leave_request',
     id: request.id,
     title: `${fullName} · ${typeName}`,
-    subtitle: `${request.startDate} to ${request.endDate} · ${formatLeaveDuration(request.halfDayUnits)}`,
+    subtitle: `${formatCalendarRangeWords(request.startDate, request.endDate)} · ${formatLeaveDuration(request.halfDayUnits)}`,
     requestedByUserId: request.userId,
     requestedAt: request.createdAt,
     project: null,
@@ -140,7 +145,7 @@ async function rewardApprovals(db: DatabaseExecutor): Promise<ApprovalDraft[]> {
     type: 'reward_review',
     id: evaluation.id,
     title: policyName,
-    subtitle: `${personName ?? teamName ?? 'Unknown'} · ${evaluation.periodStart} to ${evaluation.periodEnd}`,
+    subtitle: `${personName ?? teamName ?? 'Unknown'} · ${formatCalendarRangeWords(evaluation.periodStart, evaluation.periodEnd)}`,
     requestedByUserId: null,
     requestedAt: evaluation.updatedAt,
     project: null,

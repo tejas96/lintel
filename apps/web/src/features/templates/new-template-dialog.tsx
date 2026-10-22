@@ -12,6 +12,7 @@ import {
   useToast,
 } from '@lintel/design-system/web';
 import { PROJECT_TYPE_LABELS, PROJECT_TYPES, type ProjectType } from '@lintel/domain';
+import { pluralize } from '@lintel/shared';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { isApiError } from '@/lib/api/api-error';
@@ -145,7 +146,7 @@ export function NewTemplateDialog({ open, onOpenChange, templates }: NewTemplate
               label="Template to copy"
               hint={
                 copied?.publishedVersion
-                  ? `Copies version ${copied.publishedVersion.versionNumber}: ${copied.publishedVersion.stageCount} stages, ${copied.publishedVersion.taskCount} tasks.`
+                  ? `Copies version ${copied.publishedVersion.versionNumber}: ${pluralize(copied.publishedVersion.stageCount, 'stage')}, ${pluralize(copied.publishedVersion.taskCount, 'task')}.`
                   : undefined
               }
               error={errors.copyFromVersionId}

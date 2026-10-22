@@ -1,5 +1,5 @@
 import { notificationDedupeKey, scopeChangeMoneyIssues } from '@lintel/domain';
-import { ForbiddenError, ValidationFailedError } from '@lintel/shared';
+import { ForbiddenError, pluralize, pluralWord, ValidationFailedError } from '@lintel/shared';
 import { type ProjectAccess, ProjectAccessService } from '../access/project-access.service';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
@@ -57,14 +57,15 @@ export interface ScopeChangePreview {
   readonly cancellations: { readonly taskId: string; readonly taskTitle: string }[];
 }
 
-/** "2 moved, 1 added, 1 cancelled" — only the parts the change has. */
+/** "2 tasks moved, 1 added, 1 cancelled" — only the parts the change has. */
 export function describeScopeChange(assessed: AssessedScopeChange): string {
   const parts = [
     assessed.impacts.length > 0 ? `${assessed.impacts.length} moved` : null,
     assessed.newTasks.length > 0 ? `${assessed.newTasks.length} added` : null,
     assessed.cancellations.length > 0 ? `${assessed.cancellations.length} cancelled` : null,
   ].filter((part): part is string => part !== null);
-  return `${parts.join(', ')} task(s)`;
+  const total = assessed.impacts.length + assessed.newTasks.length + assessed.cancellations.length;
+  return `${pluralWord(total, 'task')}: ${parts.join(', ')}`;
 }
 
 /**
@@ -174,7 +175,9 @@ export class ProposeScopeChangeCommand {
     const names = await stores.projects.userNames([context.actor.userId]);
     const requester = names.get(context.actor.userId) ?? 'A team member';
     const impact =
-      change.days > 0 ? ` It would move the planned end by ${change.days} working day(s).` : '';
+      change.days > 0
+        ? ` It would move the planned end by ${pluralize(change.days, 'working day')}.`
+        : '';
     const notifier = await this.deps.notifierFor(stores);
     for (const userId of approvers) {
       await notifier.notify({

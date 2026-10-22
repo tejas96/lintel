@@ -1,6 +1,7 @@
 'use client';
 
 import { Checkbox, cn, ErrorState, SkeletonText } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { Check } from 'lucide-react';
 import { RadioGroup } from 'radix-ui';
 import { useEffect } from 'react';
@@ -73,8 +74,8 @@ export function StepWorkflow({
               <span className="type-body-sm text-ink-muted">{template.description}</span>
             )}
             <span className="type-body-sm text-ink-faint">
-              {template.publishedVersion?.stageCount} stages, {template.publishedVersion?.taskCount}{' '}
-              tasks, version {template.publishedVersion?.versionNumber}
+              {template.publishedVersion &&
+                `${pluralize(template.publishedVersion.stageCount, 'stage')}, ${pluralize(template.publishedVersion.taskCount, 'task')}, version ${template.publishedVersion.versionNumber}`}
             </span>
             {value === template.id && (
               <Check aria-hidden className="absolute top-4 right-4 size-4 text-accent" />
@@ -147,7 +148,7 @@ export function StepWorkflow({
                       {index + 1}
                     </span>
                     {stage.name}
-                    <span className="text-ink-faint">{stage.tasks.length} tasks</span>
+                    <span className="text-ink-faint">{pluralize(stage.tasks.length, 'task')}</span>
                   </li>
                 );
               })}

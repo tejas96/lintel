@@ -2,6 +2,7 @@
 
 import type { NotificationItem } from '@lintel/api-contracts';
 import { CountBadge, cn, IconButton, LineDrawing, Popover } from '@lintel/design-system/web';
+import { withCalendarDateWords } from '@lintel/shared';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -104,10 +105,12 @@ function NotificationList({
                       item.readAt ? 'text-ink-muted' : 'font-medium text-ink',
                     )}
                   >
-                    {item.title}
+                    {withCalendarDateWords(item.title)}
                     {!item.readAt && <span className="sr-only"> (unread)</span>}
                   </span>
-                  <span className="line-clamp-2 type-body-sm text-ink-faint">{item.body}</span>
+                  <span className="line-clamp-2 type-body-sm text-ink-faint">
+                    {withCalendarDateWords(item.body)}
+                  </span>
                   <time dateTime={item.createdAt} className="type-mono text-ink-faint">
                     {formatRelativeInstant(item.createdAt)}
                   </time>
