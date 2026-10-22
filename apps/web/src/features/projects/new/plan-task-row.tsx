@@ -114,6 +114,7 @@ export function PlanTaskRow(props: PlanTaskRowProps) {
             size="sm"
             variant="quiet"
             aria-expanded={expanded}
+            aria-label={`${expanded ? 'Done adjusting' : 'Adjust'} ${task.title}`}
             onClick={() => onExpand(!expanded)}
             className="ml-auto shrink-0"
             trailingIcon={

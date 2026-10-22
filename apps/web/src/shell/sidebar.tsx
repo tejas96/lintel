@@ -35,6 +35,8 @@ export function Sidebar({ items, activeId, onOpenPalette }: SidebarProps) {
       <button
         type="button"
         onClick={onOpenPalette}
+        aria-label="Jump to"
+        aria-keyshortcuts="Meta+K Control+K"
         className="mt-5 flex h-10 items-center gap-2.5 rounded-md border border-hairline bg-surface px-3 text-left type-body-sm text-ink-faint transition-colors hover:border-rule hover:text-ink-muted"
       >
         <Search aria-hidden className="size-4" />
@@ -91,6 +93,7 @@ export function Sidebar({ items, activeId, onOpenPalette }: SidebarProps) {
         trigger={
           <button
             type="button"
+            aria-label={`${user.fullName}, ${ROLE_LABELS[user.role]}: account and preferences`}
             className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-sunken/70"
           >
             <Avatar name={user.fullName} hue={user.avatarHue} size="sm" decorative />

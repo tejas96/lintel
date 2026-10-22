@@ -10,7 +10,8 @@ import { formatHalfDays } from './use-leave';
 export function LeaveBalances({ balances }: { readonly balances: readonly LeaveBalance[] }) {
   if (balances.length === 0) return null;
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    // Cards keep room for the full leave type name: as many columns as fit, never a cut-off name.
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
       {balances.map((balance, index) => {
         const booked = balance.usedHalfDays + balance.pendingHalfDays;
         const allowance = balance.allowanceHalfDays;
@@ -40,9 +41,12 @@ export function LeaveBalances({ balances }: { readonly balances: readonly LeaveB
               <p className="flex items-center gap-2 type-title-md text-ink">
                 <span
                   aria-hidden
-                  className={cn('size-2 rounded-[2px]', swatchClass(balance.leaveType.colorIndex))}
+                  className={cn(
+                    'size-2 shrink-0 rounded-[2px]',
+                    swatchClass(balance.leaveType.colorIndex),
+                  )}
                 />
-                <span className="truncate">{balance.leaveType.name}</span>
+                <span className="min-w-0 break-words">{balance.leaveType.name}</span>
               </p>
               <p className="type-body-sm text-ink-muted">
                 {left === null ? 'No yearly limit' : `${formatHalfDays(left)} left this year`}

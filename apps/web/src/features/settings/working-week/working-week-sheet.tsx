@@ -23,12 +23,14 @@ export type WorkingWeekSheetMode = 'add' | ManagedWorkingCalendar | null;
 
 interface WorkingWeekSheetProps {
   readonly mode: WorkingWeekSheetMode;
+  /** The studio week: a new week starts from its days and hours. */
+  readonly studio: ManagedWorkingCalendar | undefined;
   readonly onClose: () => void;
   readonly onRefresh: () => void;
 }
 
 /** Add or edit a working week for people who do not follow the studio week. */
-export function WorkingWeekSheet({ mode, onClose, onRefresh }: WorkingWeekSheetProps) {
+export function WorkingWeekSheet({ mode, studio, onClose, onRefresh }: WorkingWeekSheetProps) {
   return (
     <Sheet
       open={mode !== null}
@@ -43,6 +45,7 @@ export function WorkingWeekSheet({ mode, onClose, onRefresh }: WorkingWeekSheetP
         <WorkingWeekForm
           key={mode === 'add' ? 'add' : `${mode.id}:${mode.version}`}
           calendar={mode === 'add' ? null : mode}
+          studio={studio}
           onDone={onClose}
           onRefresh={onRefresh}
         />
@@ -53,10 +56,12 @@ export function WorkingWeekSheet({ mode, onClose, onRefresh }: WorkingWeekSheetP
 
 function WorkingWeekForm({
   calendar,
+  studio,
   onDone,
   onRefresh,
 }: {
   readonly calendar: ManagedWorkingCalendar | null;
+  readonly studio: ManagedWorkingCalendar | undefined;
   readonly onDone: () => void;
   readonly onRefresh: () => void;
 }) {
@@ -65,7 +70,7 @@ function WorkingWeekForm({
   const staleness = useStaleVersion();
   const { create, update } = useWorkingCalendarMutations();
   const [values, setValues] = useState<WorkingWeekValues>(() =>
-    calendar ? weekValuesOf(calendar) : emptyWorkingWeek(),
+    calendar ? weekValuesOf(calendar) : emptyWorkingWeek(studio),
   );
   const fields = useFieldErrors((next: WorkingWeekValues) => checkWorkingWeek(next, true));
   const changes = calendar ? weekChangesOf(calendar, values) : null;

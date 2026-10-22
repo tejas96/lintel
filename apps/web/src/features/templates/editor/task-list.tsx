@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, IconButton, PriorityMarker, StatusGlyph } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { ArrowDown, ArrowUp, ChevronRight, Plus } from 'lucide-react';
 import { type TemplateIssue, taskIssues } from '../template-issues';
 import { roleLabel, type TemplateStage } from '../template-types';
@@ -41,6 +42,7 @@ export function TaskList({ stage, issues, readOnly, onOpen, onMove, onAdd }: Tas
             >
               <button
                 type="button"
+                aria-label={`Open ${task.title || 'Untitled task'}${problems > 0 ? `, ${pluralize(problems, 'problem')}` : ''}`}
                 onClick={() => onOpen(index)}
                 className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-4 py-3 text-left"
               >

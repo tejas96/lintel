@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, cn, IconButton, StatusGlyph } from '@lintel/design-system/web';
+import { pluralize } from '@lintel/shared';
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { stageIssueCount, type TemplateIssue } from '../template-issues';
 import type { WorkflowDefinition } from '../template-types';
@@ -16,6 +17,12 @@ interface StageOutlineProps {
 }
 
 /** The stages in order, like a drawing index: pick one to edit, or move it. */
+/** "Stage 2: Concept, 4 tasks, 1 problem to fix": the whole card as one name. */
+function stageLabel(index: number, name: string, tasks: number, problems: number): string {
+  const issues = problems > 0 ? `, ${pluralize(problems, 'problem')} to fix` : '';
+  return `Stage ${index + 1}: ${name || 'Untitled stage'}, ${pluralize(tasks, 'task')}${issues}`;
+}
+
 export function StageOutline({
   definition,
   selected,
@@ -45,6 +52,7 @@ export function StageOutline({
               <button
                 type="button"
                 aria-current={active ? 'step' : undefined}
+                aria-label={stageLabel(index, stage.name, stage.tasks.length, problems)}
                 onClick={() => onSelect(index)}
                 className={cn(
                   'flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition-colors',
