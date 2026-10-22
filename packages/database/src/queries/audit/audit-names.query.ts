@@ -1,6 +1,15 @@
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
-import { leaveTypes, milestones, projects, tasks, teams, users } from '../../schema';
+import {
+  leaveTypes,
+  milestones,
+  projects,
+  tasks,
+  teams,
+  users,
+  workflowTemplates,
+  workflowTemplateVersions,
+} from '../../schema';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_REFERENCES = 500;
@@ -26,7 +35,7 @@ export function referencedIds(snapshots: readonly unknown[]): string[] {
 /**
  * Readable names for ids recorded in audit details, so the log can say
  * "#12 Measure the site" instead of a UUID. Ids that are not a task, person,
- * project, milestone, team or leave type stay unnamed.
+ * project, milestone, team, leave type or template version stay unnamed.
  */
 export async function loadAuditNames(
   db: DatabaseExecutor,
@@ -34,7 +43,7 @@ export async function loadAuditNames(
 ): Promise<Record<string, string>> {
   if (ids.length === 0) return {};
   const list = [...ids];
-  const [taskRows, userRows, projectRows, milestoneRows, teamRows, leaveTypeRows] =
+  const [taskRows, userRows, projectRows, milestoneRows, teamRows, leaveTypeRows, versionRows] =
     await Promise.all([
       db
         .select({ id: tasks.id, number: tasks.number, title: tasks.title })
@@ -54,9 +63,19 @@ export async function loadAuditNames(
         .select({ id: leaveTypes.id, name: leaveTypes.name })
         .from(leaveTypes)
         .where(inArray(leaveTypes.id, list)),
+      db
+        .select({
+          id: workflowTemplateVersions.id,
+          number: workflowTemplateVersions.versionNumber,
+          name: workflowTemplates.name,
+        })
+        .from(workflowTemplateVersions)
+        .innerJoin(workflowTemplates, eq(workflowTemplates.id, workflowTemplateVersions.templateId))
+        .where(inArray(workflowTemplateVersions.id, list)),
     ]);
   const names: Record<string, string> = {};
   for (const row of taskRows) names[row.id] = `#${row.number} ${row.title}`;
+  for (const row of versionRows) names[row.id] = `${row.name}, version ${row.number}`;
   for (const row of [
     ...userRows,
     ...projectRows,
