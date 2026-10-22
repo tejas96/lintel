@@ -3,6 +3,9 @@ import { Avatar, cn, type TableColumn } from '@lintel/design-system/web';
 import { ROLE_LABELS } from '@lintel/domain';
 import { formatRelativeInstant } from '@/lib/format/dates';
 
+/** Short values stay on one line; columns drop out at narrower widths instead of wrapping. */
+const NO_WRAP = 'whitespace-nowrap';
+
 /**
  * The directory's columns. With `onOpen`, the person's name is a button that
  * covers the whole row, so administrators can open anyone to edit them.
@@ -15,6 +18,8 @@ export function peopleColumns(
       key: 'person',
       header: 'Person',
       primary: true,
+      // Takes the spare width and truncates long names rather than squeezing other columns.
+      className: 'w-full max-w-0',
       cell: (person) => (
         <span
           className={cn('flex items-center gap-3', person.status === 'deactivated' && 'opacity-60')}
@@ -42,17 +47,20 @@ export function peopleColumns(
     {
       key: 'role',
       header: 'Role',
+      className: NO_WRAP,
       cell: (person) => <span className="text-ink-muted">{ROLE_LABELS[person.role]}</span>,
     },
     {
       key: 'team',
       header: 'Team',
+      className: NO_WRAP,
       cell: (person) => <span className="text-ink-muted">{person.team?.name ?? 'No team'}</span>,
     },
     {
       key: 'reports',
       header: 'Reports to',
       hideOnPhone: true,
+      className: `${NO_WRAP} hidden xl:table-cell`,
       cell: (person) => (
         <span className="text-ink-muted">{person.reportsTo?.fullName ?? 'Nobody'}</span>
       ),
@@ -61,6 +69,7 @@ export function peopleColumns(
       key: 'capacity',
       header: 'Works',
       hideOnPhone: true,
+      className: `${NO_WRAP} hidden lg:table-cell`,
       align: 'end',
       cell: (person) => (
         <span className="text-ink-muted tabular-nums">{person.capacityPercent}%</span>
@@ -70,6 +79,7 @@ export function peopleColumns(
       key: 'phone',
       header: 'Phone',
       hideOnPhone: true,
+      className: `${NO_WRAP} hidden xl:table-cell`,
       cell: (person) => (
         <span className="font-mono text-[0.8125rem] text-ink-muted">{person.maskedPhone}</span>
       ),
@@ -78,6 +88,7 @@ export function peopleColumns(
       key: 'active',
       header: 'Last active',
       align: 'end',
+      className: NO_WRAP,
       cell: (person) => (
         <span className="text-ink-faint">
           {person.status === 'deactivated'
