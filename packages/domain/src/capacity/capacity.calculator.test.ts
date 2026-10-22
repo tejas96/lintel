@@ -61,7 +61,36 @@ describe('capacity calculator', () => {
     );
     expect(result.days[0]?.confirmedMinutes).toBe(600);
     expect(result.days[0]?.status).toBe('overloaded');
-    expect(result.status).toBe('balanced');
+    expect(result.totalStatus).toBe('balanced');
+    // One overloaded day is not balanced out by quiet days around it.
+    expect(result.status).toBe('overloaded');
+    expect(result.overloadedDays).toBe(2);
+    expect(result.bookedLeaveDays).toBe(0);
+  });
+
+  it('flags work booked on approved leave days', () => {
+    const result = calculatePersonCapacity(
+      person,
+      week,
+      date('2026-11-02'),
+      [{ userId: 'u1', date: date('2026-11-03'), halfDayUnits: 2, status: 'approved' }],
+      [load({ taskId: 'a', remainingMinutes: 600, dueDate: date('2026-11-06') })],
+    );
+    const tuesday = result.days.find((day) => day.date === '2026-11-03');
+    expect(tuesday).toMatchObject({ availableMinutes: 0, confirmedMinutes: 120 });
+    expect(tuesday?.status).toBe('overloaded');
+    expect(result).toMatchObject({ overloadedDays: 1, bookedLeaveDays: 1, status: 'overloaded' });
+  });
+
+  it('keeps the totals status when no single day is overloaded', () => {
+    const result = calculatePersonCapacity(
+      person,
+      week,
+      date('2026-11-02'),
+      [],
+      [load({ taskId: 'a', remainingMinutes: 1200, dueDate: date('2026-11-06') })],
+    );
+    expect(result).toMatchObject({ overloadedDays: 0, status: result.totalStatus });
   });
 
   it('keeps tentative and blocked work apart from commitments', () => {

@@ -9,6 +9,7 @@ import {
   LOAD_LABELS,
   StatusPill,
 } from '@lintel/design-system/web';
+import { OVERLOADED_THRESHOLD } from '@lintel/domain';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { ProjectChip } from '@/features/tasks/task-presentation';
@@ -179,6 +180,14 @@ export function StuckWork({
   );
 }
 
+/** "Overloaded, 120% booked" or, when single days run over, "Overloaded on 1 day, 60% booked". */
+function overloadWords(utilization: number, overloadedDays: number): string {
+  const booked = `${Math.round(utilization * 100)}% booked this week`;
+  if (utilization > OVERLOADED_THRESHOLD || overloadedDays === 0)
+    return `${LOAD_LABELS.overloaded}, ${booked}`;
+  return `${LOAD_LABELS.overloaded} on ${overloadedDays} ${overloadedDays === 1 ? 'day' : 'days'}, ${booked}`;
+}
+
 /** Who is overloaded (load ring around the avatar) and who is away today. */
 export function TeamPulse({ data }: { readonly data: CommandCenter }) {
   const { team } = data;
@@ -195,7 +204,7 @@ export function TeamPulse({ data }: { readonly data: CommandCenter }) {
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {team.overloaded.map(({ user, utilization }) => (
+            {team.overloaded.map(({ user, utilization, overloadedDays }) => (
               <li key={user.id} className="flex items-center gap-3">
                 <Avatar
                   name={user.fullName}
@@ -208,7 +217,7 @@ export function TeamPulse({ data }: { readonly data: CommandCenter }) {
                     {user.fullName}
                   </span>
                   <span className="type-body-sm text-overdue">
-                    {LOAD_LABELS.overloaded}, {Math.round(utilization * 100)}% booked
+                    {overloadWords(utilization, overloadedDays)}
                   </span>
                 </div>
               </li>

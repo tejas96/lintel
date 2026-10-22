@@ -6,9 +6,13 @@ import { LOAD_PRESENTATION } from './load-presentation';
 
 const ORDER: readonly LoadStatus[] = ['overloaded', 'stretched', 'balanced', 'available'];
 
-/** How many people sit at each load, and the estimate assumption when it applies. */
+/**
+ * How many people sit at each load (one overloaded day counts as overloaded),
+ * work booked on leave, and the estimate assumption when it applies.
+ */
 export function CapacitySummary({ overview }: { readonly overview: CapacityOverview }) {
   const assumed = overview.people.filter((person) => person.usesDefaultEstimates).length;
+  const onLeave = overview.people.filter((person) => person.bookedLeaveDays > 0).length;
   return (
     <div className="flex flex-col gap-3">
       <ul className="flex flex-wrap gap-x-5 gap-y-2">
@@ -31,6 +35,12 @@ export function CapacitySummary({ overview }: { readonly overview: CapacityOverv
           );
         })}
       </ul>
+      {onLeave > 0 && (
+        <p className="type-body-sm text-overdue">
+          {onLeave === 1 ? 'One person has' : `${onLeave} people have`} work booked on approved
+          leave. Move it or hand it over.
+        </p>
+      )}
       {assumed > 0 && (
         <p className="type-body-sm text-ink-muted">
           <span aria-hidden className="mr-1 text-ink-faint">

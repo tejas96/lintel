@@ -3,13 +3,16 @@ import {
   type DocumentFolder,
   describeMilestoneRewardConditions,
   type MilestoneRewardStatus,
+  milestonePoolTotals,
+  otherSharesMinor,
 } from '@lintel/domain';
 import { toCalendarDate } from '@lintel/shared';
-import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { milestoneRewardRecipients, milestoneRewards, milestones, projects } from '../../schema';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import { challengeabilityOf, loadChallengeEntries } from './challenge-entries.query';
+import { loadPoolShares } from './milestone-reward-pools.query';
 
 const recipients = milestoneRewardRecipients;
 
@@ -51,17 +54,6 @@ function amountsOf(share: ShareRow, plan: { amountMinor: number }, showAmounts: 
 function summaryOf(share: ShareRow, withdrawReason: string | null): string | null {
   if (share.status !== 'withdrawn') return share.summary;
   return `Withdrawn before the milestone completed: ${withdrawReason ?? 'no reason given'}`;
-}
-
-/** How many people share each plan. */
-async function sharedByOf(db: DatabaseExecutor, planIds: readonly string[]) {
-  if (planIds.length === 0) return new Map<string, number>();
-  const rows = await db
-    .select({ planId: recipients.milestoneRewardId, people: count() })
-    .from(recipients)
-    .where(inArray(recipients.milestoneRewardId, [...planIds]))
-    .groupBy(recipients.milestoneRewardId);
-  return new Map(rows.map((row) => [row.planId, row.people]));
 }
 
 /**
@@ -111,13 +103,14 @@ export async function queryMilestoneRewardShares(
     db,
     rows.flatMap((row) => [row.share.userId, row.share.decidedByUserId]),
   );
-  const sharedBy = await sharedByOf(db, [...new Set(rows.map((row) => row.plan.id))]);
+  const pools = await loadPoolShares(db, [...new Set(rows.map((row) => row.plan.id))]);
   const history = await loadChallengeEntries(db, 'milestone', [...ownerOf.keys()], (id) =>
     visible(ownerOf.get(id) ?? ''),
   );
   const items = rows.map(({ share, plan, milestone, project }) => {
     const showAmounts = visible(share.userId);
-    const sharers = sharedBy.get(plan.id) ?? 1;
+    const poolShares = pools.get(plan.id) ?? [];
+    const sharers = Math.max(1, poolShares.length);
     const challenges = history.get(share.id) ?? [];
     const granted =
       share.status === 'approved' ? (share.adjustedAmountMinor ?? share.shareAmountMinor) : null;
@@ -141,6 +134,12 @@ export async function queryMilestoneRewardShares(
       summary: summaryOf(share, plan.withdrawReason),
       criteria: (share.evidence?.checks ?? []).map((check) => ({ ...check })),
       ...amountsOf(share, plan, showAmounts),
+      pool: query.canViewAll
+        ? {
+            ...milestonePoolTotals(poolShares),
+            othersMinor: otherSharesMinor(poolShares, share.id),
+          }
+        : null,
       currency: plan.currency,
       decidedBy: pickUser(people, share.decidedByUserId),
       decidedAt: share.decidedAt?.toISOString() ?? null,

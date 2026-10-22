@@ -18,13 +18,14 @@ import type { CommandCenterScope } from './command-center-scope';
 export type UtilisationSource = (
   userIds: readonly string[],
   span: { start: string; end: string },
-) => Promise<readonly { user: PersonSummary; utilization: number }[]>;
+) => Promise<readonly { user: PersonSummary; utilization: number; overloadedDays: number }[]>;
 
 /**
  * Headcount = active people in scope. On leave today = approved leave whose
  * working days include today. Available today = working today and not away
  * the whole day. Overloaded = confirmed load above 105% of the availability
- * left this week (today through Sunday).
+ * left this week (today through Sunday), or any day of it booked past its
+ * available time (application rule `overloadedPeople`).
  */
 export async function teamSection(
   db: DatabaseExecutor,
@@ -84,6 +85,7 @@ export async function teamSection(
     overloaded: overloadedPeople(rows).map((row) => ({
       user: row.user,
       utilization: row.utilization,
+      overloadedDays: row.overloadedDays,
     })),
   };
 }

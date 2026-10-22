@@ -29,6 +29,8 @@ export interface MilestoneRewardRecipientRecord {
   readonly userId: string;
   readonly status: MilestoneRewardStatus;
   readonly shareAmountMinor: number;
+  /** The amount granted when a reviewer changed it; null otherwise. */
+  readonly adjustedAmountMinor: number | null;
 }
 
 export interface MilestoneRewardPlanRecord extends MilestoneRewardPlanInput {

@@ -60,6 +60,17 @@ export const challengedRecordSchema = z.object({
   ),
   /** What the rules or policy proposed; null unless the viewer may see amounts. */
   proposedAmountMinor: moneyMinorSchema.nullable(),
+  /**
+   * A milestone reward's pool, for reviewers holding `rewards.view_all`: the
+   * planned amount and what the other people take from it. Null otherwise.
+   */
+  pool: z
+    .object({
+      amountMinor: moneyMinorSchema,
+      othersMinor: moneyMinorSchema,
+      sharedBy: z.number().int(),
+    })
+    .nullable(),
   currency: z.string(),
 });
 

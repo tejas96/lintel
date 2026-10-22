@@ -47,6 +47,12 @@ export type MilestoneRewardPlan = z.infer<typeof milestoneRewardPlanObject>;
 export const milestoneRewardPlanSchema: ResponseSchema<MilestoneRewardPlan> =
   milestoneRewardPlanObject;
 
+export const milestoneRewardPoolSchema = z.object({
+  grantedMinor: moneyMinorSchema,
+  committedMinor: moneyMinorSchema,
+  othersMinor: moneyMinorSchema,
+});
+
 /** One person's milestone reward: what earns it, the rules' findings, the decision. */
 export const milestoneRewardShareObject = z.object({
   id: idSchema,
@@ -76,6 +82,12 @@ export const milestoneRewardShareObject = z.object({
   shareAmountMinor: moneyMinorSchema.nullable(),
   adjustedAmountMinor: moneyMinorSchema.nullable(),
   adjustmentReason: z.string().nullable(),
+  /**
+   * Where the whole reward stands (only with `rewards.view_all`): granted,
+   * committed (granted plus shares still waiting) and what the other people
+   * take, so a reviewer sees when a different amount runs past the pool.
+   */
+  pool: milestoneRewardPoolSchema.nullable(),
   currency: z.string(),
   decidedBy: userSummarySchema.nullable(),
   decidedAt: instantSchema.nullable(),

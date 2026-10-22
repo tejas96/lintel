@@ -59,7 +59,32 @@ describe('reward eligibility', () => {
     });
     const result = evaluateRewardEligibility(criteria, metrics);
     expect(result.eligible).toBe(false);
-    expect(result.criteria[0]?.explanation).toContain('at least 4 are needed');
+    expect(result.criteria[0]?.explanation).toBe(
+      'Only 1 owned task was finished in this period; at least 4 are needed to judge fairly.',
+    );
+    expect(result.criteria[1]?.explanation).toBe(
+      'Only 1 deliverable was reviewed in this period; at least 2 are needed to judge fairly.',
+    );
+  });
+
+  it('says plainly when there is nothing to judge yet, and counts in words', () => {
+    const metrics = buildRewardMetrics({
+      outcomes: [],
+      blockerReports: [],
+      milestonesDeliveredOnTime: 1,
+      previousOnTimeRate: null,
+    });
+    const result = evaluateRewardEligibility(
+      [
+        { type: 'on_time_delivery_rate', minimumRate: 0.9, minimumTasks: 3 },
+        { type: 'milestones_delivered_on_time', minimumCount: 2 },
+      ],
+      metrics,
+    );
+    expect(result.criteria.map((criterion) => criterion.explanation)).toEqual([
+      'No finished tasks yet in this period; at least 3 are needed to judge fairly.',
+      '1 milestone delivered on time; needs at least 2.',
+    ]);
   });
 
   it('treats an empty policy as never eligible', () => {

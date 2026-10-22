@@ -116,6 +116,15 @@ export function MilestoneReviewQueue() {
                   <DecideRewardForm
                     key={share.version}
                     amountMinor={share.shareAmountMinor}
+                    pool={
+                      share.pool && share.totalAmountMinor !== null
+                        ? {
+                            amountMinor: share.totalAmountMinor,
+                            othersMinor: share.pool.othersMinor,
+                          }
+                        : null
+                    }
+                    currency={share.currency}
                     busy={decide.isPending && decide.variables?.share.id === share.id}
                     blocked={staleness.stale}
                     onDecide={(input, onFailure) =>

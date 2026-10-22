@@ -1,5 +1,6 @@
 export * from './excused-delay';
 export * from './milestone-reward.conditions';
+export * from './milestone-reward.pool';
 export * from './milestone-reward.rules';
 export * from './milestone-reward.split';
 export * from './reward-challenge.rules';

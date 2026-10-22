@@ -22,7 +22,14 @@ export const personCapacityObject = z.object({
   confirmedMinutes: z.number().int(),
   tentativeMinutes: z.number().int(),
   utilization: z.number(),
+  /** Overloaded when the totals are, or when any working day in the range is. */
   status: loadStatusSchema,
+  /** The load of the range's totals alone. */
+  totalStatus: loadStatusSchema,
+  /** Working days booked beyond their available time. */
+  overloadedDays: z.number().int(),
+  /** Approved leave days with confirmed work still on them. */
+  bookedLeaveDays: z.number().int(),
   usesDefaultEstimates: z.boolean(),
   openTaskCount: z.number().int(),
   days: z.array(capacityDaySchema),

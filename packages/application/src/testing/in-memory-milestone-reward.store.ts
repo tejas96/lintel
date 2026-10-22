@@ -48,11 +48,12 @@ export class InMemoryMilestoneRewardStore implements MilestoneRewardStore {
     const recipients = this.shares
       .filter((share) => share.planId === plan.id)
       .sort((left, right) => left.position - right.position)
-      .map(({ id, userId, status, shareAmountMinor }) => ({
+      .map(({ id, userId, status, shareAmountMinor, decision }) => ({
         id,
         userId,
         status,
         shareAmountMinor,
+        adjustedAmountMinor: decision?.adjustedAmountMinor ?? null,
       }));
     return { ...plan, recipients };
   }

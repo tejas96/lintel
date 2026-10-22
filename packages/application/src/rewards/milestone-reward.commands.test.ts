@@ -133,7 +133,7 @@ describe('checking the reward when the milestone completes', () => {
   });
 
   it('lets a reviewer decide, never their own, with an amount only on approval', async () => {
-    const { plan, complete, decide, ctx, milestoneRewards, notifications } = setup();
+    const { plan, complete, decide, ctx, milestoneRewards, notifications, records } = setup();
     await plan.execute(ctx('admin'), 'concept', shared);
     await complete('2026-11-02T08:00:00Z');
     const ana = milestoneRewards.shares.find((share) => share.userId === 'ana');
@@ -163,6 +163,12 @@ describe('checking the reward when the milestone completes', () => {
     expect(ana.decision).toMatchObject({
       adjustedAmountMinor: 300_000,
       adjustmentReason: 'Clean sign-off',
+    });
+    // 300,000 + dev's 250,000 still waiting passes the 500,001 pool: allowed, and recorded.
+    expect(records.audits.at(-1)?.after).toMatchObject({
+      poolMinor: 500_001,
+      poolTotalMinor: 550_000,
+      poolOverrunMinor: 49_999,
     });
     expect(notifications.to('ana').at(-1)).toBe('reward_updated');
     await expect(

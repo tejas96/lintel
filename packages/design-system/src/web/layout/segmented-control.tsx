@@ -50,7 +50,9 @@ export function SegmentedControl<TValue extends string>({
           <RadioGroup.Item
             key={option.value}
             value={option.value}
-            aria-label={option.compactLabel ? option.label : undefined}
+            // Named explicitly: the sliding thumb shares the item's content, and some
+            // assistive tools do not compute a radio's name from its text.
+            aria-label={option.label}
             className={cn(
               'relative flex items-center justify-center gap-1.5 rounded-[6px] px-3 font-medium transition-colors',
               size === 'sm' ? 'h-8 text-[0.8125rem] pointer-coarse:h-10' : 'h-10 text-[0.875rem]',

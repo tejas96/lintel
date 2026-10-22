@@ -11,9 +11,19 @@ import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores, UnitOfWork } from '../common/unit-of-work';
 import type { NotifierFactory } from '../notifications/notifier-factory';
 import type { RewardDecisionInput } from './decide-reward-evaluation.command';
+import { poolOverrunAudit } from './milestone-reward-pool';
 import { sendRewardNotice } from './reward-notices';
 
 type DecisionStores = Pick<ApplicationStores, 'milestoneRewards' | 'records' | 'notifications'>;
+
+/** The amount an approval grants; null when the reward is declined. */
+function grantedBy(
+  input: RewardDecisionInput,
+  share: { readonly shareAmountMinor: number },
+): number | null {
+  if (input.decision !== 'approve') return null;
+  return input.adjustedAmountMinor ?? share.shareAmountMinor;
+}
 
 /**
  * A person holding `rewards.decide` approves (optionally with a different
@@ -69,13 +79,19 @@ export class DecideMilestoneRewardCommand {
         },
       );
       if (!decided) throw new StaleVersionError('This milestone reward');
+      const overrun = await poolOverrunAudit(stores, share, grantedBy(input, share));
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
         action: `rewards.milestone_reward_${status}`,
         entityType: 'milestone_reward_share',
         entityId: share.id,
         before: { status: share.status, shareAmountMinor: share.shareAmountMinor },
-        after: { status, adjustedAmountMinor: input.adjustedAmountMinor, note: input.note },
+        after: {
+          status,
+          adjustedAmountMinor: input.adjustedAmountMinor,
+          note: input.note,
+          ...overrun,
+        },
         requestId: context.requestId,
       });
       await stores.records.enqueueEvent(

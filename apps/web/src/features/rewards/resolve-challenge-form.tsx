@@ -5,6 +5,7 @@ import { Button, Field, Input, SegmentedControl, Textarea } from '@lintel/design
 import { AnimatePresence, motion } from 'motion/react';
 import { type FormEvent, useState } from 'react';
 import { isApiError } from '@/lib/api/api-error';
+import { PoolOverrunNote } from './pool-overrun-note';
 import { formatAmount } from './reward-presentation';
 import type { useResolveChallenge } from './use-reward-records';
 
@@ -115,6 +116,13 @@ export function ResolveChallengeForm({ challenge, mutation, blocked }: ResolveCh
           </motion.div>
         )}
       </AnimatePresence>
+      {outcome === 'correct' && (
+        <PoolOverrunNote
+          pool={challenge.record.pool}
+          amountMinor={toMinorUnits(amount)}
+          currency={challenge.record.currency}
+        />
+      )}
       <Button
         type="submit"
         variant="primary"

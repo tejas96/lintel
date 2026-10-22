@@ -133,10 +133,12 @@ describe('command center formulas', () => {
     expect(presenceToday(people, sunday).availableToday).toBe(0);
     expect(
       overloadedPeople([
-        { id: 'x', utilization: 1.05 },
-        { id: 'y', utilization: 1.3 },
-        { id: 'z', utilization: 1.1 },
+        { id: 'x', utilization: 1.05, overloadedDays: 0 },
+        { id: 'y', utilization: 1.3, overloadedDays: 0 },
+        { id: 'z', utilization: 1.1, overloadedDays: 0 },
+        { id: 'priya', utilization: 0.42, overloadedDays: 1 },
+        { id: 'calm', utilization: 0.6, overloadedDays: 0 },
       ]).map((row) => row.id),
-    ).toEqual(['y', 'z']);
+    ).toEqual(['y', 'z', 'priya']);
   });
 });

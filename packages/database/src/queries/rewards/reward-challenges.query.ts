@@ -1,3 +1,4 @@
+import { otherSharesMinor } from '@lintel/domain';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import {
@@ -13,6 +14,7 @@ import {
 } from '../../schema';
 import { loadUserSummaries } from '../shared/user-summary.query';
 import { challengeEntryView } from './challenge-entries.query';
+import { loadPoolShares } from './milestone-reward-pools.query';
 import { rewardPeriodWords } from './reward-record-words';
 
 export interface RewardChallengeQuery {
@@ -44,6 +46,8 @@ interface RecordSummary {
     explanation: string;
   }[];
   readonly proposedAmountMinor: number;
+  /** A milestone reward's pool and what the other people take from it. */
+  readonly pool: { amountMinor: number; othersMinor: number; sharedBy: number } | null;
   readonly currency: string;
 }
 
@@ -82,6 +86,7 @@ async function evaluationSummaries(db: DatabaseExecutor, ids: readonly string[])
       summary: evaluation.summary,
       criteria: evaluation.evidence.criteria.map((criterion) => ({ ...criterion })),
       proposedAmountMinor: evaluation.amountMinor,
+      pool: null,
       currency: policy.currency,
     }),
   );
@@ -106,6 +111,7 @@ async function milestoneSummaries(db: DatabaseExecutor, ids: readonly string[]) 
     .innerJoin(projects, eq(projects.id, milestoneRewards.projectId))
     .innerJoin(users, eq(users.id, milestoneRewardRecipients.userId))
     .where(inArray(milestoneRewardRecipients.id, [...ids]));
+  const pools = await loadPoolShares(db, [...new Set(rows.map((row) => row.plan.id))]);
   return rows.map(
     ({ share, plan, milestone, reference, person }): RecordSummary => ({
       kind: 'milestone',
@@ -117,6 +123,11 @@ async function milestoneSummaries(db: DatabaseExecutor, ids: readonly string[]) 
       summary: share.summary,
       criteria: (share.evidence?.checks ?? []).map((check) => ({ ...check })),
       proposedAmountMinor: share.shareAmountMinor,
+      pool: {
+        amountMinor: plan.amountMinor,
+        othersMinor: otherSharesMinor(pools.get(plan.id) ?? [], share.id),
+        sharedBy: pools.get(plan.id)?.length ?? 1,
+      },
       currency: plan.currency,
     }),
   );
@@ -164,11 +175,15 @@ export async function queryRewardChallenges(db: DatabaseExecutor, query: RewardC
     );
     if (!record) return [];
     const showAmounts = query.canViewAll || record.subjectUserIds.includes(query.viewerUserId);
-    const { subjectUserIds: _subjects, proposedAmountMinor, ...visible } = record;
+    const { subjectUserIds: _subjects, proposedAmountMinor, pool, ...visible } = record;
     return [
       {
         ...challengeEntryView(row, people, showAmounts),
-        record: { ...visible, proposedAmountMinor: showAmounts ? proposedAmountMinor : null },
+        record: {
+          ...visible,
+          proposedAmountMinor: showAmounts ? proposedAmountMinor : null,
+          pool: query.canViewAll ? pool : null,
+        },
       },
     ];
   });

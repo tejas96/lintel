@@ -2,8 +2,9 @@ import { type CommandCenterPlan, RISK_CARD_LIMIT } from '@lintel/application';
 import type { DatabaseExecutor } from '../../client';
 import { resolveCommandCenterScope } from '../operations/command-center/command-center-scope';
 import type { UtilisationSource } from '../operations/command-center/command-center-team';
-import { deadlinesNextDays, highlightsInPeriod, interventionsNeeded } from './briefing-lists.query';
+import { deadlinesNextDays, interventionsNeeded } from './briefing-lists.query';
 import { loadBusinessHealth } from './business-health.query';
+import { highlightsInPeriod } from './highlights.query';
 import { loadRiskCards, riskContextFor } from './risk-cards.query';
 
 export interface BriefingSources {

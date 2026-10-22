@@ -51,6 +51,25 @@ export const LOAD_PRESENTATION: Readonly<Record<LoadStatus, LoadPresentation>> =
   },
 };
 
+const days = (count: number) => `${count} ${count === 1 ? 'day' : 'days'}`;
+
+/**
+ * The person's load in words. When the range's totals look fine but some
+ * days are booked past the time available, say so: "Overloaded on 1 day".
+ */
+export function personLoadLabel(person: PersonCapacity): string {
+  if (person.overloadedDays > 0 && person.totalStatus !== 'overloaded') {
+    return `${LOAD_LABELS.overloaded} on ${days(person.overloadedDays)}`;
+  }
+  return LOAD_PRESENTATION[person.status].label;
+}
+
+/** "Work booked on 2 leave days", or null when leave days are clear. */
+export function bookedLeaveWords(person: PersonCapacity): string | null {
+  if (person.bookedLeaveDays === 0) return null;
+  return `Work booked on ${person.bookedLeaveDays} leave ${person.bookedLeaveDays === 1 ? 'day' : 'days'}`;
+}
+
 /** "8h", "5.5h", "45m", "0h" — short enough for a day cell. */
 export function formatHoursShort(minutes: number): string {
   if (minutes <= 0) return '0h';

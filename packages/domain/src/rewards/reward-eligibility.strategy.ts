@@ -20,21 +20,58 @@ export interface RewardEligibility {
 const percent = (value: number) => `${Math.round(value * 100)}%`;
 const rate = (part: number, whole: number) => (whole === 0 ? 0 : part / whole);
 
+/** How a rate criterion talks about its measure and about the sample behind it. */
+interface RateWords {
+  /** "owned tasks were on time", after "4 of 5". */
+  readonly measure: string;
+  /** What the sample counts: one, many, and the sentence opening when there is none. */
+  readonly one: string;
+  readonly many: string;
+  readonly none: string;
+}
+
+const FINISHED_TASKS = {
+  one: 'owned task was finished',
+  many: 'owned tasks were finished',
+  none: 'No finished tasks yet',
+} as const;
+
+const REVIEWED_DELIVERABLES = {
+  one: 'deliverable was reviewed',
+  many: 'deliverables were reviewed',
+  none: 'No reviewed deliverables yet',
+} as const;
+
+/** "Only 1 owned task was finished in this period; …" or "No finished tasks yet in this period; …". */
+function tooLittleDataWords(
+  sample: number,
+  minimumSample: number,
+  words: Omit<RateWords, 'measure'>,
+): string {
+  const opening =
+    sample === 0 ? words.none : `Only ${sample} ${sample === 1 ? words.one : words.many}`;
+  return `${opening} in this period; at least ${minimumSample} are needed to judge fairly.`;
+}
+
+/** "1 milestone delivered on time" / "2 milestones delivered on time". */
+const counted = (count: number, one: string, many: string) =>
+  `${count} ${count === 1 ? one : many}`;
+
 function rateCriterion(
   criterion: RewardCriterion,
   part: number,
   whole: number,
   minimumRate: number,
   minimumSample: number,
-  noun: string,
+  words: RateWords,
 ): CriterionResult {
   const label = REWARD_CRITERION_LABELS[criterion.type];
   const actualRate = rate(part, whole);
   const enoughData = whole >= minimumSample;
   const passed = enoughData && actualRate >= minimumRate;
   const explanation = enoughData
-    ? `${part} of ${whole} ${noun} (${percent(actualRate)}); needs ${percent(minimumRate)}.`
-    : `Only ${whole} ${noun} in this period; at least ${minimumSample} are needed to judge fairly.`;
+    ? `${part} of ${whole} ${words.measure} (${percent(actualRate)}); needs ${percent(minimumRate)}.`
+    : tooLittleDataWords(whole, minimumSample, words);
   return {
     type: criterion.type,
     label,
@@ -49,7 +86,7 @@ function countCriterion(
   criterion: RewardCriterion,
   actual: number,
   minimum: number,
-  noun: string,
+  noun: { readonly one: string; readonly many: string },
 ): CriterionResult {
   return {
     type: criterion.type,
@@ -57,7 +94,7 @@ function countCriterion(
     passed: actual >= minimum,
     actual: String(actual),
     required: `≥ ${minimum}`,
-    explanation: `${actual} ${noun}; needs at least ${minimum}.`,
+    explanation: `${counted(actual, noun.one, noun.many)}; needs at least ${minimum}.`,
   };
 }
 
@@ -70,7 +107,7 @@ function evaluateCriterion(criterion: RewardCriterion, metrics: RewardMetrics): 
         metrics.ownedTasksCompleted,
         criterion.minimumRate,
         criterion.minimumTasks,
-        'owned tasks were on time',
+        { measure: 'owned tasks were on time', ...FINISHED_TASKS },
       );
     case 'first_pass_approval_rate':
       return rateCriterion(
@@ -79,7 +116,7 @@ function evaluateCriterion(criterion: RewardCriterion, metrics: RewardMetrics): 
         metrics.reviewedDeliverables,
         criterion.minimumRate,
         criterion.minimumReviews,
-        'reviewed tasks passed first time',
+        { measure: 'reviewed tasks passed first time', ...REVIEWED_DELIVERABLES },
       );
     case 'process_compliance_rate':
       return rateCriterion(
@@ -88,29 +125,28 @@ function evaluateCriterion(criterion: RewardCriterion, metrics: RewardMetrics): 
         metrics.ownedTasksCompleted,
         criterion.minimumRate,
         criterion.minimumTasks,
-        'tasks finished with the checklist complete',
+        { measure: 'tasks finished with the checklist complete', ...FINISHED_TASKS },
       );
     case 'milestones_delivered_on_time':
-      return countCriterion(
-        criterion,
-        metrics.milestonesDeliveredOnTime,
-        criterion.minimumCount,
-        'milestone(s) delivered on time',
-      );
+      return countCriterion(criterion, metrics.milestonesDeliveredOnTime, criterion.minimumCount, {
+        one: 'milestone delivered on time',
+        many: 'milestones delivered on time',
+      });
     case 'proactive_blocker_reporting':
       return countCriterion(
         criterion,
         metrics.earlyBlockerReports(criterion.leadDays),
         criterion.minimumCount,
-        `blocker(s) raised ${criterion.leadDays}+ days before the due date`,
+        {
+          one: `blocker raised ${criterion.leadDays}+ days before the due date`,
+          many: `blockers raised ${criterion.leadDays}+ days before the due date`,
+        },
       );
     case 'collaboration':
-      return countCriterion(
-        criterion,
-        metrics.collaboratorTasksCompleted,
-        criterion.minimumTasks,
-        'task(s) completed as a collaborator',
-      );
+      return countCriterion(criterion, metrics.collaboratorTasksCompleted, criterion.minimumTasks, {
+        one: 'task completed as a collaborator',
+        many: 'tasks completed as a collaborator',
+      });
     case 'on_time_improvement': {
       const current = rate(metrics.ownedTasksOnTime, metrics.ownedTasksCompleted);
       const previous = metrics.previousOnTimeRate;

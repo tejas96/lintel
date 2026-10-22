@@ -36,6 +36,8 @@ export function Checkbox({
       <CheckboxPrimitive.Root
         id={id}
         aria-labelledby={`${id}-label`}
+        // Also named directly: not every assistive tool follows aria-labelledby.
+        aria-label={typeof label === 'string' ? label : undefined}
         aria-describedby={description ? `${id}-description` : undefined}
         checked={checked}
         disabled={disabled}
@@ -118,6 +120,7 @@ export function Switch({
       <SwitchPrimitive.Root
         id={id}
         aria-labelledby={`${id}-label`}
+        aria-label={typeof label === 'string' ? label : undefined}
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}
