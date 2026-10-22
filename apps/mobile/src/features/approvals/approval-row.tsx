@@ -18,6 +18,7 @@ const DECIDED_IN_APP: ReadonlySet<ApprovalItem['type']> = new Set([
   'task_review',
   'leave_request',
   'date_change_request',
+  'leave_handover',
 ]);
 
 /** The in-app screen for an item: its server link first, then its type and id. */

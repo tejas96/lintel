@@ -1,9 +1,10 @@
-import { type DayPortion, formatLeaveDuration, type LeaveStatus } from '@lintel/domain';
+import { canSeeLeaveReason } from '@lintel/application';
+import { type Actor, type DayPortion, formatLeaveDuration, type LeaveStatus } from '@lintel/domain';
 import { asc, desc, eq, inArray, type SQL } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
-import { leaveApprovalSteps, leaveHandovers, leaveRequests, leaveTypes, tasks } from '../../schema';
+import { leaveApprovalSteps, leaveRequests, leaveTypes, users } from '../../schema';
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
-import type { TaskRefView, UserSummaryView } from '../shared/view-types';
+import type { UserSummaryView } from '../shared/view-types';
 
 export interface LeaveStepView {
   readonly level: number;
@@ -32,14 +33,6 @@ export interface LeaveRequestView {
   readonly version: number;
 }
 
-export interface LeaveHandoverView {
-  readonly id: string;
-  readonly task: TaskRefView;
-  readonly to: UserSummaryView | null;
-  readonly note: string | null;
-  readonly status: 'proposed' | 'accepted' | 'declined' | 'applied';
-}
-
 const MISSING_PERSON: UserSummaryView = {
   id: '00000000-0000-0000-0000-000000000000',
   fullName: 'Unknown',
@@ -49,7 +42,12 @@ const MISSING_PERSON: UserSummaryView = {
   status: 'deactivated',
 };
 
+/** Who reads the views: the reason and notes are left out for people who may not read them. */
+export type LeaveViewer = Pick<Actor, 'userId' | 'capabilities'>;
+
 export interface LeaveViewQuery {
+  /** Without a viewer every reason and note is left out (dashboards, summaries). */
+  readonly viewer?: LeaveViewer;
   readonly where?: SQL | undefined;
   readonly orderBy?: SQL[];
   readonly limit?: number;
@@ -88,63 +86,53 @@ export async function loadLeaveRequestViews(
       ),
     )
     .orderBy(asc(leaveApprovalSteps.level));
-  const people = await loadUserSummaries(db, [
-    ...rows.map((row) => row.request.userId),
-    ...steps.map((step) => step.approverUserId),
+  const requesterIds = [...new Set(rows.map((row) => row.request.userId))];
+  const [people, managers] = await Promise.all([
+    loadUserSummaries(db, [...requesterIds, ...steps.map((step) => step.approverUserId)]),
+    db
+      .select({ id: users.id, reportsToUserId: users.reportsToUserId })
+      .from(users)
+      .where(inArray(users.id, requesterIds)),
   ]);
-  return rows.map(({ request, leaveType }) => ({
-    id: request.id,
-    user: people.get(request.userId) ?? MISSING_PERSON,
-    leaveType,
-    startDate: request.startDate,
-    endDate: request.endDate,
-    dayPortion: request.dayPortion,
-    halfDayUnits: request.halfDayUnits,
-    durationLabel: formatLeaveDuration(request.halfDayUnits),
-    reason: request.reason,
-    status: request.status,
-    isUrgentAbsence: request.isUrgentAbsence,
-    warnings: request.warnings,
-    steps: steps
-      .filter((step) => step.leaveRequestId === request.id)
-      .map((step) => ({
-        level: step.level,
-        approver: pickUser(people, step.approverUserId),
-        status: step.status,
-        note: step.note,
-        decidedAt: step.decidedAt?.toISOString() ?? null,
-      })),
-    decisionNote: request.decisionNote,
-    createdAt: request.createdAt.toISOString(),
-    version: request.version,
-  }));
-}
-
-export async function loadLeaveHandoverViews(
-  db: DatabaseExecutor,
-  requestId: string,
-): Promise<LeaveHandoverView[]> {
-  const rows = await db
-    .select({
-      id: leaveHandovers.id,
-      note: leaveHandovers.note,
-      status: leaveHandovers.status,
-      toUserId: leaveHandovers.toUserId,
-      task: {
-        id: tasks.id,
-        number: tasks.number,
-        title: tasks.title,
-        status: tasks.status,
-        dueDate: tasks.dueDate,
-      },
-    })
-    .from(leaveHandovers)
-    .innerJoin(tasks, eq(tasks.id, leaveHandovers.taskId))
-    .where(eq(leaveHandovers.leaveRequestId, requestId))
-    .orderBy(asc(leaveHandovers.createdAt));
-  const people = await loadUserSummaries(
-    db,
-    rows.map((row) => row.toUserId),
-  );
-  return rows.map(({ toUserId, ...row }) => ({ ...row, to: pickUser(people, toUserId) }));
+  const viewer = query.viewer;
+  const mayRead = (request: (typeof rows)[number]['request']) =>
+    viewer !== undefined &&
+    canSeeLeaveReason(viewer, {
+      requesterUserId: request.userId,
+      requesterManagerUserId:
+        managers.find((manager) => manager.id === request.userId)?.reportsToUserId ?? null,
+      recordedByUserId: request.recordedByUserId,
+      approverUserIds: steps
+        .filter((step) => step.leaveRequestId === request.id)
+        .map((step) => step.approverUserId),
+    });
+  return rows.map(({ request, leaveType }) => {
+    const personal = mayRead(request);
+    return {
+      id: request.id,
+      user: people.get(request.userId) ?? MISSING_PERSON,
+      leaveType,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      dayPortion: request.dayPortion,
+      halfDayUnits: request.halfDayUnits,
+      durationLabel: formatLeaveDuration(request.halfDayUnits),
+      reason: personal ? request.reason : null,
+      status: request.status,
+      isUrgentAbsence: request.isUrgentAbsence,
+      warnings: request.warnings,
+      steps: steps
+        .filter((step) => step.leaveRequestId === request.id)
+        .map((step) => ({
+          level: step.level,
+          approver: pickUser(people, step.approverUserId),
+          status: step.status,
+          note: personal ? step.note : null,
+          decidedAt: step.decidedAt?.toISOString() ?? null,
+        })),
+      decisionNote: personal ? request.decisionNote : null,
+      createdAt: request.createdAt.toISOString(),
+      version: request.version,
+    };
+  });
 }

@@ -16,6 +16,7 @@ import {
 import { loadUserSummaries, pickUser } from '../shared/user-summary.query';
 import type { ProjectRefView, UserSummaryView } from '../shared/view-types';
 import { dateChangeApprovals } from './approval-sources.date-changes';
+import { leaveHandoverApprovals } from './approval-sources.handovers';
 import { reassignmentApprovals } from './approval-sources.reassignments';
 import { milestoneRewardApprovals, rewardChallengeApprovals } from './approval-sources.rewards';
 import {
@@ -171,6 +172,7 @@ export async function loadApprovalQueue(
     priorityConflictReviews(db, viewer.userId),
     reassignmentApprovals(db, viewer, today),
     dateChangeApprovals(db, viewer, today),
+    leaveHandoverApprovals(db, viewer, today),
   ]);
   const drafts = sources
     .flat()

@@ -9,6 +9,10 @@ import {
   resolveLeaveDecision,
 } from './leave-approval-routing';
 import { businessToday, type LeaveDependencies, type LeaveStores } from './leave-context';
+import {
+  handoverRequestNotifications,
+  handoverToApplyNotifications,
+} from './leave-handover-notifications';
 import { assessLeaveImpact, conflictSnapshotOf } from './leave-impact.assessor';
 import {
   assertNoBlockingProblems,
@@ -88,12 +92,19 @@ export class DecideLeaveRequestCommands {
           status: outcome.requestStatus,
         }),
       );
+      const facts = summaryFacts(request.id, requester, leaveType, request);
       await this.notifyDecision(stores, outcome, {
         requesterId: request.userId,
-        facts: summaryFacts(request.id, requester, leaveType, request),
+        facts,
         note: input.note,
         version: request.version + 1,
       });
+      if (outcome.requestStatus === 'approved') {
+        const notifier = await this.deps.notifierFor(stores);
+        await notifier.notifyMany(
+          handoverToApplyNotifications(facts, request.handovers, request.userId),
+        );
+      }
     });
   }
 
@@ -190,17 +201,18 @@ export class DecideLeaveRequestCommands {
         after: { handovers: handovers.length },
         requestId: context.requestId,
       });
+      const facts = summaryFacts(request.id, requester, leaveType, request);
+      const notifier = await this.deps.notifierFor(stores);
       const approver = currentStep(request.steps)?.approverUserId;
       if (approver) {
-        const notifier = await this.deps.notifierFor(stores);
         await notifier.notify(
-          leaveRequestedNotification(
-            approver,
-            summaryFacts(request.id, requester, leaveType, request),
-            `response-v${request.version + 1}`,
-          ),
+          leaveRequestedNotification(approver, facts, `response-v${request.version + 1}`),
         );
       }
+      const tasks = await stores.leave.openTasksOf(requester.id);
+      await notifier.notifyMany(
+        handoverRequestNotifications(facts, handovers, tasks, requester.id),
+      );
     });
   }
 }

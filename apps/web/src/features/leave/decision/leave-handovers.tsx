@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { TaskNumber } from '@/features/tasks/task-presentation';
 import { useTask } from '@/features/tasks/use-task';
-import { describeDue } from '@/lib/format/dates';
+import { describeDue, formatCalendarDate } from '@/lib/format/dates';
 import { HandoverActions } from './handover-actions';
 import type { useLeaveDecisionMutations } from './use-leave-decision';
 
@@ -18,6 +18,29 @@ const HANDOVER_STATUS: Readonly<
   declined: { tone: 'atRisk', glyph: 'changes', label: 'Declined' },
   applied: { tone: 'done', glyph: 'done', label: 'Handed over' },
 };
+
+const HANDED_BACK = { tone: 'atRisk', glyph: 'changes', label: 'Handed back' } as const;
+const MOVED_ON = { tone: 'neutral', glyph: 'done', label: 'Owner changed since' } as const;
+
+/** "Handed back to Sameer on 22 Oct" / "Now with Ravi since 22 Oct", from the task's current owner. */
+function supersededText(
+  handover: LeaveHandover,
+  requesterName: string,
+  today: string,
+  canApply: boolean,
+): string {
+  const since = handover.superseded?.at
+    ? // en-CA gives the viewer's local calendar date as YYYY-MM-DD.
+      formatCalendarDate(new Date(handover.superseded.at).toLocaleDateString('en-CA'), today)
+    : null;
+  if (handover.superseded?.handedBack) {
+    const who = requesterName === 'You' ? 'you' : requesterName;
+    const next = canApply ? ' Choose who covers again.' : '';
+    return `Handed back to ${who}${since ? ` on ${since}` : ''}.${next}`;
+  }
+  const owner = handover.currentOwner?.fullName ?? 'nobody';
+  return `Now with ${owner}${since ? ` since ${since}` : ''}.`;
+}
 
 type HandoverMutation = ReturnType<typeof useLeaveDecisionMutations>['handover'];
 
@@ -84,10 +107,16 @@ function HandoverRow({
   LeaveHandoversProps,
   'handovers' | 'coverChoice'
 >) {
-  const status = HANDOVER_STATUS[handover.status];
+  const superseded = handover.superseded;
+  const status = superseded
+    ? superseded.handedBack
+      ? HANDED_BACK
+      : MOVED_ON
+    : HANDOVER_STATUS[handover.status];
   const isRecipient = handover.to?.id === viewerId;
+  const open = handover.status !== 'applied' || superseded?.handedBack === true;
   // Only a manager of the task's project may apply; the task detail says whether that is us.
-  const task = useTask(handover.status === 'applied' ? null : handover.task.id);
+  const task = useTask(open ? handover.task.id : null);
   const canApply = task.data?.viewerCanManage === true;
   const due = handover.task.dueDate ? describeDue(handover.task.dueDate, today) : null;
   return (
@@ -130,6 +159,15 @@ function HandoverRow({
           <span className="text-ink-faint">nobody chosen yet</span>
         )}
       </p>
+      {superseded && (
+        <p
+          className={
+            superseded.handedBack ? 'type-body-sm text-at-risk' : 'type-body-sm text-ink-muted'
+          }
+        >
+          {supersededText(handover, requesterName, today, canApply)}
+        </p>
+      )}
       {handover.note && (
         <p className="rounded-md bg-sunken/70 px-3 py-2 type-body-sm text-ink">{handover.note}</p>
       )}

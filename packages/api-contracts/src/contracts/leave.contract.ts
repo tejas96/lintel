@@ -10,6 +10,7 @@ import {
   leaveRequestSchema,
   leaveStatusSchema,
   leaveTypeSchema,
+  peopleAwaySchema,
 } from '../schemas/leave.schema';
 
 const c = initContract();
@@ -122,5 +123,13 @@ export const leaveContract = c.router({
     responses: { 200: leaveRequestDetailSchema },
     summary:
       'Accept or decline a proposed handover; a manager applies it (reassigns the task, audited).',
+  },
+  peopleAwayDuringTask: {
+    method: 'GET',
+    path: '/leave/away-during-task/:id',
+    pathParams: idParams,
+    responses: { 200: peopleAwaySchema },
+    summary:
+      'Who is on leave (or has asked for it) while the task runs, for warnings when changing its owner. Dates only.',
   },
 });

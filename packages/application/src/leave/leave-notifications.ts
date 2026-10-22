@@ -121,10 +121,13 @@ export function taskHandoverNotifications(input: {
   readonly handoverId: string;
   readonly previousOwnerUserId: string | null;
   readonly newOwnerUserId: string;
+  /** Separates a second application after the task was handed back. */
+  readonly window?: string;
 }): NewNotification[] {
+  const window = input.window ?? input.handoverId;
   const linkPath = `/tasks/${input.taskId}`;
   const notifications = [
-    build('task_assigned', input.newOwnerUserId, input.taskId, input.handoverId, {
+    build('task_assigned', input.newOwnerUserId, input.taskId, window, {
       title: `You now own "${input.taskTitle}"`,
       body: 'This task was handed over to you for a leave period.',
       linkPath,
@@ -133,7 +136,7 @@ export function taskHandoverNotifications(input: {
   ];
   if (input.previousOwnerUserId && input.previousOwnerUserId !== input.newOwnerUserId) {
     notifications.push(
-      build('task_reassigned', input.previousOwnerUserId, input.taskId, input.handoverId, {
+      build('task_reassigned', input.previousOwnerUserId, input.taskId, window, {
         title: `"${input.taskTitle}" was handed over`,
         body: 'Your manager applied the handover you proposed.',
         linkPath,

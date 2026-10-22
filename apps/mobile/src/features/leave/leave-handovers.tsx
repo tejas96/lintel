@@ -21,6 +21,15 @@ const HANDOVER_STATUS: Readonly<Record<LeaveHandover['status'], StatusPresentati
   applied: { tone: 'done', icon: 'done', label: 'Reassigned' },
 };
 
+const HANDED_BACK: StatusPresentation = { tone: 'atRisk', icon: 'flag', label: 'Handed back' };
+const MOVED_ON: StatusPresentation = { tone: 'neutral', icon: 'done', label: 'Owner changed' };
+
+/** Read against the task's current owner: a handover undone later no longer reads as done. */
+function statusOf(handover: LeaveHandover): StatusPresentation {
+  if (!handover.superseded) return HANDOVER_STATUS[handover.status];
+  return handover.superseded.handedBack ? HANDED_BACK : MOVED_ON;
+}
+
 function HandoverRow({
   handover,
   canApply,
@@ -47,7 +56,7 @@ function HandoverRow({
         <AppText variant="body" style={styles.flex}>
           {handover.task.title}
         </AppText>
-        <StatusPill status={HANDOVER_STATUS[handover.status]} />
+        <StatusPill status={statusOf(handover)} />
       </View>
       {handover.to ? (
         <View style={styles.person}>
@@ -56,6 +65,13 @@ function HandoverRow({
             To {handover.to.fullName}
           </AppText>
         </View>
+      ) : null}
+      {handover.superseded ? (
+        <AppText variant="bodySm" tone="secondary">
+          {handover.superseded.handedBack
+            ? 'The task was given back to the person on leave. A project manager chooses cover again on the web.'
+            : `Now with ${handover.currentOwner?.fullName ?? 'nobody'}.`}
+        </AppText>
       ) : null}
       {handover.note ? (
         <AppText variant="bodySm" tone="secondary">

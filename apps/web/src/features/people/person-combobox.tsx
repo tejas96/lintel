@@ -12,6 +12,8 @@ interface PersonComboboxProps {
   readonly excludeIds?: readonly string[];
   /** Accessible name when the combobox is not inside a Field. */
   readonly label?: string;
+  /** People away during the work, with a short note ("Is on leave on 2 Nov") shown on their option. */
+  readonly away?: ReadonlyMap<string, string>;
 }
 
 /** Pick one active person. Each field searches on its own. */
@@ -22,12 +24,16 @@ export function PersonCombobox({
   placeholder = 'Search people',
   excludeIds = [],
   label,
+  away,
 }: PersonComboboxProps) {
   const people = usePeopleOptions();
-  const options =
-    excludeIds.length === 0
-      ? people.options
-      : people.options.filter((option) => !excludeIds.includes(option.value));
+  const options = people.options
+    .filter((option) => !excludeIds.includes(option.value))
+    .map((option) => {
+      const note = away?.get(option.value);
+      if (!note) return option;
+      return { ...option, description: [option.description, note].filter(Boolean).join(' · ') };
+    });
   return (
     <Combobox
       {...(label ? { label } : {})}

@@ -90,20 +90,37 @@ const hours = (minutes: number) => `${Math.round((Math.max(0, minutes) / 60) * 1
 const sameText = (left: string | null, right: string | null) =>
   left !== null && right !== null && left.trim().toLowerCase() === right.trim().toLowerCase();
 
+/**
+ * A different specialist role on the project (a site supervisor for a
+ * designer's task, the project manager for a drafter's) is not a fit by
+ * itself; plain team members and people with the same role are.
+ */
+export function isUnrelatedProjectRole(
+  candidate: ProjectRole | null,
+  absent: ProjectRole | null,
+): boolean {
+  if (candidate === null || candidate === absent) return false;
+  return candidate !== 'member' && absent !== null && absent !== 'member';
+}
+
 function fitOf(
   candidate: CoverPersonFact,
   absent: CoverPersonFact,
 ): { score: number; reasons: string[] } {
   const reasons: string[] = [];
   let score = 0;
+  const sameDesignation = sameText(candidate.designation, absent.designation);
   if (candidate.projectRole !== null && candidate.projectRole === absent.projectRole) {
     score += COVER_POINTS.sameProjectRole;
     reasons.push(`${PROJECT_ROLE_LABELS[candidate.projectRole]} on this project`);
   } else if (candidate.projectRole !== null) {
+    if (isUnrelatedProjectRole(candidate.projectRole, absent.projectRole) && !sameDesignation) {
+      return { score: 0, reasons: [] };
+    }
     score += COVER_POINTS.projectMember;
     reasons.push('On this project');
   }
-  if (sameText(candidate.designation, absent.designation)) {
+  if (sameDesignation) {
     score += COVER_POINTS.sameDesignation;
     reasons.push(`Also ${candidate.designation?.trim().toLowerCase() ?? ''}`);
   }
@@ -119,8 +136,9 @@ function roomReason(freeMinutes: number, need: number): string {
 
 /**
  * Who could take a task while its owner is away. Only people who fit the work
- * are considered: the same role on this project, a member of the project, or
- * the same designation as the absent owner. People away in those days, people
+ * are considered: the same role on this project, a member of the project in
+ * a related role (see isUnrelatedProjectRole), or the same designation as the
+ * absent owner. People away in those days, people
  * with no working time in them, the absent owner and the task's reviewer are
  * left out. People with any free time come before fully booked ones, then
  * by points, then by free time. Nobody is ever assigned by this: a manager

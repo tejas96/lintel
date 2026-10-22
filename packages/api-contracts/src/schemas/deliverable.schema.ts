@@ -58,6 +58,7 @@ export const approvalItemObject = z.object({
     'priority_conflict',
     'reassignment_request',
     'date_change_request',
+    'leave_handover',
   ]),
   id: idSchema,
   title: z.string(),

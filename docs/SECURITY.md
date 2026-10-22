@@ -43,6 +43,12 @@ reviewer can check each one.
   projects they manage (a project filter outside them answers 404); leave in a
   manager's reports is limited to the people their leave and capacity rights
   cover; everyone else gets 403. Leave reasons never appear in reports.
+- Leave reasons (and approvers' questions and notes) are removed server-side in the
+  leave read models for anyone but the person, their manager, the request's
+  approvers, the recorder of an urgent absence and `leave.approve_any` holders.
+  `GET /v1/leave/away-during-task/:id` shares only dates and approved/requested
+  status, and only with people who may reassign the task (403 otherwise, 404 when
+  the task is hidden).
 - CSV exports (`/v1/reports/:report/csv`): same session and rules as the JSON
   report, `Cache-Control: private, no-store`, `nosniff`, attachment with an
   RFC 6266 file name; text cells starting with `= + - @`, tab or CR are prefixed

@@ -16,10 +16,16 @@ import {
 } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../../client';
 import { leaveApprovalSteps, leaveRequests, leaveTypes, users } from '../../schema';
-import { type LeaveRequestView, loadLeaveRequestViews } from './leave-request.view';
+import {
+  type LeaveRequestView,
+  type LeaveViewer,
+  loadLeaveRequestViews,
+} from './leave-request.view';
 
 export interface LeaveListQuery {
   readonly filter: LeaveListFilter;
+  /** Reasons and notes appear only on requests this viewer may read them on. */
+  readonly viewer: LeaveViewer;
   readonly status: 'open' | 'all' | LeaveStatus;
   readonly from?: string | undefined;
   readonly to?: string | undefined;
@@ -88,6 +94,7 @@ export async function queryLeaveRequests(
   const [totals] = await db.select({ total: count() }).from(leaveRequests).where(where);
   const waitingFirst = query.filter.kind === 'approver' || query.filter.kind === 'any_pending';
   const items = await loadLeaveRequestViews(db, {
+    viewer: query.viewer,
     where,
     orderBy: waitingFirst
       ? [asc(leaveRequests.startDate), asc(leaveRequests.createdAt)]
