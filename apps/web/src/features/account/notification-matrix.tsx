@@ -45,6 +45,12 @@ function Unavailable({ reason }: { readonly reason: string }) {
  */
 export function NotificationMatrix({ preferences, onChange }: NotificationMatrixProps) {
   const columns = columnsFor(preferences);
+  // Only kinds this person's role and projects can ever receive (decided by the server).
+  const receivable = new Set(preferences.receivableKinds);
+  const groups = KIND_GROUPS.map((group) => ({
+    ...group,
+    kinds: group.kinds.filter((kind) => receivable.has(kind)),
+  })).filter((group) => group.kinds.length > 0);
   const cell = (kind: NotificationKind, column: Column) => {
     const { channel } = column;
     const label = `${KIND_COPY[kind].label}: ${column.spoken}`;
@@ -113,7 +119,7 @@ export function NotificationMatrix({ preferences, onChange }: NotificationMatrix
           </tr>
         </thead>
         <tbody>
-          {KIND_GROUPS.map((group) => (
+          {groups.map((group) => (
             <Fragment key={group.title}>
               <tr>
                 <th

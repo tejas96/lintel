@@ -7,8 +7,10 @@ import type { Environment } from '@lintel/configuration';
 import {
   type DatabaseConnection,
   loadNotificationPreferences,
+  managesOpenProjects,
   queryNotifications,
 } from '@lintel/database';
+import { receivableNotificationKinds } from '@lintel/domain';
 import { Controller, Inject } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
 import { Ctx } from '../../common/auth/auth.decorators';
@@ -39,13 +41,15 @@ export class NotificationsController {
   ) {}
 
   /** The person's choices plus what the studio has switched on (never the address itself). */
-  private async preferences(userId: string) {
-    const { hasEmailAddress, ...choices } = await loadNotificationPreferences(
-      this.database.db,
-      userId,
-    );
+  private async preferences(context: RequestContext) {
+    const { userId, capabilities } = context.actor;
+    const [{ hasEmailAddress, ...choices }, managesProjects] = await Promise.all([
+      loadNotificationPreferences(this.database.db, userId),
+      managesOpenProjects(this.database.db, userId),
+    ]);
     return {
       ...choices,
+      receivableKinds: receivableNotificationKinds({ capabilities, managesProjects }),
       delivery: {
         sms: this.flags.smsNotificationsEnabled,
         email: this.flags.emailNotificationsEnabled,
@@ -80,11 +84,11 @@ export class NotificationsController {
       },
       getNotificationPreferences: async () => ({
         status: 200,
-        body: await this.preferences(userId),
+        body: await this.preferences(context),
       }),
       updateNotificationPreferences: async ({ body }) => {
         await this.commands.updatePreferences(context, body);
-        return { status: 200, body: await this.preferences(userId) };
+        return { status: 200, body: await this.preferences(context) };
       },
       registerDevice: async ({ body }) => {
         const device = await this.commands.registerDevice(context, body);
