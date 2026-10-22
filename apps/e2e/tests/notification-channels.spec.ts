@@ -4,7 +4,8 @@ import { PEOPLE, sessionFile } from '../support/people';
 import { StudioApi } from '../support/studio-api';
 
 test.describe('notification channels in account settings', () => {
-  test.use({ storageState: sessionFile('teamLead') });
+  // The only urgent (SMS) kind is the absence alert, sent to project managers.
+  test.use({ storageState: sessionFile('projectManager') });
 
   test('offers SMS for urgent alerts only, explains a missing email address', async ({
     page,
