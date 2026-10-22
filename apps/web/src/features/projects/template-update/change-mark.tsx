@@ -44,7 +44,7 @@ export const CHANGE_HEADINGS: Readonly<Record<ChangeKind, { title: string; descr
     added: {
       title: 'Added',
       description:
-        'New stages, milestones and tasks, scheduled from today and given to whoever holds the role.',
+        'New stages, milestones and tasks, placed inside their stage after the work they wait for, and given to whoever holds the role.',
     },
     changed: {
       title: 'Changed',
