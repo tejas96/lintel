@@ -10,12 +10,12 @@ import { loadTaskForActor } from '../tasks/task-loader';
 import { notifyAboutTask, quoted } from '../tasks/task-records';
 import { deadlineText } from '../tasks/task-schedule-records';
 import type { DateChangeRequestRecord } from './date-change.store';
-import { acceptedStartDate, dateChangeImpact } from './date-change-impact';
 import {
   type DateChangeDependencies,
   recordDateChangeStep,
   sendDateChangeNotice,
 } from './date-change-dependencies';
+import { acceptedStartDate, dateChangeImpact } from './date-change-impact';
 
 export interface DateChangeDecisionInput {
   readonly decision: DateChangeDecision;
@@ -81,7 +81,13 @@ export class DecideDateChangeCommand {
       if (!resolved) throw new StaleVersionError('This request');
       const pushed =
         input.decision === 'accepted'
-          ? await this.accept(stores, context, request, loaded.task, input.moveWaitingTasks === true)
+          ? await this.accept(
+              stores,
+              context,
+              request,
+              loaded.task,
+              input.moveWaitingTasks === true,
+            )
           : [];
       const knockOn =
         pushed.length === 0

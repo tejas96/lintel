@@ -56,7 +56,8 @@ function latestOpenDue(facts: ProjectScheduleFacts): string | null {
   return facts.tasks
     .filter((task) => isOpenTaskStatus(task.status) && task.dueDate !== null)
     .reduce<string | null>(
-      (latest, task) => (task.dueDate && (!latest || task.dueDate > latest) ? task.dueDate : latest),
+      (latest, task) =>
+        task.dueDate && (!latest || task.dueDate > latest) ? task.dueDate : latest,
       null,
     );
 }

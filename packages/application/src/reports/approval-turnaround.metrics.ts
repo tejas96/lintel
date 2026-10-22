@@ -1,4 +1,10 @@
-export const APPROVAL_KINDS = ['deliverable_review', 'leave_decision', 'scope_change'] as const;
+export const APPROVAL_KINDS = [
+  'deliverable_review',
+  'leave_decision',
+  'scope_change',
+  'date_change',
+  'reassignment',
+] as const;
 export type ApprovalKind = (typeof APPROVAL_KINDS)[number];
 
 /**
@@ -6,7 +12,9 @@ export type ApprovalKind = (typeof APPROVAL_KINDS)[number];
  * its review. Leave: a request until its final approval or rejection (urgent
  * absences are recorded, not requested, and cancelled requests were never
  * decided, so neither is a fact). Scope changes: a proposal until it is
- * approved or rejected (withdrawn ones are not facts).
+ * approved or rejected (withdrawn ones are not facts). New-date and handover
+ * (reassignment) requests: asked until accepted or declined (withdrawn ones
+ * are not facts).
  */
 export interface DecisionFact {
   readonly kind: ApprovalKind;

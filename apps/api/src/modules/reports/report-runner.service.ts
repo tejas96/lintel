@@ -15,6 +15,7 @@ import {
   loadEstimatesReport,
   loadLeaveReport,
   loadReworkReport,
+  loadStudioStartDate,
   loadWorkloadReport,
   managesAnyProject,
 } from '@lintel/database';
@@ -104,7 +105,8 @@ export class ReportRunner {
       this.business.settings(),
       managesAnyProject(this.database.db, context.actor.userId),
     ]);
-    const plan = planReport(context.actor, query, today, manages);
+    const studioStart = await loadStudioStartDate(this.database.db, settings.timeZone);
+    const plan = planReport(context.actor, query, today, manages, studioStart);
     if (plan.projectId) {
       const access = await this.access.requireView(context.actor, plan.projectId);
       if (plan.scope === 'managed' && access.managerUserId !== context.actor.userId) {

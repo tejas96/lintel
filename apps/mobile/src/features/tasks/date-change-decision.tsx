@@ -2,7 +2,6 @@ import type { DateChangeRequest } from '@lintel/api-contracts';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { errorMessage } from '@/api/api-error';
-import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Divider } from '@/components/section';
 import { TextField } from '@/components/text-field';
@@ -75,7 +74,9 @@ export function DateChangeDecisionPanel({ request }: { readonly request: DateCha
       {impact.data ? <DateChangeImpactSummary impact={impact.data} /> : null}
       {canMoveAll ? (
         <Button
-          label={moves === 1 ? 'Accept and move the waiting task' : `Accept and move ${moves} tasks`}
+          label={
+            moves === 1 ? 'Accept and move the waiting task' : `Accept and move ${moves} tasks`
+          }
           icon="done"
           size="lg"
           loading={pending === 'accept-all'}
@@ -85,8 +86,7 @@ export function DateChangeDecisionPanel({ request }: { readonly request: DateCha
       ) : null}
       <Button
         label={moves > 0 ? 'Accept only this task' : 'Accept the new date'}
-        icon={canMoveAll ? undefined : 'done'}
-        variant={canMoveAll ? 'secondary' : undefined}
+        {...(canMoveAll ? { variant: 'secondary' as const } : { icon: 'done' as const })}
         size="lg"
         loading={pending === 'accept-one'}
         disabled={decide.isPending || impact.isPending}

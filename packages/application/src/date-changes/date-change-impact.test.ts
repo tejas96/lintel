@@ -37,7 +37,9 @@ const facts: ProjectScheduleFacts = {
     { taskId: 'presentation', dependsOnTaskId: 'space-planning' },
     { taskId: 'drawings', dependsOnTaskId: 'presentation' },
   ],
-  milestones: [{ id: 'concept', name: 'Concept approved', dueDate: '2026-10-29', status: 'pending' }],
+  milestones: [
+    { id: 'concept', name: 'Concept approved', dueDate: '2026-10-29', status: 'pending' },
+  ],
 };
 
 function request(proposedDueDate: string): DateChangeRequestRecord {

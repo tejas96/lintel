@@ -51,6 +51,34 @@ describe('report plan', () => {
     ).toThrow(ValidationFailedError);
   });
 
+  it('never counts days before the studio started', () => {
+    const started = toCalendarDate('2026-10-14');
+    const plan = planReport(actor('owner'), {}, today, false, started);
+    expect(plan.range).toEqual({ start: '2026-10-14', end: '2026-10-21' });
+    expect(plan.studioStartDate).toBe('2026-10-14');
+    expect(plan.periods).toEqual([
+      { start: '2026-10-14', end: '2026-10-18' },
+      { start: '2026-10-19', end: '2026-10-21' },
+    ]);
+    const long = planReport(
+      actor('owner'),
+      { from: '2026-01-01', to: '2026-10-21' },
+      today,
+      false,
+      started,
+    );
+    expect(long.range.start).toBe('2026-10-14');
+    expect(long.granularity).toBe('week');
+    const before = planReport(
+      actor('owner'),
+      { from: '2026-09-01', to: '2026-09-30' },
+      today,
+      false,
+      started,
+    );
+    expect(before.range).toEqual({ start: '2026-09-01', end: '2026-09-30' });
+  });
+
   it('turns the range into instants at studio midnight', () => {
     const window = reportInstantWindow(
       { start: toCalendarDate('2026-10-01'), end: toCalendarDate('2026-10-31') },

@@ -105,6 +105,7 @@ export async function loadLeaveReport(
     scope: plan.scope,
     range: { start: plan.range.start, end: plan.range.end },
     granularity: plan.granularity,
+    studioStartDate: plan.studioStartDate,
     totals: breakdown.totals,
     types: types
       .flatMap((type) => {

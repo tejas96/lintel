@@ -105,6 +105,7 @@ export async function loadReworkReport(
     scope: plan.scope,
     range: { start: plan.range.start, end: plan.range.end },
     granularity: plan.granularity,
+    studioStartDate: plan.studioStartDate,
     totals: breakdown.totals,
     byPeriod: plan.periods.map((period, index) => ({
       start: period.start,

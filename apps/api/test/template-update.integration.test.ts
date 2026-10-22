@@ -186,7 +186,9 @@ describe('moving a project to a newer template version', () => {
     expect(after.get('Prepare the lighting plan')?.status).toBe('ready');
     expect(after.get('Hold the sign-off meeting')).toBeDefined();
     const samples = after.get('Get client approval on material samples');
-    expect(samples?.plannedStartDate).toBe(before.get('Prepare working drawings')?.plannedStartDate);
+    expect(samples?.plannedStartDate).toBe(
+      before.get('Prepare working drawings')?.plannedStartDate,
+    );
     const lighting = await as.pm
       .get(`/v1/tasks/${after.get('Prepare the lighting plan')?.id}`)
       .expect(200);

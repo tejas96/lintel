@@ -76,7 +76,7 @@ export const reportsContract = c.router({
     path: '/reports/approvals',
     query: reportQuerySchema,
     responses: { 200: approvalsReportSchema },
-    summary: `Turnaround of deliverable reviews, leave decisions and scope changes.${access}`,
+    summary: `Turnaround of deliverable reviews, leave decisions, scope changes, new-date and handover requests.${access}`,
   },
   estimatesReport: {
     method: 'GET',

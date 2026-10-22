@@ -106,7 +106,12 @@ function DecisionPanel({
         >
           {moves > 0 ? 'Accept only this task' : 'Accept the new date'}
         </Button>
-        <Button variant="danger" size="sm" pending={pending('decline')} onClick={() => run('decline')}>
+        <Button
+          variant="danger"
+          size="sm"
+          pending={pending('decline')}
+          onClick={() => run('decline')}
+        >
           Decline
         </Button>
       </div>

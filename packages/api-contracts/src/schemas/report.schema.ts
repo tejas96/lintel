@@ -16,8 +16,11 @@ export const reportMeta = z.object({
   generatedAt: instantSchema,
   /** business = the whole studio; managed = only the viewer's own projects. */
   scope: z.enum(['business', 'managed']),
+  /** Never starts before the studio did (see `studioStartDate`). */
   range: z.object(span),
   granularity: z.enum(['week', 'month']),
+  /** The first day the studio has records for; earlier days are not counted. Null when unknown. */
+  studioStartDate: calendarDateSchema.nullable(),
 });
 
 const deliveryTally = z.object({
@@ -102,7 +105,13 @@ export const leaveReportObject = reportMeta.extend({
 export type LeaveReport = z.infer<typeof leaveReportObject>;
 export const leaveReportSchema: ResponseSchema<LeaveReport> = leaveReportObject;
 
-export const approvalKindSchema = z.enum(['deliverable_review', 'leave_decision', 'scope_change']);
+export const approvalKindSchema = z.enum([
+  'deliverable_review',
+  'leave_decision',
+  'scope_change',
+  'date_change',
+  'reassignment',
+]);
 
 export const approvalsReportObject = reportMeta.extend({
   kinds: z.array(

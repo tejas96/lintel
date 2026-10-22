@@ -1,4 +1,9 @@
-import { type CalendarDate, isCalendarDate, maxCalendarDate, minCalendarDate } from '@lintel/shared';
+import {
+  type CalendarDate,
+  isCalendarDate,
+  maxCalendarDate,
+  minCalendarDate,
+} from '@lintel/shared';
 import type { ProjectWorkflowSnapshot } from './template-update.types';
 
 export interface StageSpan {
