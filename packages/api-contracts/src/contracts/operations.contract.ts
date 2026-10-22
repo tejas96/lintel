@@ -178,6 +178,7 @@ export const operationsContract = c.router({
           entityId: z.string().nullable(),
           before: z.record(z.unknown()).nullable(),
           after: z.record(z.unknown()).nullable(),
+          names: z.record(z.string()),
           createdAt: instantSchema,
         }),
       ),
