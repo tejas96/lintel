@@ -128,4 +128,19 @@ describe('cover suggestions', () => {
     ]);
     expect(suggestions.map((item) => item.userId)).toEqual(['ira', 'kabir']);
   });
+
+  it('never offers oversight roles to cover a plain team member', () => {
+    const member = {
+      userId: 'sameer',
+      designation: '3D visualiser',
+      projectRole: 'member' as const,
+    };
+    const suggestions = suggestCover(task, member, [
+      person('imran', { projectRole: 'site_supervisor', designation: 'Site supervisor' }),
+      person('neha', { projectRole: 'manager', designation: 'Senior project manager' }),
+      person('priya', { projectRole: 'designer', designation: 'Interior designer' }),
+      person('vis', { designation: '3d Visualiser' }),
+    ]);
+    expect(suggestions.map((item) => item.userId)).toEqual(['vis', 'priya']);
+  });
 });

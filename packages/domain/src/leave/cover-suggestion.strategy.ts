@@ -90,16 +90,25 @@ const hours = (minutes: number) => `${Math.round((Math.max(0, minutes) / 60) * 1
 const sameText = (left: string | null, right: string | null) =>
   left !== null && right !== null && left.trim().toLowerCase() === right.trim().toLowerCase();
 
+/** Roles that oversee the work rather than do it. */
+const OVERSIGHT_ROLES: ReadonlySet<ProjectRole> = new Set([
+  'manager',
+  'reviewer',
+  'site_supervisor',
+]);
+
 /**
- * A different specialist role on the project (a site supervisor for a
- * designer's task, the project manager for a drafter's) is not a fit by
- * itself; plain team members and people with the same role are.
+ * A different specialist role on the project is not a fit by itself: the
+ * project manager, reviewer or site supervisor never covers someone else's
+ * hands-on work, and two different specialists (a site supervisor for a
+ * designer) do not swap. Plain team members and people with the same role fit.
  */
 export function isUnrelatedProjectRole(
   candidate: ProjectRole | null,
   absent: ProjectRole | null,
 ): boolean {
   if (candidate === null || candidate === absent) return false;
+  if (OVERSIGHT_ROLES.has(candidate)) return true;
   return candidate !== 'member' && absent !== null && absent !== 'member';
 }
 

@@ -69,10 +69,13 @@ describe('task ownership window', () => {
 });
 
 describe('related project roles', () => {
-  it('relates the same role and plain members, not other specialists', () => {
+  it('relates the same role and plain members, not other specialists or oversight roles', () => {
     expect(isUnrelatedProjectRole('designer', 'designer')).toBe(false);
     expect(isUnrelatedProjectRole('member', 'designer')).toBe(false);
-    expect(isUnrelatedProjectRole('site_supervisor', 'member')).toBe(false);
+    expect(isUnrelatedProjectRole('designer', 'member')).toBe(false);
+    expect(isUnrelatedProjectRole('site_supervisor', 'member')).toBe(true);
+    expect(isUnrelatedProjectRole('reviewer', 'member')).toBe(true);
+    expect(isUnrelatedProjectRole('manager', 'manager')).toBe(false);
     expect(isUnrelatedProjectRole('site_supervisor', 'designer')).toBe(true);
     expect(isUnrelatedProjectRole('manager', 'architect')).toBe(true);
   });

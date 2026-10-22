@@ -743,9 +743,9 @@ all of the project's cards.
 For a leave request waiting for a decision or approved, and for an urgent absence, each
 affected task (§8 conflicts) on a project the viewer manages gets up to three suggestions.
 Only people who fit are considered: the same role on the task's project as the absent owner,
-a member of that project in a related role (a plain team member, or anyone when the absent
-owner is a plain member — a different specialist role such as site supervisor or project
-manager does not count by itself), or the same designation (case-insensitive; Lintel has no
+a member of that project in a related role (a plain team member, or a designer or architect
+when the absent owner is a plain member — oversight roles (project manager, reviewer, site
+supervisor) and a different specialist role never count by themselves), or the same designation (case-insensitive; Lintel has no
 skills list in Phase 1, so the designation stands for it). Tasks already handed over (and
 still with that person) get no suggestions; handed-back tasks get them again. Left out: the absent person, the task's
 reviewer, anyone with leave (approved or pending) in the cover days, and anyone not working
