@@ -11,6 +11,7 @@ import {
   requireCapability,
   requirePerson,
 } from './leave-context';
+import { handoverRequestNotifications } from './leave-handover-notifications';
 import { assessLeaveImpact, conflictSnapshotOf, type LeaveImpact } from './leave-impact.assessor';
 import {
   assertNoBlockingProblems,
@@ -21,7 +22,7 @@ import {
   summaryFacts,
   validateHandovers,
 } from './leave-input';
-import { handoverRequestedNotification, leaveRequestedNotification } from './leave-notifications';
+import { leaveRequestedNotification } from './leave-notifications';
 
 export interface PreviewLeaveInput extends LeavePeriodInput {
   /** Someone else's absence (manager preview); null for my own leave. */
@@ -138,14 +139,9 @@ export class RequestLeaveCommands {
         await notifier.notify(leaveRequestedNotification(levelOne, facts, 'level-1'));
       }
       const tasks = await stores.leave.openTasksOf(requester.id);
-      for (const handover of handovers) {
-        const task = tasks.find((candidate) => candidate.taskId === handover.taskId);
-        if (handover.toUserId && task) {
-          await notifier.notify(
-            handoverRequestedNotification(handover.toUserId, facts, task.taskId, task.title),
-          );
-        }
-      }
+      await notifier.notifyMany(
+        handoverRequestNotifications(facts, handovers, tasks, requester.id),
+      );
       return { id };
     });
   }

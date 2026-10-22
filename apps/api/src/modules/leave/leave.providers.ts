@@ -7,6 +7,7 @@ import {
   LeaveQueries,
   Notifier,
   type NotifierFactory,
+  PeopleAwayQuery,
   RecordUrgentAbsenceCommand,
   RequestLeaveCommands,
   type UnitOfWork,
@@ -49,5 +50,11 @@ export const leaveProviders: Provider[] = [
     provide: LeaveQueries,
     inject: [UNIT_OF_WORK, CLOCK],
     useFactory: (uow: UnitOfWork<ApplicationStores>, clock: Clock) => new LeaveQueries(uow, clock),
+  },
+  {
+    provide: PeopleAwayQuery,
+    inject: [UNIT_OF_WORK, CLOCK],
+    useFactory: (uow: UnitOfWork<ApplicationStores>, clock: Clock) =>
+      new PeopleAwayQuery(uow, clock),
   },
 ];

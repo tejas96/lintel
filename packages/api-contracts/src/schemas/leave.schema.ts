@@ -60,6 +60,13 @@ export const leaveHandoverObject = z.object({
   to: userSummarySchema.nullable(),
   note: z.string().nullable(),
   status: z.enum(['proposed', 'accepted', 'declined', 'applied']),
+  /** Who owns the task now. */
+  currentOwner: userSummarySchema.nullable(),
+  /**
+   * Applied, then the task changed owner again (`at`, when known). `handedBack`:
+   * it is with the person on leave once more, so cover is needed again.
+   */
+  superseded: z.object({ at: instantSchema.nullable(), handedBack: z.boolean() }).nullable(),
 });
 export type LeaveHandover = z.infer<typeof leaveHandoverObject>;
 export const leaveHandoverSchema: ResponseSchema<LeaveHandover> = leaveHandoverObject;
@@ -131,3 +138,20 @@ export const leavePoliciesObject = z.object({
 });
 export type LeavePolicies = z.infer<typeof leavePoliciesObject>;
 export const leavePoliciesSchema: ResponseSchema<LeavePolicies> = leavePoliciesObject;
+
+export const personAwayObject = z.object({
+  user: userSummarySchema,
+  startDate: calendarDateSchema,
+  endDate: calendarDateSchema,
+  dayPortion: dayPortionSchema,
+  /** Approved leave, or a request still waiting for a decision. Never the type or reason. */
+  status: z.enum(['approved', 'requested']),
+});
+export const peopleAwayObject = z.object({
+  taskId: idSchema,
+  /** From the later of today and the task's planned start to its due date. */
+  window: z.object({ start: calendarDateSchema, end: calendarDateSchema }),
+  people: z.array(personAwayObject),
+});
+export type PeopleAway = z.infer<typeof peopleAwayObject>;
+export const peopleAwaySchema: ResponseSchema<PeopleAway> = peopleAwayObject;

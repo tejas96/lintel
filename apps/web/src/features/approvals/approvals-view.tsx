@@ -43,6 +43,7 @@ const KINDS: Readonly<
     action: 'Accept or decline the new date',
     onWeb: true,
   },
+  leave_handover: { label: 'Cover while away', action: 'Open the handover', onWeb: true },
 };
 
 /** Reward reviews are decided in the review queue of the rewards screen. */

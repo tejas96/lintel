@@ -42,6 +42,7 @@ export async function toCoverSuggestionsView(
                 id: item.handover.id,
                 status: item.handover.status,
                 to: pickUser(people, item.handover.toUserId),
+                handedBack: item.handover.handedBack,
               }
             : null,
           suggestions: item.suggestions.flatMap((suggestion) => {

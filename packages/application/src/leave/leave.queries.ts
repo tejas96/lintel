@@ -2,7 +2,7 @@ import type { Clock } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { UnitOfWork } from '../common/unit-of-work';
 import type { LeaveRequestRecord } from './leave.store';
-import { canCancelLeaveRequest, canDecideLeaveRequest } from './leave-access';
+import { canCancelLeaveRequest, canDecideLeaveRequest, canSeeLeaveReason } from './leave-access';
 import { buildLeaveBalances, calendarYearOf, type LeaveBalanceRow } from './leave-balance';
 import {
   businessToday,
@@ -31,6 +31,8 @@ export interface LeaveRequestAccess {
   readonly impact: LeaveImpact;
   readonly viewerCanDecide: boolean;
   readonly viewerCanCancel: boolean;
+  /** The reason, questions and decision notes are shown only to these people. */
+  readonly viewerCanSeeReason: boolean;
 }
 
 /** Read-side rules for leave: who sees what, live impact and balances. */
@@ -62,6 +64,12 @@ export class LeaveQueries {
       impact,
       viewerCanDecide: canDecideLeaveRequest(context.actor, request),
       viewerCanCancel: canCancelLeaveRequest(context.actor, request, today),
+      viewerCanSeeReason: canSeeLeaveReason(context.actor, {
+        requesterUserId: request.userId,
+        requesterManagerUserId: requester.reportsToUserId,
+        recordedByUserId: request.recordedByUserId,
+        approverUserIds: request.steps.map((step) => step.approverUserId),
+      }),
     };
   }
 

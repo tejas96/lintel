@@ -43,6 +43,8 @@ export function useLeaveDecisionMutations(requestId: string, onStale: (error: un
   const fail = useFailureToast();
   const settle = (request: LeaveRequestDetail) => {
     queryClient.setQueryData(leaveKeys.request(request.id), request);
+    // Cover suggestions follow the handovers and owners, so they change with every answer.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.coverSuggestions(request.id) });
     void queryClient.invalidateQueries({ queryKey: ['leave', 'requests'] });
     void queryClient.invalidateQueries({ queryKey: ['leave', 'balances'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });

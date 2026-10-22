@@ -5,6 +5,7 @@ import { Button, Field } from '@lintel/design-system/web';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { PersonCombobox } from '@/features/people/person-combobox';
+import { AwayWarning, useAwayByPerson } from '../people-away';
 import type { useLeaveDecisionMutations } from './use-leave-decision';
 
 type HandoverMutation = ReturnType<typeof useLeaveDecisionMutations>['handover'];
@@ -36,10 +37,14 @@ export function HandoverActions({
   const [choosing, setChoosing] = useState(preferred);
   const [someoneElse, setSomeoneElse] = useState<string | null>(preferred ? preferredUserId : null);
   const busy = mutation.isPending && mutation.variables?.handoverId === handover.id;
+  const handedBack = handover.superseded?.handedBack === true;
   const answering = isRecipient && handover.status === 'proposed';
-  const applicable = canApply && handover.status !== 'applied';
+  const applicable = canApply && (handover.status !== 'applied' || handedBack);
+  const away = useAwayByPerson(handover.task.id, applicable);
   if (!answering && !applicable) return null;
-  const needsChoice = handover.to === null || handover.status === 'declined' || choosing;
+  // Handed back: the earlier choice no longer stands, so the manager names someone again.
+  const needsChoice =
+    handover.to === null || handover.status === 'declined' || handedBack || choosing;
   const run = (decision: 'accept' | 'decline' | 'apply', toUserId: string | null = null) =>
     mutation.mutate({ handoverId: handover.id, decision, toUserId });
 
@@ -84,6 +89,7 @@ export function HandoverActions({
               value={someoneElse}
               onValueChange={setSomeoneElse}
               excludeIds={excludeIds}
+              away={away.labels}
               placeholder="Search colleagues"
             />
           </Field>
@@ -97,6 +103,9 @@ export function HandoverActions({
             Hand over
           </Button>
         </div>
+      )}
+      {applicable && (
+        <AwayWarning userId={needsChoice ? someoneElse : (handover.to?.id ?? null)} away={away} />
       )}
     </div>
   );

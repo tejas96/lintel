@@ -118,4 +118,14 @@ describe('cover suggestions', () => {
     const many = ['p', 'q', 'r', 's'].map((id) => person(id, { projectRole: 'member' }));
     expect(suggestCover(task, absent, many)).toHaveLength(3);
   });
+
+  it('leaves out people in an unrelated role on the project unless the designation matches', () => {
+    const suggestions = suggestCover(task, absent, [
+      person('sana', { projectRole: 'site_supervisor', designation: 'Site supervisor' }),
+      person('pm', { projectRole: 'manager', designation: 'Project manager' }),
+      person('ira', { projectRole: 'architect', designation: 'Interior designer' }),
+      person('kabir', { projectRole: 'member' }),
+    ]);
+    expect(suggestions.map((item) => item.userId)).toEqual(['ira', 'kabir']);
+  });
 });

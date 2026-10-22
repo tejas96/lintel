@@ -151,6 +151,8 @@ export const coverSuggestionsObject = z.object({
           id: idSchema,
           status: z.enum(['proposed', 'accepted', 'declined', 'applied']),
           to: userSummarySchema.nullable(),
+          /** Applied, then given back to the person on leave: choose cover again. */
+          handedBack: z.boolean(),
         })
         .nullable(),
       suggestions: z.array(

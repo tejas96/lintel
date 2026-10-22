@@ -89,7 +89,12 @@ export function LeaveDecisionPage({ requestId }: { readonly requestId: string })
             <LeaveConflicts conflicts={request.impact.conflicts} />
             <ImpactNotes impact={request.impact} />
           </Section>
-          <CoverSuggestions leaveRequestId={request.id} today={today} onChoose={chooseCover} />
+          <CoverSuggestions
+            leaveRequestId={request.id}
+            today={today}
+            requesterName={isRequester ? 'you' : (request.user.fullName.split(' ')[0] ?? '')}
+            onChoose={chooseCover}
+          />
           <Section
             title="Handovers"
             description="Proposed by the person going on leave. Nothing is reassigned until a project manager hands it over."

@@ -1,4 +1,4 @@
-import { domainEvent } from '@lintel/domain';
+import { domainEvent, handoverApplyProblem, isHandedBack } from '@lintel/domain';
 import {
   ForbiddenError,
   InvalidTransitionError,
@@ -36,9 +36,17 @@ export class DecideHandoverCommand {
     return this.deps.uow.transaction(async (stores) => {
       const handover = await stores.leave.findHandover(handoverId);
       if (!handover) throw new NotFoundError('Handover');
-      await loadVisibleLeaveRequest(stores, context, handover.leaveRequestId);
+      const { request } = await loadVisibleLeaveRequest(stores, context, handover.leaveRequestId);
       if (input.decision === 'apply') {
-        await this.apply(stores, context, handover, input.toUserId, now);
+        await this.apply(
+          stores,
+          context,
+          { ...handover, absentUserId: request.userId },
+          {
+            overrideUserId: input.toUserId,
+            now,
+          },
+        );
       } else {
         if (handover.toUserId !== context.actor.userId) {
           throw new ForbiddenError('Only the proposed person can accept or decline.');
@@ -65,30 +73,36 @@ export class DecideHandoverCommand {
     });
   }
 
+  /**
+   * Reassigns the task. An applied handover can be applied again only when the
+   * task came back to the person on leave (for example a reassignment request
+   * returned it); then the manager chooses cover once more.
+   */
   private async apply(
     stores: LeaveStores,
     context: RequestContext,
-    handover: LeaveHandoverRecord,
-    overrideUserId: string | null,
-    now: Date,
+    handover: LeaveHandoverRecord & { readonly absentUserId: string },
+    input: { readonly overrideUserId: string | null; readonly now: Date },
   ): Promise<void> {
     await new ProjectAccessService(stores.access).requireManage(
       context.actor,
       handover.projectId,
       'Task',
     );
-    if (handover.status === 'applied') {
-      throw new InvalidTransitionError('This handover was already applied.');
-    }
-    const toUserId = overrideUserId ?? handover.toUserId;
+    const task = await stores.leave.handoverTask(handover.taskId);
+    if (!task) throw new NotFoundError('Task');
+    const ownership = { ...handover, taskOwnerUserId: task.ownerUserId };
+    const problem = handoverApplyProblem(ownership);
+    if (problem) throw new InvalidTransitionError(problem);
+    // Handed back: the earlier choice no longer stands, so the manager names the person again.
+    const handedBack = isHandedBack(ownership);
+    const toUserId = input.overrideUserId ?? (handedBack ? null : handover.toUserId);
     const recipient = toUserId ? await stores.people.findById(toUserId) : null;
     if (recipient?.status !== 'active') {
       throw new ValidationFailedError('Choose an active person to take over the task.', [
         { field: 'toUserId', message: 'Choose who takes over.' },
       ]);
     }
-    const task = await stores.leave.handoverTask(handover.taskId);
-    if (!task) throw new NotFoundError('Task');
     if (task.ownerUserId === recipient.id) {
       throw new ValidationFailedError('This person already owns the task.');
     }
@@ -100,7 +114,7 @@ export class DecideHandoverCommand {
       status: 'applied',
       toUserId: recipient.id,
       decidedByUserId: context.actor.userId,
-      decidedAt: now,
+      decidedAt: input.now,
     });
     await stores.records.appendAudit({
       actorUserId: context.actor.userId,
@@ -108,7 +122,7 @@ export class DecideHandoverCommand {
       entityType: 'task',
       entityId: task.id,
       before: { ownerUserId: task.ownerUserId },
-      after: { ownerUserId: recipient.id, handoverId: handover.id },
+      after: { ownerUserId: recipient.id, handoverId: handover.id, handedBack },
       requestId: context.requestId,
     });
     await stores.records.appendActivity({
@@ -135,6 +149,7 @@ export class DecideHandoverCommand {
         handoverId: handover.id,
         previousOwnerUserId: task.ownerUserId,
         newOwnerUserId: recipient.id,
+        window: handedBack ? `${handover.id}:${task.version}` : handover.id,
       }),
     );
   }

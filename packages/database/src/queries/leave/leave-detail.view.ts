@@ -4,10 +4,10 @@ import type { DatabaseExecutor } from '../../client';
 import { leaveRequests } from '../../schema';
 import { loadUserSummaries } from '../shared/user-summary.query';
 import type { UserSummaryView } from '../shared/view-types';
+import { type LeaveHandoverView, loadLeaveHandoverViews } from './leave-handover.view';
 import {
-  type LeaveHandoverView,
   type LeaveRequestView,
-  loadLeaveHandoverViews,
+  type LeaveViewer,
   loadLeaveRequestViews,
 } from './leave-request.view';
 
@@ -67,18 +67,24 @@ export async function toLeaveImpactView(
   };
 }
 
-/** The detail view: the request, its live impact, handovers and what the viewer may do. */
+/**
+ * The detail view: the request, its live impact, handovers (read against each
+ * task's current owner) and what the viewer may do. The reason and notes are
+ * included only when the access check allowed this viewer to read them.
+ */
 export async function loadLeaveRequestDetail(
   db: DatabaseExecutor,
   access: LeaveRequestAccess,
+  viewer: LeaveViewer,
 ): Promise<LeaveRequestDetailView | null> {
   const [view] = await loadLeaveRequestViews(db, {
+    ...(access.viewerCanSeeReason ? { viewer } : {}),
     where: eq(leaveRequests.id, access.request.id),
   });
   if (!view) return null;
   const [impact, handovers] = await Promise.all([
     toLeaveImpactView(db, access.impact),
-    loadLeaveHandoverViews(db, access.request.id),
+    loadLeaveHandoverViews(db, access.request),
   ]);
   return {
     ...view,

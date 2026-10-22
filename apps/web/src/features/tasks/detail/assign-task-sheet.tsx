@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserRoundPen } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { AwayWarning, useAwayByPerson } from '@/features/leave/people-away';
 import { PersonCombobox } from '@/features/people/person-combobox';
 import { api, expectStatus } from '@/lib/api/api-client';
 import { queryKeys } from '@/lib/query/query-keys';
@@ -59,6 +60,7 @@ export function AssignTaskButton({ task }: { readonly task: TaskDetail }) {
   const [reason, setReason] = useState(suggested ? 'Covering while the owner is away.' : '');
   const [error, setError] = useState<string | null>(null);
   const assign = useAssign(task);
+  const away = useAwayByPerson(task.id, open);
   if (!task.viewerCanManage || task.status === 'done' || task.status === 'cancelled') return null;
   const close = () => {
     setOpen(false);
@@ -108,11 +110,13 @@ export function AssignTaskButton({ task }: { readonly task: TaskDetail }) {
             <PersonCombobox
               value={owner}
               onValueChange={setOwner}
+              away={away.labels}
               excludeIds={[task.owner?.id, task.reviewer?.id].filter((id): id is string =>
                 Boolean(id),
               )}
             />
           </Field>
+          <AwayWarning userId={owner} away={away} />
           <Field label="Reason" hint="Optional. Kept in the audit log.">
             <Textarea
               value={reason}

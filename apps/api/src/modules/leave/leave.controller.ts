@@ -3,6 +3,7 @@ import {
   DecideHandoverCommand,
   DecideLeaveRequestCommands,
   LeaveQueries,
+  PeopleAwayQuery,
   RecordUrgentAbsenceCommand,
   type RequestContext,
   RequestLeaveCommands,
@@ -11,6 +12,7 @@ import {
   type DatabaseConnection,
   listLeaveTypes,
   loadLeaveRequestDetail,
+  loadPeopleAway,
   queryLeaveRequests,
   toLeaveImpactView,
 } from '@lintel/database';
@@ -33,13 +35,17 @@ export class LeaveController {
     private readonly absences: RecordUrgentAbsenceCommand,
     private readonly handovers: DecideHandoverCommand,
     private readonly queries: LeaveQueries,
+    private readonly away: PeopleAwayQuery,
     @Inject(DATABASE_CONNECTION) private readonly database: DatabaseConnection,
   ) {}
 
   /** The detail as the viewer may see it (404 when hidden). */
   private async detail(context: RequestContext, requestId: string) {
     const access = await this.queries.detail(context, requestId);
-    return found(await loadLeaveRequestDetail(this.database.db, access), 'Leave request');
+    return found(
+      await loadLeaveRequestDetail(this.database.db, access, context.actor),
+      'Leave request',
+    );
   }
 
   @TsRestHandler(contract)
@@ -68,7 +74,7 @@ export class LeaveController {
       },
       listLeaveRequests: async ({ query }) => {
         const filter = await this.queries.listFilter(context, query.scope);
-        const result = await queryLeaveRequests(db, { ...query, filter });
+        const result = await queryLeaveRequests(db, { ...query, filter, viewer: context.actor });
         return {
           status: 200,
           body: pageOf(result.items, query.page, query.pageSize, result.totalItems),
@@ -94,6 +100,10 @@ export class LeaveController {
         const { leaveRequestId } = await this.handovers.execute(context, params.id, body);
         return { status: 200, body: await this.detail(context, leaveRequestId) };
       },
+      peopleAwayDuringTask: async ({ params }) => ({
+        status: 200,
+        body: await loadPeopleAway(db, await this.away.forTask(context, params.id)),
+      }),
     });
   }
 }

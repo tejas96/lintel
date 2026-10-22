@@ -43,6 +43,31 @@ export function canViewLeaveRequest(
   );
 }
 
+export interface LeaveReasonFacts {
+  readonly requesterUserId: string;
+  readonly requesterManagerUserId: string | null;
+  readonly recordedByUserId: string | null;
+  readonly approverUserIds: readonly (string | null)[];
+}
+
+/**
+ * The reason (and the conversation about it: questions, decision notes) is
+ * personal. Only the person, their manager, the approvers of the request, the
+ * manager who recorded an urgent absence, and people deciding any leave
+ * (owner, administrators) read it. Colleagues covering work, team leads and
+ * project managers see the dates, the type and the work impact only.
+ */
+export function canSeeLeaveReason(
+  viewer: Pick<Actor, 'userId' | 'capabilities'>,
+  facts: LeaveReasonFacts,
+): boolean {
+  const userId = viewer.userId;
+  if (viewer.capabilities.has('leave.approve_any')) return true;
+  if (facts.requesterUserId === userId || facts.requesterManagerUserId === userId) return true;
+  if (facts.recordedByUserId === userId) return true;
+  return facts.approverUserIds.includes(userId);
+}
+
 /**
  * The approver of the current pending step decides; people holding
  * `leave.approve_any` may decide for them, but never on their own request.

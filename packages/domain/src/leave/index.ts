@@ -1,5 +1,6 @@
 export * from './cover-suggestion.strategy';
 export * from './leave-approval.policy';
 export * from './leave-conflict.detector';
+export * from './leave-handover.rules';
 export * from './leave-request';
 export * from './leave-type.rules';

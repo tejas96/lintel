@@ -291,6 +291,22 @@ blocked work is shown separately. Load ≥85 % = stretched, >105 % = overloaded.
 - Urgent absence: recorded by a manager, triggers reassessment notifications;
   tasks are **never reassigned automatically** — handovers are proposed,
   accepted, then applied by a manager with an audit record.
+- Handovers: the proposed colleague is notified and finds "Cover … for <name>" in
+  Approvals (accept or decline) while the leave is pending or approved. Once the
+  leave is approved, the project manager of each task with a handover not yet
+  applied is notified and finds "Hand over …" in Approvals until it is handed over.
+  The leave page reads each handover against the task's current owner: when the task
+  later goes back to the person on leave (for example through a reassignment
+  request), the handover shows as handed back, cover suggestions return and the
+  manager hands it over again (choosing the person anew).
+- Leave reasons, approvers' questions and decision notes are visible only to the
+  person, their manager, the request's approvers, the manager who recorded an urgent
+  absence and holders of `leave.approve_any`. Others who may see the request (cover
+  colleagues, project managers, team leads) see dates, type and work impact only.
+- Changing a task's owner (Change owner, reassignment decisions, leave handovers)
+  warns — never blocks — when the chosen person has approved or requested leave
+  between the later of today and the task's planned start and its due date (the next
+  14 days without a due date or when overdue); the person picker marks people away.
 - Leave types and allowances are configurable examples; statutory entitlements
   must be verified by the studio for its jurisdiction. Holders of
   `leave.manage_policies` manage them in Settings, Leave: name, description, colour,
@@ -720,8 +736,11 @@ all of the project's cards.
 For a leave request waiting for a decision or approved, and for an urgent absence, each
 affected task (§8 conflicts) on a project the viewer manages gets up to three suggestions.
 Only people who fit are considered: the same role on the task's project as the absent owner,
-a member of that project, or the same designation (case-insensitive; Lintel has no skills
-list in Phase 1, so the designation stands for it). Left out: the absent person, the task's
+a member of that project in a related role (a plain team member, or anyone when the absent
+owner is a plain member — a different specialist role such as site supervisor or project
+manager does not count by itself), or the same designation (case-insensitive; Lintel has no
+skills list in Phase 1, so the designation stands for it). Tasks already handed over (and
+still with that person) get no suggestions; handed-back tasks get them again. Left out: the absent person, the task's
 reviewer, anyone with leave (approved or pending) in the cover days, and anyone not working
 then.
 

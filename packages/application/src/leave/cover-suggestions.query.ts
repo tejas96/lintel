@@ -4,6 +4,7 @@ import {
   coverNeedMinutes,
   coverWindow,
   DEFAULT_WORKING_CALENDAR,
+  isHandedBack,
   type ProjectRole,
   suggestCover,
 } from '@lintel/domain';
@@ -35,6 +36,8 @@ export interface CoverTaskSuggestions {
     readonly id: string;
     readonly toUserId: string | null;
     readonly status: HandoverStatus;
+    /** Applied once, then the task came back to the person on leave: it needs cover again. */
+    readonly handedBack: boolean;
   } | null;
   readonly suggestions: readonly CoverSuggestion[];
 }
@@ -180,7 +183,17 @@ export class CoverSuggestionsQuery {
         remainingMinutes,
         needMinutes,
         handover: handover
-          ? { id: handover.id, toUserId: handover.toUserId, status: handover.status }
+          ? {
+              id: handover.id,
+              toUserId: handover.toUserId,
+              status: handover.status,
+              // Every task listed here is owned by the person on leave right now.
+              handedBack: isHandedBack({
+                ...handover,
+                taskOwnerUserId: request.userId,
+                absentUserId: request.userId,
+              }),
+            }
           : null,
         suggestions,
       };

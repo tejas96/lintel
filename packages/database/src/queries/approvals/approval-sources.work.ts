@@ -20,7 +20,8 @@ export interface ApprovalDraft {
     | 'reward_review'
     | 'priority_conflict'
     | 'reassignment_request'
-    | 'date_change_request';
+    | 'date_change_request'
+    | 'leave_handover';
   readonly id: string;
   readonly title: string;
   readonly subtitle: string;

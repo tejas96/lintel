@@ -33,16 +33,23 @@ function windowText(item: TaskCover, today: string): string {
   return `${days} · about ${hours(item.needMinutes)} of work then`;
 }
 
+/** Handed over and still with that person: nothing to cover, so the task is left out. */
+const isCovered = (item: TaskCover) =>
+  item.handover?.status === 'applied' && !item.handover.handedBack;
+
 function TaskSuggestions({
   item,
   today,
+  requesterName,
   onChoose,
 }: {
   readonly item: TaskCover;
   readonly today: string;
+  readonly requesterName: string;
   readonly onChoose: (taskId: string, userId: string) => void;
 }) {
-  const handover = item.handover && item.handover.status !== 'applied' ? item.handover : null;
+  // A proposed (or handed-back) handover is where the choice is made; otherwise Change owner.
+  const handover = item.handover && !isCovered(item) ? item.handover : null;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-raised p-4">
       <div className="flex flex-col gap-0.5">
@@ -55,11 +62,13 @@ function TaskSuggestions({
         </Link>
         <p className="type-body-sm text-ink-muted">{windowText(item, today)}</p>
       </div>
-      {item.handover?.status === 'applied' ? (
-        <p className="type-body-sm text-ink-muted">
-          Already handed over to {item.handover.to?.fullName ?? 'a colleague'}.
+      {item.handover?.handedBack && (
+        <p className="type-body-sm text-at-risk">
+          Handed over to {item.handover.to?.fullName ?? 'a colleague'}, then given back to{' '}
+          {requesterName}. Choose who covers again.
         </p>
-      ) : item.suggestions.length === 0 ? (
+      )}
+      {item.suggestions.length === 0 ? (
         <p className="type-body-sm text-ink-faint">
           Nobody fits yet: no one on this project or with the same designation is working those
           days.
@@ -135,14 +144,17 @@ function TaskSuggestions({
 export function CoverSuggestions({
   leaveRequestId,
   today,
+  requesterName,
   onChoose,
 }: {
   readonly leaveRequestId: string;
   readonly today: string;
+  /** The person on leave, as the page names them ("Sameer", or "you"). */
+  readonly requesterName: string;
   readonly onChoose: (taskId: string, userId: string) => void;
 }) {
   const cover = useCoverSuggestions(leaveRequestId, true);
-  const tasks = cover.data?.tasks ?? [];
+  const tasks = (cover.data?.tasks ?? []).filter((item) => !isCovered(item));
   if (tasks.length === 0) return null;
   return (
     <section aria-labelledby="cover-title" className="flex flex-col gap-3">
@@ -157,7 +169,13 @@ export function CoverSuggestions({
       </div>
       <div className="flex flex-col gap-3">
         {tasks.map((item) => (
-          <TaskSuggestions key={item.task.id} item={item} today={today} onChoose={onChoose} />
+          <TaskSuggestions
+            key={item.task.id}
+            item={item}
+            today={today}
+            requesterName={requesterName}
+            onChoose={onChoose}
+          />
         ))}
       </div>
     </section>

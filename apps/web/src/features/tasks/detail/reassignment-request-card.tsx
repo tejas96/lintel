@@ -12,6 +12,7 @@ import {
 } from '@lintel/design-system/web';
 import { ArrowRight } from 'lucide-react';
 import { useState } from 'react';
+import { AwayWarning, useAwayByPerson } from '@/features/leave/people-away';
 import { PersonCombobox } from '@/features/people/person-combobox';
 import { formatRelativeInstant } from '@/lib/format/dates';
 import { useReassignmentMutations } from './use-reassignments';
@@ -31,6 +32,7 @@ function DecisionPanel({ request }: { readonly request: ReassignmentRequest }) {
   const [owner, setOwner] = useState<string | null>(request.suggested?.id ?? null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<{ field: 'owner' | 'note'; message: string } | null>(null);
+  const away = useAwayByPerson(request.task.id, true);
   const run = (decision: 'accepted' | 'declined') => {
     if (decision === 'accepted' && !owner) {
       setError({ field: 'owner', message: 'Choose who should own the task now.' });
@@ -56,8 +58,14 @@ function DecisionPanel({ request }: { readonly request: ReassignmentRequest }) {
         error={error?.field === 'owner' ? error.message : null}
         hint="They are told straight away; the current owner hears too."
       >
-        <PersonCombobox value={owner} onValueChange={setOwner} excludeIds={excluded} />
+        <PersonCombobox
+          value={owner}
+          onValueChange={setOwner}
+          excludeIds={excluded}
+          away={away.labels}
+        />
       </Field>
+      <AwayWarning userId={owner} away={away} />
       <Field
         label="Note"
         hint="Optional to reassign, needed to decline."
