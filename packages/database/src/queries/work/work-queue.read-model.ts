@@ -53,7 +53,14 @@ export class WorkQueueReadModel implements WorkQueueSource<TaskSummaryView> {
           ),
         ),
       this.db
-        .select({ id: tasks.id, status: tasks.status, milestoneId: tasks.milestoneId })
+        .select({
+          id: tasks.id,
+          number: tasks.number,
+          title: tasks.title,
+          status: tasks.status,
+          dueDate: tasks.dueDate,
+          milestoneId: tasks.milestoneId,
+        })
         .from(tasks)
         .where(and(inArray(tasks.projectId, projectIds), isNull(tasks.archivedAt))),
       this.db
@@ -100,7 +107,12 @@ export class WorkQueueReadModel implements WorkQueueSource<TaskSummaryView> {
         },
       })),
       edges,
-      nodes: new Map(nodeRows.map((node) => [node.id, node])),
+      nodes: new Map(
+        nodeRows.map((node) => [
+          node.id,
+          { ...node, dueDate: node.dueDate as CalendarDate | null },
+        ]),
+      ),
       milestones: new Map(
         milestoneRows.map((milestone) => [
           milestone.id,

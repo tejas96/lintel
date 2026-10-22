@@ -26,6 +26,15 @@ export interface WorkQueueTaskRow {
   readonly needsAcknowledgement: boolean;
 }
 
+/** Any task in the person's projects: enough to rank, and to name what a task waits on. */
+export interface WorkQueueNode {
+  readonly number: number;
+  readonly title: string;
+  readonly status: TaskStatus;
+  readonly dueDate: CalendarDate | null;
+  readonly milestoneId: string | null;
+}
+
 /**
  * Everything needed to rank one person's work: their open tasks plus the
  * dependency graph and milestones of the projects those tasks belong to.
@@ -33,10 +42,7 @@ export interface WorkQueueTaskRow {
 export interface WorkQueueSnapshot<TSummary> {
   readonly tasks: readonly { readonly row: WorkQueueTaskRow; readonly summary: TSummary }[];
   readonly edges: readonly TaskDependencyEdge[];
-  readonly nodes: ReadonlyMap<
-    string,
-    { readonly status: TaskStatus; readonly milestoneId: string | null }
-  >;
+  readonly nodes: ReadonlyMap<string, WorkQueueNode>;
   readonly milestones: ReadonlyMap<
     string,
     { readonly name: string; readonly dueDate: CalendarDate; readonly isOpen: boolean }

@@ -24,6 +24,7 @@ function presentItem(item: WorkQueueItem<TaskSummaryView>) {
     bucket: item.bucket,
     headline: item.headline,
     reasons: item.reasons.map((reason) => ({ ...reason })),
+    waitingOn: item.waitingOn.map((task) => ({ ...task })),
   };
 }
 

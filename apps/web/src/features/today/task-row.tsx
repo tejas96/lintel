@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskSummary } from '@lintel/api-contracts';
+import type { TaskRef, TaskSummary } from '@lintel/api-contracts';
 import { cn, layoutSpring, PriorityMarker, StatusGlyph } from '@lintel/design-system/web';
 import { ListChecks } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -25,6 +25,8 @@ const GLYPH_TONE: Readonly<Record<string, string>> = {
 
 interface TaskRowProps {
   readonly task: TaskSummary;
+  /** Unfinished tasks it waits on: it can't start yet, so it says so instead of offering Start. */
+  readonly waitingOn?: readonly TaskRef[];
   readonly today: string;
   /** Optional reason the server gave for this task's position. */
   readonly headline?: string;
@@ -34,15 +36,27 @@ interface TaskRowProps {
 }
 
 /** One task: what, where, when, and the next step, in a single calm line. */
+/** "Waiting on #6 Present the concept" (and "+2 more"). */
+function waitingWords(waitingOn: readonly TaskRef[]): string {
+  const [first, ...rest] = waitingOn;
+  if (!first) return '';
+  const more = rest.length > 0 ? ` +${rest.length} more` : '';
+  return `Waiting on #${first.number} ${first.title}${more}`;
+}
+
 export function TaskRow({
   task,
+  waitingOn = [],
   today,
   headline,
   onBeforeChange,
   onReportBlocker,
   showActions = true,
 }: TaskRowProps) {
-  const status = TASK_STATUS_PRESENTATION[task.status];
+  const waiting = waitingOn.length > 0;
+  const status = waiting
+    ? { label: waitingWords(waitingOn), glyph: 'notStarted' as const, tone: 'neutral' }
+    : TASK_STATUS_PRESENTATION[task.status];
   const due = describeTaskDue(task, today);
   return (
     <motion.li
@@ -90,10 +104,20 @@ export function TaskRow({
         </div>
       </div>
       <div className="flex w-full items-center justify-end gap-3 pl-7 sm:w-auto sm:shrink-0 sm:gap-4 sm:pl-0">
-        {NOTABLE_STATUSES.has(task.status) && (
-          <span className="mr-auto sm:mr-0">
-            <TaskStatusPill status={task.status} />
+        {waiting ? (
+          <span
+            title={status.label}
+            className="mr-auto inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full bg-sunken px-2 text-[0.75rem] font-medium text-ink-muted sm:mr-0 sm:max-w-72"
+          >
+            <StatusGlyph name="notStarted" className="size-3 shrink-0" />
+            <span className="truncate">{status.label}</span>
           </span>
+        ) : (
+          NOTABLE_STATUSES.has(task.status) && (
+            <span className="mr-auto sm:mr-0">
+              <TaskStatusPill status={task.status} />
+            </span>
+          )
         )}
         {due && (
           <span
@@ -113,6 +137,7 @@ export function TaskRow({
         {showActions && (
           <TaskQuickAction
             task={task}
+            waiting={waiting}
             onBeforeChange={onBeforeChange}
             onReportBlocker={onReportBlocker}
           />

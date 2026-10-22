@@ -164,6 +164,8 @@ export const workQueueItemObject = z.object({
   bucket: z.enum(['overdue', 'today', 'upcoming', 'later', 'blocked', 'waiting', 'in_review']),
   headline: z.string(),
   reasons: z.array(z.object({ code: z.string(), points: z.number(), explanation: z.string() })),
+  /** Unfinished tasks it waits on; non-empty for the `waiting` bucket. */
+  waitingOn: z.array(taskRefSchema),
 });
 export type WorkQueueItem = z.infer<typeof workQueueItemObject>;
 export const workQueueItemSchema: ResponseSchema<WorkQueueItem> = workQueueItemObject;

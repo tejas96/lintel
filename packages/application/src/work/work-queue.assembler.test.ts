@@ -42,12 +42,54 @@ function snapshot(rows: WorkQueueTaskRow[]): WorkQueueSnapshot<string> {
       { taskId: 'old-done', dependsOnTaskId: 'overdue' },
     ],
     nodes: new Map([
-      ['overdue', { status: 'in_progress' as const, milestoneId: null }],
-      ['waiting', { status: 'ready' as const, milestoneId: null }],
-      ['measure', { status: 'in_progress' as const, milestoneId: null }],
-      ['drawings', { status: 'draft' as const, milestoneId: null }],
-      ['site-visit', { status: 'draft' as const, milestoneId: 'm-site' }],
-      ['old-done', { status: 'done' as const, milestoneId: null }],
+      [
+        'overdue',
+        {
+          number: 1,
+          title: 'overdue',
+          status: 'in_progress' as const,
+          dueDate: null,
+          milestoneId: null,
+        },
+      ],
+      [
+        'waiting',
+        { number: 1, title: 'waiting', status: 'ready' as const, dueDate: null, milestoneId: null },
+      ],
+      [
+        'measure',
+        {
+          number: 1,
+          title: 'measure',
+          status: 'in_progress' as const,
+          dueDate: null,
+          milestoneId: null,
+        },
+      ],
+      [
+        'drawings',
+        {
+          number: 1,
+          title: 'drawings',
+          status: 'draft' as const,
+          dueDate: null,
+          milestoneId: null,
+        },
+      ],
+      [
+        'site-visit',
+        {
+          number: 1,
+          title: 'site-visit',
+          status: 'draft' as const,
+          dueDate: null,
+          milestoneId: 'm-site',
+        },
+      ],
+      [
+        'old-done',
+        { number: 1, title: 'old-done', status: 'done' as const, dueDate: null, milestoneId: null },
+      ],
     ]),
     milestones: new Map([
       ['m-site', { name: 'Site handover', dueDate: date('2026-10-24'), isOpen: true }],
@@ -110,6 +152,15 @@ describe('work queue assembly', () => {
       inReview: 1,
       needsAcknowledgement: 1,
     });
+  });
+
+  it('names the unfinished tasks a waiting task waits on', () => {
+    const queue = assembleWorkQueue(snapshot(rows), today, deadlineAwarePriorityStrategy);
+    const waiting = queue.items.find((item) => item.task === 'summary:waiting');
+    expect(waiting?.waitingOn).toEqual([
+      { id: 'measure', number: 1, title: 'measure', status: 'in_progress', dueDate: null },
+    ]);
+    expect(queue.items.find((item) => item.task === 'summary:later')?.waitingOn).toEqual([]);
   });
 
   it('has no next task when nothing is actionable', () => {
