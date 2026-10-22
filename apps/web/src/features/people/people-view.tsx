@@ -101,8 +101,8 @@ export function PeopleView() {
           }
         />
       </motion.div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="sm:w-80">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="min-w-0 lg:w-80 lg:shrink">
           <Input
             type="search"
             aria-label="Search people"
@@ -112,7 +112,7 @@ export function PeopleView() {
             leading={<Search aria-hidden />}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:shrink-0">
           <Select
             label="Role"
             value={role}
@@ -121,7 +121,7 @@ export function PeopleView() {
               { value: 'any', label: 'Every role' },
               ...ROLES.map((value) => ({ value, label: ROLE_LABELS[value] })),
             ]}
-            className="sm:w-44"
+            className="lg:w-44"
           />
           <Select
             label="Team"
@@ -134,7 +134,7 @@ export function PeopleView() {
                 label: `${team.name} (${team.memberCount})`,
               })),
             ]}
-            className="sm:w-44"
+            className="lg:w-44"
           />
           {manages && (
             <Select
@@ -142,7 +142,7 @@ export function PeopleView() {
               value={status}
               onValueChange={setStatus}
               options={STATUS_OPTIONS}
-              className="col-span-2 sm:w-40"
+              className="col-span-2 sm:col-span-1 lg:w-40"
             />
           )}
         </div>

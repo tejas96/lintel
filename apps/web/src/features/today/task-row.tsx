@@ -55,7 +55,7 @@ export function TaskRow({
 }: TaskRowProps) {
   const waiting = waitingOn.length > 0;
   const status = waiting
-    ? { label: waitingWords(waitingOn), glyph: 'notStarted' as const, tone: 'neutral' }
+    ? { label: 'Waiting', glyph: 'notStarted' as const, tone: 'neutral' }
     : TASK_STATUS_PRESENTATION[task.status];
   const due = describeTaskDue(task, today);
   return (
@@ -78,6 +78,15 @@ export function TaskRow({
         >
           {task.title}
         </Link>
+        {waiting && (
+          <p
+            title={waitingWords(waitingOn)}
+            className="flex min-w-0 items-center gap-1.5 type-body-sm text-ink-muted"
+          >
+            <StatusGlyph name="notStarted" className="size-3 shrink-0 text-ink-faint" />
+            <span className="truncate">{waitingWords(waitingOn)}</span>
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {due && (
             <span
@@ -104,20 +113,10 @@ export function TaskRow({
         </div>
       </div>
       <div className="flex w-full items-center justify-end gap-3 pl-7 sm:w-auto sm:shrink-0 sm:gap-4 sm:pl-0">
-        {waiting ? (
-          <span
-            title={status.label}
-            className="mr-auto inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full bg-sunken px-2 text-[0.75rem] font-medium text-ink-muted sm:mr-0 sm:max-w-72"
-          >
-            <StatusGlyph name="notStarted" className="size-3 shrink-0" />
-            <span className="truncate">{status.label}</span>
+        {!waiting && NOTABLE_STATUSES.has(task.status) && (
+          <span className="mr-auto sm:mr-0">
+            <TaskStatusPill status={task.status} />
           </span>
-        ) : (
-          NOTABLE_STATUSES.has(task.status) && (
-            <span className="mr-auto sm:mr-0">
-              <TaskStatusPill status={task.status} />
-            </span>
-          )
         )}
         {due && (
           <span
