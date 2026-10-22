@@ -8,7 +8,7 @@ import {
   shortTextSchema,
   versionSchema,
 } from '../common/primitives';
-import { directoryEntrySchema, roleSchema, teamSchema } from '../schemas/people.schema';
+import { directoryEntrySchema, roleSchema } from '../schemas/people.schema';
 
 const c = initContract();
 
@@ -73,17 +73,6 @@ export const peopleContract = c.router({
     pathParams: z.object({ id: idSchema }),
     body: z.object({ version: versionSchema }),
     responses: { 200: directoryEntrySchema },
-  },
-  listTeams: {
-    method: 'GET',
-    path: '/teams',
-    responses: { 200: z.array(teamSchema) },
-  },
-  createTeam: {
-    method: 'POST',
-    path: '/teams',
-    body: z.object({ name: shortTextSchema, description: z.string().max(500).nullable() }),
-    responses: { 201: teamSchema },
   },
   touch: {
     method: 'POST',

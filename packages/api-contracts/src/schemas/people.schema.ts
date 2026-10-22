@@ -47,7 +47,12 @@ export const teamObject = z.object({
   id: idSchema,
   name: z.string(),
   description: z.string().nullable(),
+  lead: userSummarySchema.nullable(),
+  /** People on the team who can sign in (invited or active). */
   memberCount: z.number().int(),
+  /** Archived teams cannot be chosen; people already on them keep the team as history. */
+  archivedAt: instantSchema.nullable(),
+  version: z.number().int(),
 });
 export type Team = z.infer<typeof teamObject>;
 export const teamSchema: ResponseSchema<Team> = teamObject;

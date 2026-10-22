@@ -1,6 +1,18 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, date, integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core';
-import { createdAt, primaryId, updatedAt, version } from './columns';
+import {
+  type AnyPgColumn,
+  boolean,
+  check,
+  date,
+  integer,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
+import { createdAt, instant, primaryId, updatedAt, version } from './columns';
+import { users } from './identity.schema';
 
 /** One row: this deployment serves a single studio (see docs/DECISIONS/0003). */
 export const organizationSettings = pgTable(
@@ -55,10 +67,21 @@ export const calendarHolidays = pgTable(
   (table) => [unique('calendar_holidays_unique_date').on(table.calendarId, table.date)],
 );
 
-export const teams = pgTable('teams', {
-  id: primaryId(),
-  name: text('name').notNull().unique(),
-  description: text('description'),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
+export const teams = pgTable(
+  'teams',
+  {
+    id: primaryId(),
+    name: text('name').notNull(),
+    description: text('description'),
+    leadUserId: uuid('lead_user_id').references((): AnyPgColumn => users.id, {
+      onDelete: 'set null',
+    }),
+    /** Archived teams keep their people's history but cannot be chosen any more. */
+    archivedAt: instant('archived_at'),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  // One name per studio, whatever the case (archived teams included, so restoring never clashes).
+  (table) => [uniqueIndex('teams_name_lower_unique').on(sql`lower(${table.name})`)],
+);

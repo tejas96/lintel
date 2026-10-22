@@ -12,7 +12,7 @@ function setup() {
     ...fakePeople([]),
     findById: async (id) => people.get(id) ?? null,
     phoneInUse: async () => false,
-    teamExists: async () => true,
+    teamIsOpen: async () => true,
     update: async (id, version, changes: Patch<PersonInput>) => {
       const current = people.get(id);
       if (!current || current.version !== version) return null;

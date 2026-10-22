@@ -72,6 +72,8 @@ interface PersonFieldsProps {
   readonly onChange: (values: PersonFormValues) => void;
   readonly errors: Readonly<Record<string, string>>;
   readonly teams: readonly Team[];
+  /** The person's team today; still offered if it has since been archived. */
+  readonly currentTeam?: { readonly id: string; readonly name: string } | null;
   /** Adding asks for the phone; editing offers to replace it. */
   readonly mode: 'add' | 'edit';
   /** The person being edited (cannot report to themselves). */
@@ -86,12 +88,15 @@ export function PersonFields({
   onChange,
   errors,
   teams,
+  currentTeam = null,
   mode,
   personId,
   isOwner = false,
 }: PersonFieldsProps) {
   const set = <K extends keyof PersonFormValues>(key: K, value: PersonFormValues[K]) =>
     onChange({ ...values, [key]: value });
+  const archivedTeam =
+    currentTeam && !teams.some((team) => team.id === currentTeam.id) ? currentTeam : null;
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Full name" error={errors.fullName} required>
@@ -147,13 +152,20 @@ export function PersonFields({
           }))}
         />
       </Field>
-      <Field label="Team" error={errors.teamId}>
+      <Field
+        label="Team"
+        error={errors.teamId}
+        {...(teams.length === 0 ? { hint: 'No teams yet. Add them in Settings, Teams.' } : {})}
+      >
         <Select
           value={values.teamId}
           onValueChange={(teamId) => set('teamId', teamId)}
           options={[
             { value: NO_TEAM, label: 'No team' },
             ...teams.map((team) => ({ value: team.id, label: team.name })),
+            ...(archivedTeam
+              ? [{ value: archivedTeam.id, label: `${archivedTeam.name} (archived)` }]
+              : []),
           ]}
         />
       </Field>

@@ -20,11 +20,12 @@ export interface PersonRecord extends PersonInput {
   readonly version: number;
 }
 
-/** Write-side persistence for people and teams. */
+/** Write-side persistence for people. Teams have their own store (`TeamStore`). */
 export interface PeopleStore {
   findById(userId: string): Promise<PersonRecord | null>;
   phoneInUse(phoneE164: string, exceptUserId: string | null): Promise<boolean>;
-  teamExists(teamId: string): Promise<boolean>;
+  /** The team exists and is not archived, so people can be put on it. */
+  teamIsOpen(teamId: string): Promise<boolean>;
   create(input: PersonInput): Promise<PersonRecord>;
   /** Applies the change only if `expectedVersion` still matches. Returns null on a stale version. */
   update(
@@ -38,6 +39,4 @@ export interface PeopleStore {
     status: 'active' | 'deactivated',
     at: Date,
   ): Promise<PersonRecord | null>;
-  createTeam(name: string, description: string | null): Promise<{ id: string }>;
-  teamNameInUse(name: string): Promise<boolean>;
 }

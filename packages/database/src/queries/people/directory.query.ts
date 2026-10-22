@@ -67,21 +67,6 @@ export async function findDirectoryEntry(
   return entry ?? null;
 }
 
-export async function listTeams(db: DatabaseExecutor) {
-  const rows = await db
-    .select({
-      id: teams.id,
-      name: teams.name,
-      description: teams.description,
-      memberCount: count(users.id),
-    })
-    .from(teams)
-    .leftJoin(users, and(eq(users.teamId, teams.id), eq(users.status, 'active')))
-    .groupBy(teams.id)
-    .orderBy(asc(teams.name));
-  return rows;
-}
-
 async function toDirectoryEntries(
   db: DatabaseExecutor,
   rows: { user: typeof users.$inferSelect; team: { id: string; name: string } | null }[],

@@ -23,6 +23,7 @@ import { ScopeChangeRepository } from './repositories/scope-change.repository';
 import { SettingsRepository } from './repositories/settings.repository';
 import { TaskRepository } from './repositories/task.repository';
 import { TaskItemRepository } from './repositories/task-item.repository';
+import { TeamRepository } from './repositories/team.repository';
 import { TemplateRepository } from './repositories/template.repository';
 import { TemplateUpdateRepository } from './repositories/template-update.repository';
 import { WorkSessionRepository } from './repositories/work-session.repository';
@@ -41,6 +42,7 @@ export function createStores(executor: DatabaseExecutor): ApplicationStores {
     leave: new LeaveRepository(executor),
     notifications: new NotificationRepository(executor),
     people: new PeopleRepository(executor),
+    teams: new TeamRepository(executor),
     projects: new ProjectRepository(executor),
     records: new RecordRepository(executor),
     scopeChanges: new ScopeChangeRepository(executor),

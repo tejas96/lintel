@@ -122,6 +122,7 @@ function PersonEditor({
           onChange={setValues}
           errors={errors}
           teams={teams}
+          currentTeam={person.team}
           mode="edit"
           personId={person.id}
           isOwner={isOwner}

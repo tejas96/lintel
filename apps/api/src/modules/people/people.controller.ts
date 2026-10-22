@@ -1,10 +1,5 @@
 import { ManagePeopleCommands, type RequestContext } from '@lintel/application';
-import {
-  type DatabaseConnection,
-  findDirectoryEntry,
-  listTeams,
-  queryDirectory,
-} from '@lintel/database';
+import { type DatabaseConnection, findDirectoryEntry, queryDirectory } from '@lintel/database';
 import type { Clock } from '@lintel/shared';
 import { Controller, Inject } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
@@ -69,21 +64,6 @@ export class PeopleController {
       reactivatePerson: async ({ params, body }) => {
         await this.commands.setActive(context, params.id, body.version, true, null);
         return { status: 200, body: await this.entry(params.id) };
-      },
-      listTeams: async () => {
-        requireCapability(context, 'users.view_directory');
-        return { status: 200, body: await listTeams(this.database.db) };
-      },
-      createTeam: async ({ body }) => {
-        const team = await this.commands.createTeam(context, body.name, body.description);
-        const teams = await listTeams(this.database.db);
-        return {
-          status: 201,
-          body: found(
-            teams.find((candidate) => candidate.id === team.id),
-            'Team',
-          ),
-        };
       },
       touch: async () => {
         void this.clock;

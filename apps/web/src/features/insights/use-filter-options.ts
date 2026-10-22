@@ -37,7 +37,7 @@ export function useFilterOptions(): FilterOptions {
   });
   const teams = useQuery({
     queryKey: queryKeys.teams,
-    queryFn: () => expectStatus(api.people.listTeams(), 200),
+    queryFn: () => expectStatus(api.teams.listTeams({ query: { status: 'active' } }), 200),
     enabled: can('users.view_directory'),
     staleTime: 5 * 60_000,
   });

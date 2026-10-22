@@ -1,6 +1,6 @@
 import type { PeopleStore, PersonInput, PersonRecord } from '@lintel/application';
 import { definedOnly, type Patch } from '@lintel/shared';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { DatabaseExecutor } from '../client';
 import { teams, users } from '../schema';
 
@@ -37,8 +37,11 @@ export class PeopleRepository implements PeopleStore {
     return Boolean(row);
   }
 
-  async teamExists(teamId: string) {
-    const [row] = await this.db.select({ id: teams.id }).from(teams).where(eq(teams.id, teamId));
+  async teamIsOpen(teamId: string) {
+    const [row] = await this.db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(and(eq(teams.id, teamId), isNull(teams.archivedAt)));
     return Boolean(row);
   }
 
@@ -78,22 +81,5 @@ export class PeopleRepository implements PeopleStore {
       .where(and(eq(users.id, userId), eq(users.version, expectedVersion)))
       .returning();
     return row ? toPerson(row) : null;
-  }
-
-  async createTeam(name: string, description: string | null) {
-    const [row] = await this.db
-      .insert(teams)
-      .values({ name, description })
-      .returning({ id: teams.id });
-    if (!row) throw new Error('Creating the team returned no row.');
-    return row;
-  }
-
-  async teamNameInUse(name: string) {
-    const [row] = await this.db
-      .select({ id: teams.id })
-      .from(teams)
-      .where(sql`lower(${teams.name}) = lower(${name})`);
-    return Boolean(row);
   }
 }

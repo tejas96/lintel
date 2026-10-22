@@ -25,6 +25,7 @@ export * from './scope-changes';
 export * from './settings';
 export * from './setup';
 export * from './tasks';
+export * from './teams';
 export * from './template-updates';
 export * from './templates';
 export * from './work';

@@ -15,6 +15,7 @@ import { ReportsModule } from './reports/reports.module';
 import { RewardRecordsModule } from './rewards/reward-records.module';
 import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TeamsModule } from './teams/teams.module';
 import { TemplateUpdatesModule } from './template-updates/template-updates.module';
 import { TemplatesModule } from './templates/templates.module';
 import { WorkModule } from './work/work.module';
@@ -26,6 +27,7 @@ import { WorkingCalendarsModule } from './working-calendars/working-calendars.mo
  */
 export const FEATURE_MODULES: Type[] = [
   PeopleModule,
+  TeamsModule,
   ProjectsModule,
   TemplatesModule,
   SettingsModule,

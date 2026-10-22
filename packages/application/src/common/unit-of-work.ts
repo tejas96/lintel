@@ -22,6 +22,7 @@ import type { ScopeChangeStore } from '../scope-changes/scope-change.store';
 import type { SettingsStore } from '../settings/settings.store';
 import type { TaskStore } from '../tasks/task.store';
 import type { TaskItemStore } from '../tasks/task-item.store';
+import type { TeamStore } from '../teams/team.store';
 import type { TemplateUpdateStore } from '../template-updates/template-update.store';
 import type { TemplateStore } from '../templates/template.store';
 import type { WorkSessionStore } from '../work/work-session.store';
@@ -42,6 +43,7 @@ export interface ApplicationStores {
   readonly leave: LeaveStore;
   readonly notifications: NotificationStore;
   readonly people: PeopleStore;
+  readonly teams: TeamStore;
   readonly projects: ProjectStore;
   readonly records: RecordStore;
   readonly scopeChanges: ScopeChangeStore;

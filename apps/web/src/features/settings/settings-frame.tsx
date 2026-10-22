@@ -12,6 +12,7 @@ import { useSession } from '@/features/session/session-provider';
 const SECTIONS: readonly { href: string; label: string; requires: Capability }[] = [
   { href: '/settings', label: 'Studio', requires: 'organization.manage_settings' },
   { href: '/settings/roles', label: 'Roles and access', requires: 'roles.manage' },
+  { href: '/settings/teams', label: 'Teams', requires: 'users.manage' },
   { href: '/settings/holidays', label: 'Holidays', requires: 'organization.manage_settings' },
   {
     href: '/settings/working-week',

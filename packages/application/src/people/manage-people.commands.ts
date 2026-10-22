@@ -64,7 +64,7 @@ export class ManagePeopleCommands {
     requireCapability(context, 'users.manage');
     this.guardOwnerRole(context, input.role);
     return this.uow.transaction(async (stores) => {
-      await this.validate(stores, input, null);
+      await this.validate(stores, input, null, null);
       const person = await stores.people.create(input);
       await stores.records.appendAudit({
         actorUserId: context.actor.userId,
@@ -90,7 +90,7 @@ export class ManagePeopleCommands {
       const before = await stores.people.findById(userId);
       if (!before) throw new NotFoundError('Person');
       const phoneChanges = guardPersonUpdate(context, before, changes);
-      await this.validate(stores, { ...before, ...definedOnly(changes) }, userId);
+      await this.validate(stores, { ...before, ...definedOnly(changes) }, userId, before.teamId);
       const after = await stores.people.update(userId, expectedVersion, changes);
       if (!after) throw new StaleVersionError('This person');
       if (phoneChanges) {
@@ -148,19 +148,6 @@ export class ManagePeopleCommands {
     });
   }
 
-  async createTeam(
-    context: RequestContext,
-    name: string,
-    description: string | null,
-  ): Promise<{ id: string }> {
-    requireCapability(context, 'users.manage');
-    return this.uow.transaction(async (stores) => {
-      if (await stores.people.teamNameInUse(name))
-        throw new ConflictError('A team with this name already exists.');
-      return stores.people.createTeam(name, description);
-    });
-  }
-
   private guardOwnerRole(context: RequestContext, role: string): void {
     if (role === 'owner' && context.actor.role !== 'owner') {
       throw new ForbiddenError('Only the owner can grant the owner role.');
@@ -171,15 +158,18 @@ export class ManagePeopleCommands {
     stores: ApplicationStores,
     input: PersonInput,
     userId: string | null,
+    currentTeamId: string | null,
   ): Promise<void> {
     if (await stores.people.phoneInUse(input.phoneE164, userId)) {
       throw new ConflictError('Someone already uses this phone number.', [
         { field: 'nationalNumber', message: 'This number belongs to another person.' },
       ]);
     }
-    if (input.teamId && !(await stores.people.teamExists(input.teamId))) {
-      throw new ValidationFailedError('That team does not exist.', [
-        { field: 'teamId', message: 'Unknown team.' },
+    // Someone already on a team that was archived keeps it until it is changed.
+    const teamChanges = input.teamId !== currentTeamId;
+    if (input.teamId && teamChanges && !(await stores.people.teamIsOpen(input.teamId))) {
+      throw new ValidationFailedError('That team does not exist or is archived.', [
+        { field: 'teamId', message: 'Choose one of the studio’s teams.' },
       ]);
     }
     if (input.workingCalendarId && !(await stores.calendars.find(input.workingCalendarId))) {

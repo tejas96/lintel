@@ -17,6 +17,7 @@ import { reassignmentsContract } from './reassignments.contract';
 import { reportsContract } from './reports.contract';
 import { rewardRecordsContract } from './reward-records.contract';
 import { tasksContract } from './tasks.contract';
+import { teamsContract } from './teams.contract';
 import { templateUpdatesContract } from './template-updates.contract';
 import { templatesContract } from './templates.contract';
 import { workContract } from './work.contract';
@@ -30,6 +31,7 @@ import { workingCalendarsContract } from './working-calendars.contract';
 export type ApiRouterDefinition = {
   readonly auth: typeof authContract;
   readonly people: typeof peopleContract;
+  readonly teams: typeof teamsContract;
   readonly projects: typeof projectsContract;
   readonly templates: typeof templatesContract;
   readonly tasks: typeof tasksContract;
@@ -55,6 +57,7 @@ export type ApiRouterDefinition = {
 export const apiRouterDefinition: ApiRouterDefinition = {
   auth: authContract,
   people: peopleContract,
+  teams: teamsContract,
   projects: projectsContract,
   templates: templatesContract,
   tasks: tasksContract,
@@ -110,6 +113,7 @@ export {
 } from './reports.contract';
 export { rewardRecordsContract } from './reward-records.contract';
 export { createTaskBodySchema, tasksContract } from './tasks.contract';
+export { teamsContract } from './teams.contract';
 export { templateUpdatesContract } from './template-updates.contract';
 export { templatesContract } from './templates.contract';
 export { workContract } from './work.contract';

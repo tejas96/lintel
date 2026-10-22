@@ -91,12 +91,10 @@ export function fakePeople(people: PersonRecord[]): PeopleStore {
   return {
     findById: async (id) => people.find((person) => person.id === id) ?? null,
     phoneInUse: unused,
-    teamExists: unused,
+    teamIsOpen: unused,
     create: unused,
     update: unused,
     setStatus: unused,
-    createTeam: unused,
-    teamNameInUse: unused,
   };
 }
 

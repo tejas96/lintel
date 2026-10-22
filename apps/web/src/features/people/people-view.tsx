@@ -57,7 +57,7 @@ export function PeopleView() {
   const deferred = useDeferredValue(search.trim());
   const teams = useQuery({
     queryKey: queryKeys.teams,
-    queryFn: () => expectStatus(api.people.listTeams(), 200),
+    queryFn: () => expectStatus(api.teams.listTeams({ query: { status: 'active' } }), 200),
   });
   const query = {
     page: 1,

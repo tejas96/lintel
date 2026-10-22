@@ -64,6 +64,13 @@
       "when": 1792590548668,
       "tag": "0008_fair_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792668731434,
+      "tag": "0009_teams_administration",
+      "breakpoints": true
     }
   ]
 }
