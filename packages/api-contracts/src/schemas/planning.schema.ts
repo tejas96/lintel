@@ -110,23 +110,24 @@ export const taskDateChangeSchema = z.object({
   dueDate: calendarDateSchema,
 });
 
+/** One task a reschedule would move, with its dates before and after. */
+export const previewedMoveSchema = z.object({
+  taskId: idSchema,
+  title: z.string(),
+  status: taskStatusSchema,
+  currentStartDate: calendarDateSchema.nullable(),
+  currentDueDate: calendarDateSchema.nullable(),
+  proposedStartDate: calendarDateSchema.nullable(),
+  proposedDueDate: calendarDateSchema,
+  shiftWorkingDays: z.number().int(),
+  /** Moved because work it waits for moved. */
+  isDownstream: z.boolean(),
+  /** A committed deadline moves (the task is no longer a draft). */
+  committed: z.boolean(),
+});
+
 export const reschedulePreviewObject = z.object({
-  moves: z.array(
-    z.object({
-      taskId: idSchema,
-      title: z.string(),
-      status: taskStatusSchema,
-      currentStartDate: calendarDateSchema.nullable(),
-      currentDueDate: calendarDateSchema.nullable(),
-      proposedStartDate: calendarDateSchema.nullable(),
-      proposedDueDate: calendarDateSchema,
-      shiftWorkingDays: z.number().int(),
-      /** Moved because work it waits for moved. */
-      isDownstream: z.boolean(),
-      /** A committed deadline moves (the task is no longer a draft). */
-      committed: z.boolean(),
-    }),
-  ),
+  moves: z.array(previewedMoveSchema),
   plannedEndDate: calendarDateSchema,
   forecastEndDate: calendarDateSchema.nullable(),
   projectEndImpactDays: z.number().int(),

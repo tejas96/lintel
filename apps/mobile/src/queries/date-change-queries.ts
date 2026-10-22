@@ -14,6 +14,20 @@ export function useTaskDateChanges(taskId: string) {
   });
 }
 
+/** What accepting a request would do to the rest of the plan (for people who decide). */
+export function useDateChangeImpact(request: DateChangeRequest) {
+  return useQuery({
+    queryKey: queryKeys.dateChangeImpact(request.task.id, request.id),
+    queryFn: ({ signal }) =>
+      unwrap(
+        api.dateChanges.getDateChangeImpact({
+          params: { id: request.id },
+          fetchOptions: { signal },
+        }),
+      ),
+  });
+}
+
 /**
  * Asking, deciding and withdrawing can move the task's dates, so the task
  * (and its requests, under the same key), the queue and approvals refresh.
@@ -49,11 +63,17 @@ export function useDecideDateChange() {
       readonly request: DateChangeRequest;
       readonly decision: 'accepted' | 'declined';
       readonly note: string | null;
+      readonly moveWaitingTasks?: boolean;
     }) =>
       unwrap(
         api.dateChanges.decideDateChange({
           params: { id: input.request.id },
-          body: { decision: input.decision, note: input.note, version: input.request.version },
+          body: {
+            decision: input.decision,
+            note: input.note,
+            version: input.request.version,
+            moveWaitingTasks: input.moveWaitingTasks === true,
+          },
         }),
       ),
     onSuccess: (request) => refreshAfterDateChange(queryClient, request),

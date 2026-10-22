@@ -1,13 +1,16 @@
 import { checkDateChangeDecision, type DateChangeDecision, domainEvent } from '@lintel/domain';
-import { NotFoundError, StaleVersionError } from '@lintel/shared';
+import { NotFoundError, PreconditionFailedError, StaleVersionError } from '@lintel/shared';
 import type { RequestContext } from '../common/request-context';
 import type { ApplicationStores } from '../common/unit-of-work';
 import { mayDecideReassignment } from '../reassignments/reassignment-deciders';
 import { assertReassignmentAllowed as assertAllowed } from '../reassignments/reassignment-errors';
+import { type AppliedMove, applyTaskMoves } from '../scheduling/apply-task-moves';
 import type { TaskRecord } from '../tasks/task.store';
 import { loadTaskForActor } from '../tasks/task-loader';
-import { quoted } from '../tasks/task-records';
+import { notifyAboutTask, quoted } from '../tasks/task-records';
+import { deadlineText } from '../tasks/task-schedule-records';
 import type { DateChangeRequestRecord } from './date-change.store';
+import { acceptedStartDate, dateChangeImpact } from './date-change-impact';
 import {
   type DateChangeDependencies,
   recordDateChangeStep,
@@ -18,21 +21,16 @@ export interface DateChangeDecisionInput {
   readonly decision: DateChangeDecision;
   readonly note: string | null;
   readonly version: number;
-}
-
-/** The start the task keeps: the proposed one, else the current one unless it now falls after the due date. */
-function newStartDate(request: DateChangeRequestRecord, task: TaskRecord): string | null {
-  if (request.proposedStartDate) return request.proposedStartDate;
-  if (task.plannedStartDate && task.plannedStartDate > request.proposedDueDate) {
-    return request.proposedDueDate;
-  }
-  return task.plannedStartDate;
+  /** On accept, also push the tasks that wait on this one (the impact preview's moves). */
+  readonly moveWaitingTasks?: boolean | undefined;
 }
 
 /**
  * The project manager accepts (the task's dates move, schedule history and an
  * outbox event that re-plans its reminders are written; the baseline due date
- * never changes) or declines with a note. The person who asked hears either
+ * never changes) or declines with a note. Accepting can also push the tasks
+ * that wait on this one, with the timeline's knock-on rule, unless that
+ * would move the agreed end (a scope change does that). The person who asked hears either
  * way, and so does the task owner when someone else asked.
  */
 export class DecideDateChangeCommand {
@@ -81,8 +79,16 @@ export class DecideDateChangeCommand {
         note,
       });
       if (!resolved) throw new StaleVersionError('This request');
-      if (input.decision === 'accepted')
-        await this.applyDates(stores, context, request, loaded.task);
+      const pushed =
+        input.decision === 'accepted'
+          ? await this.accept(stores, context, request, loaded.task, input.moveWaitingTasks === true)
+          : [];
+      const knockOn =
+        pushed.length === 0
+          ? ''
+          : pushed.length === 1
+            ? ' 1 waiting task moved with it.'
+            : ` ${pushed.length} waiting tasks moved with it.`;
       const decided: DateChangeRequestRecord = {
         ...request,
         status: input.decision,
@@ -94,13 +100,57 @@ export class DecideDateChangeCommand {
         action: `date_change_${input.decision}`,
         summary:
           input.decision === 'accepted'
-            ? `Moved ${quoted(loaded.task.title)} to ${request.proposedDueDate} as asked.`
+            ? `Moved ${quoted(loaded.task.title)} to ${request.proposedDueDate} as asked.${knockOn}`
             : `Declined the new date for ${quoted(loaded.task.title)}.`,
-        after: { status: input.decision, note, dueDate: request.proposedDueDate },
+        after: {
+          status: input.decision,
+          note,
+          dueDate: request.proposedDueDate,
+          movedWaitingTaskIds: pushed.map((entry) => entry.after.id),
+        },
       });
       await this.tell(stores, context, decided, loaded.task);
       return decided;
     });
+  }
+
+  /** Moves the task, and the work waiting on it when asked; returns the waiting tasks moved. */
+  private async accept(
+    stores: ApplicationStores,
+    context: RequestContext,
+    request: DateChangeRequestRecord,
+    task: TaskRecord,
+    moveWaitingTasks: boolean,
+  ): Promise<AppliedMove[]> {
+    const facts = moveWaitingTasks ? await stores.scopeChanges.scheduleFacts(task.projectId) : null;
+    const impact = facts
+      ? dateChangeImpact(facts, request, await stores.settings.defaultCalendar())
+      : null;
+    if (impact?.movingWaitingTasksNeedsScopeChange) {
+      throw new PreconditionFailedError(
+        `Moving the waiting tasks too would end the project after the agreed ${impact.plannedEndDate}. Accept only this task, or propose a scope change.`,
+      );
+    }
+    await this.applyDates(stores, context, request, task);
+    if (!impact || impact.dependentMoves.length === 0) return [];
+    const why = `Moved because ${quoted(task.title)} got a new date: ${request.reason}`;
+    const pushed = await applyTaskMoves(stores, context, impact.dependentMoves, {
+      expectedVersions: new Map(),
+      reasonFor: () => why,
+    });
+    const notifier = await this.deps.operations.notifierFor(stores);
+    for (const { move, before, after } of pushed) {
+      if (!move.committed) continue;
+      await notifyAboutTask(notifier, context.actor.userId, after, `v${after.version}`, [
+        {
+          kind: 'priority_changed',
+          recipientUserId: after.ownerUserId,
+          title: `${quoted(after.title)} moved`,
+          body: `Due ${deadlineText(before)} is now ${deadlineText(after)}. ${why}`,
+        },
+      ]);
+    }
+    return pushed;
   }
 
   private async applyDates(
@@ -110,7 +160,7 @@ export class DecideDateChangeCommand {
     task: TaskRecord,
   ): Promise<void> {
     const after = await stores.tasks.update(task.id, task.version, {
-      plannedStartDate: newStartDate(request, task),
+      plannedStartDate: acceptedStartDate(request, task),
       dueDate: request.proposedDueDate,
     });
     if (!after) throw new StaleVersionError('This task');

@@ -8,15 +8,25 @@ import { Divider } from '@/components/section';
 import { TextField } from '@/components/text-field';
 import { haptics } from '@/feedback/haptics';
 import { useToast } from '@/feedback/toast';
-import { useDecideDateChange, useWithdrawDateChange } from '@/queries/date-change-queries';
+import {
+  useDateChangeImpact,
+  useDecideDateChange,
+  useWithdrawDateChange,
+} from '@/queries/date-change-queries';
 import { SPACE } from '@/theme/layout';
+import { DateChangeImpactSummary } from './date-change-impact-summary';
 
-type Decision = 'accepted' | 'declined';
+type Decision = 'accept-all' | 'accept-one' | 'declined';
 
-/** The project manager accepts the new dates or declines with a note. */
+/**
+ * The project manager sees what accepting does to the rest of the plan, then
+ * accepts (only this task, or with the tasks that wait on it) or declines.
+ */
 export function DateChangeDecisionPanel({ request }: { readonly request: DateChangeRequest }) {
   const toast = useToast();
   const decide = useDecideDateChange();
+  const impact = useDateChangeImpact(request);
+  const [choice, setChoice] = useState<Decision | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const run = (decision: Decision) => {
@@ -26,8 +36,14 @@ export function DateChangeDecisionPanel({ request }: { readonly request: DateCha
       return;
     }
     setError(null);
+    setChoice(decision);
     decide.mutate(
-      { request, decision, note: note.trim() || null },
+      {
+        request,
+        decision: decision === 'declined' ? 'declined' : 'accepted',
+        note: note.trim() || null,
+        moveWaitingTasks: decision === 'accept-all',
+      },
       {
         onSuccess: (decided) =>
           toast.show(
@@ -38,7 +54,9 @@ export function DateChangeDecisionPanel({ request }: { readonly request: DateCha
       },
     );
   };
-  const pending = decide.isPending ? decide.variables?.decision : undefined;
+  const pending = decide.isPending ? choice : null;
+  const moves = impact.data?.dependentMoves.length ?? 0;
+  const canMoveAll = moves > 0 && impact.data?.movingWaitingTasksNeedsScopeChange === false;
   return (
     <View style={styles.panel}>
       <Divider />
@@ -54,17 +72,25 @@ export function DateChangeDecisionPanel({ request }: { readonly request: DateCha
         maxLength={2000}
         error={error}
       />
-      <AppText variant="bodySm" tone="tertiary">
-        Accepting moves only this task; the history keeps the old date. Later tasks keep theirs: use
-        a scope change to move them too.
-      </AppText>
+      {impact.data ? <DateChangeImpactSummary impact={impact.data} /> : null}
+      {canMoveAll ? (
+        <Button
+          label={moves === 1 ? 'Accept and move the waiting task' : `Accept and move ${moves} tasks`}
+          icon="done"
+          size="lg"
+          loading={pending === 'accept-all'}
+          disabled={decide.isPending}
+          onPress={() => run('accept-all')}
+        />
+      ) : null}
       <Button
-        label="Accept the new date"
-        icon="done"
+        label={moves > 0 ? 'Accept only this task' : 'Accept the new date'}
+        icon={canMoveAll ? undefined : 'done'}
+        variant={canMoveAll ? 'secondary' : undefined}
         size="lg"
-        loading={pending === 'accepted'}
-        disabled={decide.isPending}
-        onPress={() => run('accepted')}
+        loading={pending === 'accept-one'}
+        disabled={decide.isPending || impact.isPending}
+        onPress={() => run('accept-one')}
       />
       <Button
         label="Decline"

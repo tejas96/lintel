@@ -2,7 +2,11 @@ import { DATE_CHANGE_DECISIONS } from '@lintel/domain';
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { calendarDateSchema, idSchema, noteSchema, versionSchema } from '../common/primitives';
-import { dateChangeRequestSchema, taskDateChangesSchema } from '../schemas/date-change.schema';
+import {
+  dateChangeImpactSchema,
+  dateChangeRequestSchema,
+  taskDateChangesSchema,
+} from '../schemas/date-change.schema';
 
 const c = initContract();
 
@@ -36,6 +40,14 @@ export const dateChangesContract = c.router({
     pathParams: idParams,
     responses: { 200: dateChangeRequestSchema },
   },
+  getDateChangeImpact: {
+    method: 'GET',
+    path: '/date-change-requests/:id/impact',
+    pathParams: idParams,
+    responses: { 200: dateChangeImpactSchema },
+    summary:
+      'What accepting would do before anyone decides: waiting tasks that would start too early, where they would move, slipping milestones and the delivery forecast.',
+  },
   decideDateChange: {
     method: 'POST',
     path: '/date-change-requests/:id/decision',
@@ -44,6 +56,8 @@ export const dateChangesContract = c.router({
       decision: z.enum(DATE_CHANGE_DECISIONS),
       note: z.string().trim().max(2000).nullable(),
       version: versionSchema,
+      /** On accept, also move the tasks that wait on this one (see the impact). */
+      moveWaitingTasks: z.boolean().optional(),
     }),
     responses: { 200: dateChangeRequestSchema },
     summary:
