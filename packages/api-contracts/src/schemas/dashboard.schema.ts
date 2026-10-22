@@ -47,7 +47,14 @@ export const commandCenterObject = z.object({
     headcount: z.number().int(),
     availableToday: z.number().int(),
     onLeaveToday: z.array(userSummarySchema),
-    overloaded: z.array(z.object({ user: userSummarySchema, utilization: z.number() })),
+    /** Booked past 105% this week, or past the available time on any day of it. */
+    overloaded: z.array(
+      z.object({
+        user: userSummarySchema,
+        utilization: z.number(),
+        overloadedDays: z.number().int(),
+      }),
+    ),
   }),
   leaveAwaitingDecision: z.array(leaveRequestSchema),
   scopeChangesAwaitingDecision: z.array(scopeChangeSchema),

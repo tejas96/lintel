@@ -24,7 +24,11 @@ export interface CapacityRow {
   readonly confirmedMinutes: number;
   readonly tentativeMinutes: number;
   readonly utilization: number;
+  /** Overloaded when the totals are or when any day is (see `calculatePersonCapacity`). */
   readonly status: LoadStatus;
+  readonly totalStatus: LoadStatus;
+  readonly overloadedDays: number;
+  readonly bookedLeaveDays: number;
   readonly usesDefaultEstimates: boolean;
   readonly openTaskCount: number;
   readonly days: CapacityDay[];
@@ -111,6 +115,9 @@ export function buildCapacityRows(input: {
       tentativeMinutes: result.tentativeMinutes,
       utilization: Math.round(result.utilization * 1000) / 1000,
       status: result.status,
+      totalStatus: result.totalStatus,
+      overloadedDays: result.overloadedDays,
+      bookedLeaveDays: result.bookedLeaveDays,
       usesDefaultEstimates: result.usesDefaultEstimates,
       openTaskCount: tasks.length,
       days: [...result.days],

@@ -68,6 +68,7 @@ function share(overrides: Partial<MilestoneRewardShare>): MilestoneRewardShare {
     criteria: [],
     totalAmountMinor: 500_001,
     shareAmountMinor: 250_001,
+    pool: null,
     adjustedAmountMinor: null,
     adjustmentReason: null,
     currency: 'INR',

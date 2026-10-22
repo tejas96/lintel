@@ -21,17 +21,31 @@ interface MilestoneRewardCardProps {
   readonly children?: ReactNode;
 }
 
+/**
+ * The amount and, honestly, where it stands against the pool: "Share of ₹2,000"
+ * only while it is the equal split; otherwise "Pool ₹2,000 shared by 2". When
+ * the granted total runs past the pool, reviewers see by how much.
+ */
 function AmountLine({ share }: { readonly share: MilestoneRewardShare }) {
   const amount = payableShare(share);
   if (amount === null || share.status === 'withdrawn') return null;
+  const money = (minor: number) => formatAmount(minor, share.currency);
+  const total = share.totalAmountMinor;
+  const over = share.pool && total !== null ? share.pool.grantedMinor - total : 0;
+  const equalSplit = amount === share.shareAmountMinor && over <= 0;
   return (
     <div className="flex flex-col items-end gap-0.5 text-right">
-      <p className="font-display text-[1.75rem] leading-8 text-ink tabular-nums">
-        {formatAmount(amount, share.currency)}
-      </p>
-      {share.sharedBy > 1 && share.totalAmountMinor !== null && (
+      <p className="font-display text-[1.75rem] leading-8 text-ink tabular-nums">{money(amount)}</p>
+      {share.sharedBy > 1 && total !== null && (
         <p className="type-body-sm text-ink-faint">
-          Share of {formatAmount(share.totalAmountMinor, share.currency)}
+          {equalSplit
+            ? `Share of ${money(total)}`
+            : `Pool ${money(total)} shared by ${share.sharedBy}`}
+        </p>
+      )}
+      {share.pool && over > 0 && (
+        <p className="type-body-sm text-at-risk">
+          Total granted {money(share.pool.grantedMinor)}, {money(over)} over the pool
         </p>
       )}
     </div>

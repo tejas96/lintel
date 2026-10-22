@@ -8,8 +8,13 @@ import { useAppTheme } from '@/theme/app-theme';
 import { RADIUS, SPACE } from '@/theme/layout';
 import { payableAmount, type RewardRecord } from './reward-records';
 
+/** The equal-split line, only while the amount still is the equal split. */
 function shareWords(record: RewardRecord): string | null {
-  return record.sharedBy > 1 ? `Your share, split equally by ${record.sharedBy} people.` : null;
+  if (record.sharedBy <= 1) return null;
+  return record.adjustedAmountMinor === null ||
+    record.adjustedAmountMinor === record.proposedAmountMinor
+    ? `Your share, split equally by ${record.sharedBy} people.`
+    : `From a reward shared by ${record.sharedBy} people.`;
 }
 
 /** "Adjusted from ₹2,500.01: the reason." when a reviewer changed the amount. */

@@ -275,7 +275,9 @@ calendar when they run, so edits apply from then on; dates already planned stay.
 task's remaining effort (estimate − logged minutes; 120 min assumed and flagged
 when missing) is spread evenly over the person's working days from today (or its
 start) to its due date; overdue work lands on today. Draft tasks are tentative;
-blocked work is shown separately. Load ≥85 % = stretched, >105 % = overloaded.
+blocked work is shown separately. Load ≥85 % = stretched, >105 % = overloaded. A person
+with any working day in the range booked past that day's available time (work on approved
+leave included) counts as overloaded ("Overloaded on 1 day"); the range's totals stay shown.
 
 ## 8. Leave (FR-LV)
 
@@ -369,7 +371,10 @@ wait on one recipient excuses the others but not them.
 The result is a **recommendation** (grant when every condition is met, otherwise
 withhold) with the evidence of each condition, and the share waits for review. A person
 holding `rewards.decide` approves (optionally with a different amount, explained by the
-note) or declines it, always with a note, never for their own reward. Nothing is granted,
+note) or declines it, always with a note, never for their own reward. When a different
+amount (or a challenge correction) takes the milestone's total past the reward's amount,
+the reviewer is warned before deciding and the overrun is recorded in the audit; it is not
+blocked, because a person decides rewards. Nothing is granted,
 paid or deducted automatically: the proposed amount is always the full share.
 
 Amounts: the person and `rewards.view_all` see what is proposed and granted; planners
@@ -702,7 +707,9 @@ all of the project's cards.
   today (today has its own count), soonest first (10 listed, the count is complete), plus the
   number of pending milestones due in the same days.
 - **Performance highlights**: milestones completed on or before their due date in the period,
-  credited to everyone who owned one of their finished tasks; most milestones first, then the
+  credited to everyone who owned one of their finished tasks (its own tasks, their subtasks and
+  the unlinked work they wait for, such as the site measurement before the survey review) or
+  submitted one of their deliverables; most milestones first, then the
   most recent. Every milestone counts as important (each is a client-facing commitment).
 - **Owner intervention needed**: what the timelines have already escalated to the studio owner
   and is still unresolved, oldest escalation first: overdue urgent work or work on critical

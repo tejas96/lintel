@@ -15,6 +15,7 @@ import {
   type ChallengeableRecordView,
   loadChallengeable,
 } from './challengeable-records';
+import { poolOverrunAudit } from './milestone-reward-pool';
 import type { ChallengeRecordSnapshot, RewardChallengeRecord } from './reward-challenge.store';
 import { sendRewardNotice } from './reward-notices';
 
@@ -75,6 +76,7 @@ export class ResolveRewardChallengeCommand {
               now,
             );
       const status = correcting ? 'corrected' : 'upheld';
+      const overrun = await this.poolOverrun(stores, record, input.correctedAmountMinor);
       const resolved = await stores.rewardChallenges.resolve(challenge.id, challenge.version, {
         status,
         resolvedByUserId: context.actor.userId,
@@ -89,7 +91,7 @@ export class ResolveRewardChallengeCommand {
         entityType: 'reward_challenge',
         entityId: challenge.id,
         before: { record: record.snapshot, reason: challenge.reason },
-        after: { record: after, note: input.note },
+        after: { record: after, note: input.note, ...overrun },
         requestId: context.requestId,
       });
       await stores.records.enqueueEvent(
@@ -149,6 +151,17 @@ export class ResolveRewardChallengeCommand {
     });
     if (!corrected) throw new StaleVersionError('This reward record');
     return { status: 'approved', grantedAmountMinor: amountMinor, decisionNote: note };
+  }
+
+  /** When a milestone correction takes the milestone past its pool: how far (for the audit). */
+  private async poolOverrun(
+    stores: ResolveStores,
+    record: ChallengeableRecordView,
+    correctedAmountMinor: number | null,
+  ): Promise<Record<string, number>> {
+    if (record.target.kind !== 'milestone' || correctedAmountMinor === null) return {};
+    const share = await stores.milestoneRewards.findShare(record.target.recordId);
+    return share ? poolOverrunAudit(stores, share, correctedAmountMinor) : {};
   }
 
   /** The person who raised it hears the answer; on a correction, everyone the record is about. */

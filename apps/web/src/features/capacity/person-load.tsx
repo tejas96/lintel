@@ -1,10 +1,17 @@
 import type { PersonCapacity } from '@lintel/api-contracts';
 import { Avatar, cn, StatusGlyph } from '@lintel/design-system/web';
-import { formatHoursShort, LOAD_PRESENTATION } from './load-presentation';
+import {
+  bookedLeaveWords,
+  formatHoursShort,
+  LOAD_PRESENTATION,
+  personLoadLabel,
+} from './load-presentation';
 
 /**
  * Who, their load ring, and the range in one line: booked of available hours
- * and the load in words. A hollow mark flags assumed estimates.
+ * and the load in words ("Overloaded on 1 day" when single days run over).
+ * Work booked on approved leave gets its own line. A hollow mark flags
+ * assumed estimates.
  */
 export function PersonLoad({
   person,
@@ -14,6 +21,7 @@ export function PersonLoad({
   readonly size?: 'md' | 'lg';
 }) {
   const presentation = LOAD_PRESENTATION[person.status];
+  const onLeave = bookedLeaveWords(person);
   return (
     <span className="flex min-w-0 items-center gap-3">
       <Avatar
@@ -31,14 +39,17 @@ export function PersonLoad({
             </span>
           )}
         </span>
-        <span className="flex items-center gap-1.5 text-[0.75rem] text-ink-muted">
+        <span className="flex flex-wrap items-center gap-x-1.5 text-[0.75rem] text-ink-muted">
           <StatusGlyph name={presentation.glyph} className={cn('size-3', presentation.text)} />
-          <span className={presentation.text}>{presentation.label}</span>
-          <span className="truncate text-ink-faint">
+          <span className={cn('whitespace-nowrap', presentation.text)}>
+            {personLoadLabel(person)}
+          </span>
+          <span className="whitespace-nowrap text-ink-faint">
             {formatHoursShort(person.confirmedMinutes)} of{' '}
             {formatHoursShort(person.availableMinutes)}
           </span>
         </span>
+        {onLeave && <span className="text-[0.75rem] text-overdue">{onLeave}</span>}
       </span>
     </span>
   );

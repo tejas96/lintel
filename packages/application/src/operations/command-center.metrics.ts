@@ -120,9 +120,18 @@ export function presenceToday(people: readonly PresenceFact[], today: CalendarDa
   };
 }
 
-/** Overloaded = confirmed load above 105% of availability this week. */
-export function overloadedPeople<T extends { utilization: number }>(rows: readonly T[]): T[] {
+/**
+ * Overloaded = confirmed load above 105% of availability this week, or any
+ * single working day booked past its available time (work on a leave day
+ * counts). Most loaded first, then the most overloaded days.
+ */
+export function overloadedPeople<T extends { utilization: number; overloadedDays: number }>(
+  rows: readonly T[],
+): T[] {
   return rows
-    .filter((row) => row.utilization > OVERLOADED_THRESHOLD)
-    .sort((left, right) => right.utilization - left.utilization);
+    .filter((row) => row.utilization > OVERLOADED_THRESHOLD || row.overloadedDays > 0)
+    .sort(
+      (left, right) =>
+        right.utilization - left.utilization || right.overloadedDays - left.overloadedDays,
+    );
 }

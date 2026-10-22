@@ -53,7 +53,18 @@ export interface PersonCapacity {
   readonly confirmedMinutes: number;
   readonly tentativeMinutes: number;
   readonly utilization: number;
+  /**
+   * The person's load over the range: overloaded when the totals are, or when
+   * any working day in the range is (one 10-hour day is not balanced by quiet
+   * days around it).
+   */
   readonly status: LoadStatus;
+  /** The load of the range's totals alone (booked of available minutes). */
+  readonly totalStatus: LoadStatus;
+  /** Working days in the range booked beyond the day's available time. */
+  readonly overloadedDays: number;
+  /** Days of approved leave that still have confirmed work on them. */
+  readonly bookedLeaveDays: number;
   readonly usesDefaultEstimates: boolean;
 }
 
@@ -150,6 +161,8 @@ export function calculatePersonCapacity(
   );
   const availableMinutes = sum(days, (day) => day.availableMinutes);
   const confirmedMinutes = sum(days, (day) => day.confirmedMinutes);
+  const totalStatus = loadStatus(availableMinutes, confirmedMinutes);
+  const overloadedDays = days.filter((day) => day.status === 'overloaded').length;
   return {
     userId: person.userId,
     fullName: person.fullName,
@@ -158,7 +171,11 @@ export function calculatePersonCapacity(
     confirmedMinutes,
     tentativeMinutes: sum(days, (day) => day.tentativeMinutes),
     utilization: availableMinutes === 0 ? 0 : confirmedMinutes / availableMinutes,
-    status: loadStatus(availableMinutes, confirmedMinutes),
+    status: overloadedDays > 0 ? 'overloaded' : totalStatus,
+    totalStatus,
+    overloadedDays,
+    bookedLeaveDays: days.filter((day) => day.leave === 'approved' && day.confirmedMinutes > 0)
+      .length,
     usesDefaultEstimates: tasks.some((task) => task.estimateIsDefault),
   };
 }

@@ -11,6 +11,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { type FormEvent, useState } from 'react';
 import { isApiError } from '@/lib/api/api-error';
+import { PoolOverrunNote, type RewardPool } from './pool-overrun-note';
 
 const CHOICES = [
   { value: 'approve', label: 'Approve' },
@@ -33,6 +34,9 @@ export interface RewardDecision {
 interface DecideRewardFormProps {
   /** The proposed amount, when the reviewer may see it. */
   readonly amountMinor: number | null;
+  /** A milestone reward's pool, when the reviewer may see amounts: warns on an overrun. */
+  readonly pool?: RewardPool | null;
+  readonly currency?: string;
   readonly busy: boolean;
   readonly blocked: boolean;
   /** Sends the decision; server field errors come back through `onFailure`. */
@@ -40,7 +44,14 @@ interface DecideRewardFormProps {
 }
 
 /** Approve (optionally with a different amount) or decline, always with a note. */
-export function DecideRewardForm({ amountMinor, busy, blocked, onDecide }: DecideRewardFormProps) {
+export function DecideRewardForm({
+  amountMinor,
+  pool = null,
+  currency = 'INR',
+  busy,
+  blocked,
+  onDecide,
+}: DecideRewardFormProps) {
   const [decision, setDecision] = useState<'approve' | 'reject'>('approve');
   const [note, setNote] = useState('');
   const [adjusting, setAdjusting] = useState(false);
@@ -117,6 +128,13 @@ export function DecideRewardForm({ amountMinor, busy, blocked, onDecide }: Decid
             )}
           </AnimatePresence>
         </div>
+      )}
+      {decision === 'approve' && (
+        <PoolOverrunNote
+          pool={pool}
+          amountMinor={adjusting ? toMinorUnits(amount) : amountMinor}
+          currency={currency}
+        />
       )}
       <Button
         type="submit"

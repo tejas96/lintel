@@ -59,6 +59,7 @@ export class MilestoneRewardRepository implements MilestoneRewardStore {
         userId: recipients.userId,
         status: recipients.status,
         shareAmountMinor: recipients.shareAmountMinor,
+        adjustedAmountMinor: recipients.adjustedAmountMinor,
       })
       .from(recipients)
       .where(eq(recipients.milestoneRewardId, plan.id))

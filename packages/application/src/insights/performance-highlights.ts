@@ -1,6 +1,6 @@
 import type { CalendarDate } from '@lintel/shared';
 
-/** A milestone completed in the period, with the people who owned its finished tasks. */
+/** A milestone completed in the period, with the people who did its work (`milestoneContributors`). */
 export interface MilestoneCompletionFact {
   readonly milestoneId: string;
   readonly name: string;
@@ -17,7 +17,7 @@ export interface PerformanceHighlight {
 
 /**
  * Performance highlights: milestones completed on or before their due date
- * in the period, credited to everyone who owned one of their finished tasks.
+ * in the period, credited to everyone who did their work (see `milestoneContributors`).
  * Most milestones first, then the most recent delivery.
  */
 export function performanceHighlights(
